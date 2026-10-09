@@ -1,4 +1,4 @@
-# Tab Search
+# TabNow
 
 Fast fuzzy search over all open tabs, Spotlight style. `Alt+F` or the toolbar button opens it as an
 overlay on the page (or a small popup window on pages where scripts can't run: `chrome://`, Web Store, new tab).

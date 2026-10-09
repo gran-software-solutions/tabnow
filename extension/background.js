@@ -1,9 +1,9 @@
 // Page-side overlay: self-contained, injected into the active tab. Calling it again toggles it off.
 function overlay(src) {
-  const old = document.getElementById("tabsearch-host");
+  const old = document.getElementById("tabnow-host");
   if (old) return old.close?.();
   const host = document.createElement("div");
-  host.id = "tabsearch-host";
+  host.id = "tabnow-host";
   host.style.cssText = "all:initial;position:fixed;inset:0;z-index:2147483647;background:rgb(0 0 0/.25)";
   const root = host.attachShadow({ mode: "closed" });
   const f = document.createElement("iframe");
@@ -12,7 +12,7 @@ function overlay(src) {
   root.append(f);
   const origin = new URL(src).origin;
   const close = () => { host.remove(); removeEventListener("message", onMsg); removeEventListener("keydown", onKey, true); };
-  const onMsg = e => { if (e.origin === origin && e.data === "tabsearch:close") close(); };
+  const onMsg = e => { if (e.origin === origin && e.data === "tabnow:close") close(); };
   const onKey = e => { if (e.key === "Escape") close(); };
   host.close = close;
   host.addEventListener("click", e => { if (e.target === host) close(); });

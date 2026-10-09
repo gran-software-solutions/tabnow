@@ -2,7 +2,7 @@ import { search, hl } from "./fuzzy.js";
 
 const params = new URLSearchParams(location.search);
 const popup = params.has("popup"), curWin = +params.get("w");
-const close = () => popup ? window.close() : parent.postMessage("tabsearch:close", "*");
+const close = () => popup ? window.close() : parent.postMessage("tabnow:close", "*");
 const msg = chrome.i18n.getMessage;
 const el = (tag, cls, ...kids) => { const e = document.createElement(tag); if (cls) e.className = cls; e.append(...kids); return e; };
 
@@ -11,9 +11,6 @@ input.placeholder = msg("placeholder");
 document.querySelectorAll("[data-m]").forEach(n => n.textContent = msg(n.dataset.m));
 
 const tabs = (await chrome.tabs.query({ windowType: "normal" })).sort((a, b) => b.lastAccessed - a.lastAccessed);
-// Number windows 1..n in the order they were opened (window ids only grow), so a window keeps its
-// number between opens; tabs in the current window get no badge.
-const winNo = new Map([...new Set(tabs.map(t => t.windowId))].sort((a, b) => a - b).map((id, i) => [id, i + 1]));
 const items = tabs.map(t => {
   const url = t.url || t.pendingUrl || "";
   return { id: t.id, win: t.windowId, title: t.title || url, url, disp: url.replace(/^https?:\/\/(www\.)?/, "") };
@@ -26,7 +23,7 @@ function row(r) {
   img.src = chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(tab.url)}&size=32`);
   return el("li", "", img,
     el("div", "txt", el("div", "t trunc", hl(tab.title, r.th)), el("div", "u trunc", hl(tab.disp, r.uh))),
-    ...(tab.win !== curWin ? [Object.assign(el("span", "w", "W" + winNo.get(tab.win)), { title: msg("winTitle", [String(winNo.get(tab.win)), String(winNo.get(curWin))]) })] : []));
+    ...(tab.win !== curWin ? [el("span", "w", msg("otherWin"))] : []));
 }
 function render(keepSel) {
   results = search(items, input.value).slice(0, 200);

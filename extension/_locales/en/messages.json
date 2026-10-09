@@ -1,10 +1,10 @@
 {
-  "name": { "message": "Tab Search" },
+  "name": { "message": "TabNow" },
   "description": { "message": "Fast fuzzy search across all your open tabs." },
   "placeholder": { "message": "Search tabs" },
   "noMatch": { "message": "No tabs match" },
   "footSwitch": { "message": "switch" },
   "footClose": { "message": "close tab" },
   "footDismiss": { "message": "dismiss" },
-  "winTitle": { "message": "In window $1 (you are in window $2)" }
+  "otherWin": { "message": "other window" }
 }
