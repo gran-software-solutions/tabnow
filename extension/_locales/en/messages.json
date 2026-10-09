@@ -3,7 +3,9 @@
   "description": { "message": "Fast fuzzy search across all your open tabs." },
   "placeholder": { "message": "Search tabs" },
   "noMatch": { "message": "No tabs match" },
-  "footSwitch": { "message": "switch" },
+  "footNav": { "message": "navigate" },
+  "footSwitch": { "message": "open" },
+  "footClear": { "message": "clear" },
   "footClose": { "message": "close tab" },
   "footDismiss": { "message": "dismiss" },
   "otherWin": { "message": "In another window" }

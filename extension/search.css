@@ -25,6 +25,11 @@ mark { background: none; color: var(--hit); font-weight: 600; }
 .u { font-size: 12px; color: var(--muted); }
 .txt { display: grid; gap: 2px; min-width: 0; flex: 1; }
 
-.foot { display: flex; gap: 14px; flex-wrap: wrap; padding: 8px 18px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); background: var(--panel-2); }
-.foot i { font-style: normal; }
-kbd { font-family: var(--mono); font-size: 12px; padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+/* Footer: one quiet row of keycaps; navigation first, esc pushed right, extras drop on narrow widths. */
+.foot { display: flex; align-items: center; gap: 16px; padding: 9px 16px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); background: var(--panel-2); white-space: nowrap; overflow: hidden; }
+.foot .k { display: inline-flex; align-items: center; gap: 3px; }
+.foot .k i { font-style: normal; margin-left: 3px; }
+.foot .end { margin-left: auto; }
+.foot .or { width: 1px; height: 12px; margin: 0 4px; background: var(--line); }
+kbd { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; font: 500 10.5px/1 var(--sans); color: var(--fg); opacity: .8; background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; }
+@media (max-width: 560px) { .foot .opt { display: none; } }
