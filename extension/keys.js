@@ -24,6 +24,13 @@ export async function loadOpacity() {
   catch { return DEFAULT_OPACITY; }
 }
 
+// Blur of the page behind the panel in px (the dimmed page gets an eighth of it), set on the options page.
+export const DEFAULT_BLUR = 24;
+export async function loadBlur() {
+  try { return (await chrome.storage.sync.get("blur")).blur ?? DEFAULT_BLUR; }
+  catch { return DEFAULT_BLUR; }
+}
+
 export async function loadClose() {
   try { return (await chrome.storage.sync.get("closeKey")).closeKey ?? DEFAULT_CLOSE; }
   catch { return DEFAULT_CLOSE; }

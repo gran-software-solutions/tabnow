@@ -13,8 +13,13 @@
   "otherWin": { "message": "In another window" },
   "cmdPrevious": { "message": "Switch to previous tab" },
   "optClose": { "message": "Close the selected tab" },
-  "optPress": { "message": "Press a key combination…" },
+  "optPress": { "message": "Press keys…" },
+  "optCloseHint": { "message": "Click, then press the new combination. Esc cancels." },
+  "optOpacityHint": { "message": "Lower lets the page show through." },
+  "optBlur": { "message": "Blur" },
+  "optBlurHint": { "message": "Higher softens the page behind." },
+  "optOff": { "message": "Off" },
   "optReset": { "message": "Reset" },
-  "optOpacity": { "message": "Panel opacity" },
-  "optNote": { "message": "Click the key, then press the combination you want. Esc cancels. Browser-reserved keys such as Ctrl+W or Ctrl+N never reach TabNow." }
+  "optOpacity": { "message": "Opacity" },
+  "optNote": { "message": "Keys the browser reserves, such as Ctrl+W or Ctrl+N, never reach TabNow. The open and previous-tab shortcuts are set in your browser's extension shortcuts page." }
 }

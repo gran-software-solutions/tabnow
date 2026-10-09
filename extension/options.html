@@ -3,34 +3,54 @@
 <head>
 <meta charset="utf-8">
 <title>TabNow</title>
-<link rel="stylesheet" href="search.css">
 <style>
-  html, body { height: auto; background: var(--panel); }
-  main { padding: 20px 22px; display: grid; gap: 14px; font-size: 13px; min-width: 360px; }
-  .row { display: flex; align-items: center; gap: 12px; }
-  .row label { flex: 1; }
-  .rec { display: inline-flex; gap: 3px; align-items: center; min-height: 28px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); cursor: pointer; font: inherit; color: var(--fg); }
+  /* Settings rows: label + one-line hint on the left, control on the right, hairlines between. */
+  :root {
+    --fg: #1b1f27; --muted: #69707d; --faint: #9aa1ad; --line: #e3e6eb; --pill: #f0f2f5; --hit: #1f5fd6;
+    --sans: system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root {
+    --fg: #e6e9ef; --muted: #8b93a3; --faint: #646c7a; --line: #2f3541; --pill: #2a303b; --hit: #8fb4ff; color-scheme: dark } }
+
+  html, body { margin: 0; overflow: hidden; font: 13px/1.4 var(--sans); color: var(--fg); }
+  main { box-sizing: border-box; width: 500px; padding: 12px 32px 28px; }
+  .row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+  .lbl { flex: 1; min-width: 0; display: grid; gap: 3px; }
+  .name { font-weight: 500; }
+  .hint { color: var(--muted); font-size: 12px; }
+  .ctl { flex: none; display: flex; align-items: center; gap: 10px; }
+
+  .rec { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border: 0; border-radius: 7px; background: var(--pill); color: var(--fg); font: 500 12px var(--sans); word-spacing: 2px; cursor: pointer; }
+  .rec:hover { box-shadow: inset 0 0 0 1px var(--line); }
   .rec:focus-visible, .rec.on { outline: 2px solid var(--hit); outline-offset: 1px; }
-  .rec.on { color: var(--muted); }
-  .reset { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; text-decoration: underline; text-underline-offset: 2px; }
-  .note { color: var(--muted); margin: 0; line-height: 1.5; }
-  input[type=range] { width: 140px; accent-color: var(--hit); }
-  output { min-width: 3.5ch; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .rec.on { color: var(--muted); font-weight: 400; }
+  .reset { border: 0; background: none; padding: 0; color: var(--faint); font: 12px var(--sans); cursor: pointer; }
+  .reset:hover { color: var(--fg); }
+
+  input[type=range] { appearance: none; width: 140px; height: 4px; margin: 0; border-radius: 2px; cursor: pointer;
+    background: linear-gradient(to right, var(--hit) var(--p, 50%), var(--line) var(--p, 50%)); }
+  input[type=range]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .12), 0 1px 3px rgb(0 0 0 / .25); }
+  input[type=range]:focus-visible { outline: 2px solid var(--hit); outline-offset: 6px; }
+  output { min-width: 5ch; text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .note { margin: 20px 0 0; color: var(--faint); font-size: 12px; line-height: 1.5; }
 </style>
 </head>
 <body>
 <main>
   <div class="row">
-    <label for="close" data-m="optClose"></label>
-    <button id="close" class="rec" type="button"></button>
-    <button id="reset" class="reset" type="button" data-m="optReset"></button>
+    <div class="lbl"><label class="name" for="close" data-m="optClose"></label><span class="hint" data-m="optCloseHint"></span></div>
+    <div class="ctl"><button id="reset" class="reset" type="button" data-m="optReset"></button><button id="close" class="rec" type="button"></button></div>
+  </div>
+  <div class="row">
+    <div class="lbl"><label class="name" for="opacity" data-m="optOpacity"></label><span class="hint" data-m="optOpacityHint"></span></div>
+    <div class="ctl"><input id="opacity" type="range" min="60" max="100" step="2"><output id="opacityVal" for="opacity"></output></div>
+  </div>
+  <div class="row">
+    <div class="lbl"><label class="name" for="blur" data-m="optBlur"></label><span class="hint" data-m="optBlurHint"></span></div>
+    <div class="ctl"><input id="blur" type="range" min="0" max="40" step="2"><output id="blurVal" for="blur"></output></div>
   </div>
   <p class="note" data-m="optNote"></p>
-  <div class="row">
-    <label for="opacity" data-m="optOpacity"></label>
-    <input id="opacity" type="range" min="60" max="100" step="2">
-    <output id="opacityVal" for="opacity"></output>
-  </div>
 </main>
 <script type="module" src="options.js"></script>
 </body>

@@ -1,5 +1,7 @@
+import { loadBlur } from "./keys.js";
+
 // Page-side overlay: self-contained, injected into the active tab. Calling it again toggles it off.
-function overlay(src) {
+function overlay(src, blur) {
   const old = document.getElementById("tabnow-host");
   if (old) return old.close?.();
   const host = document.createElement("div");
@@ -11,10 +13,10 @@ function overlay(src) {
   // Dim + frost are sibling layers. A backdrop-filter on the host would hide the page from the frost,
   // and browsers ignore backdrop-filter on the iframe itself.
   const scrim = document.createElement("div");
-  scrim.style.cssText = "position:absolute;inset:0;background:rgb(20 24 32/.14);backdrop-filter:blur(3px)";
+  scrim.style.cssText = "position:absolute;inset:0;background:rgb(20 24 32/.14);backdrop-filter:blur(" + Math.round(blur / 8) + "px)";
   const box = "position:absolute;left:50%;top:12vh;transform:translateX(-50%);width:min(640px,94vw);height:min(480px,80vh);border-radius:16px;";
   const frost = document.createElement("div");
-  frost.style.cssText = box + "backdrop-filter:blur(24px) saturate(1.4);box-shadow:0 30px 80px rgb(0 0 0/.25)";
+  frost.style.cssText = box + "backdrop-filter:blur(" + blur + "px) saturate(1.4);box-shadow:0 30px 80px rgb(0 0 0/.25)";
   f.style.cssText = box + "border:0;color-scheme:normal";
   root.append(scrim, frost, f);
   const origin = new URL(src).origin;
@@ -43,7 +45,7 @@ async function open(tab) {
   if (!tab?.id) [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   const src = chrome.runtime.getURL(`search.html?w=${tab.windowId}`);
   try {
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: overlay, args: [src] });
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: overlay, args: [src, await loadBlur()] });
   } catch { // restricted page (chrome://, Web Store, new tab): fall back to a popup window
     const prefix = chrome.runtime.getURL("search.html");
     const [mine] = await chrome.tabs.query({ url: prefix + "*" });
