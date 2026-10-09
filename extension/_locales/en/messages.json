@@ -1,0 +1,9 @@
+{
+  "name": { "message": "Tab Search" },
+  "description": { "message": "Fast fuzzy search across all your open tabs." },
+  "placeholder": { "message": "Search tabs" },
+  "noMatch": { "message": "No tabs match" },
+  "footSwitch": { "message": "switch" },
+  "footClose": { "message": "close tab" },
+  "footDismiss": { "message": "dismiss" }
+}
