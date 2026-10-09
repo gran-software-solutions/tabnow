@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { match, search } from "./extension/fuzzy.js";
+import { DEFAULT_CLOSE, fromEvent, matches, caps } from "./extension/keys.js";
 
 assert.equal(match("zz", "gmail"), null);
 assert.deepEqual(match("mai", "gmail").hits, [1, 2, 3]);
@@ -23,4 +24,14 @@ const g = [
 const r = search(g, "google");
 assert.equal(r[0].tab, g[1]);
 assert.equal(r.length, 2);
+// Close-tab key combos.
+const ev = (key, mods = {}) => ({ key, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
+assert.ok(matches(ev("Backspace", { ctrlKey: true }), DEFAULT_CLOSE));
+assert.ok(!matches(ev("Backspace"), DEFAULT_CLOSE));
+assert.ok(!matches(ev("Backspace", { ctrlKey: true, shiftKey: true }), DEFAULT_CLOSE));
+assert.equal(fromEvent(ev("Control", { ctrlKey: true })), null);
+const altD = fromEvent(ev("D", { altKey: true, shiftKey: true }));
+assert.ok(matches(ev("d", { altKey: true, shiftKey: true }), altD)); // letter case doesn't matter
+assert.deepEqual(caps(DEFAULT_CLOSE), ["ctrl", "⌫"]);
+assert.deepEqual(caps(altD), ["alt", "shift", "D"]);
 console.log("ok");

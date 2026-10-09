@@ -40,7 +40,7 @@ On open, tabs are listed most recently used first and the previous tab is presel
 | Key | What it does |
 | --- | --- |
 | <kbd>Enter</kbd> | Switch to the selected tab. Focuses its window if it is in another one. |
-| <kbd>Ctrl</kbd>+<kbd>Backspace</kbd> | Close the selected tab and stay in the list. |
+| <kbd>Ctrl</kbd>+<kbd>Backspace</kbd> | Close the selected tab and stay in the list. Change the key on the options page. |
 | <kbd>Esc</kbd> | Dismiss. Clicking the dimmed background does the same. |
 
 **Search**
@@ -58,6 +58,8 @@ Tips:
 Change the opening shortcut at `brave://extensions/shortcuts` (or `chrome://extensions/shortcuts`): TabNow, "Activate the extension".
 
 ## Configure
+
+The close-tab key (default `Ctrl+Backspace`) is set on the TabNow options page: right-click the toolbar icon → Options, click the key and press the new combination. It syncs with your browser profile.
 
 Restricted pages (`brave://`, new tab, Web Store) can't host the overlay, so a small popup window opens instead.
 On tiling window managers, add a float rule for it. Hyprland example (classic `hyprland.conf` syntax, which varies by Hyprland version):

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TabNow</title>
+<link rel="stylesheet" href="search.css">
+<style>
+  html, body { height: auto; background: var(--panel); }
+  main { padding: 20px 22px; display: grid; gap: 14px; font-size: 13px; min-width: 360px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .row label { flex: 1; }
+  .rec { display: inline-flex; gap: 3px; align-items: center; min-height: 28px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); cursor: pointer; font: inherit; color: var(--fg); }
+  .rec:focus-visible, .rec.on { outline: 2px solid var(--hit); outline-offset: 1px; }
+  .rec.on { color: var(--muted); }
+  .reset { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .note { color: var(--muted); margin: 0; line-height: 1.5; }
+</style>
+</head>
+<body>
+<main>
+  <div class="row">
+    <label for="close" data-m="optClose"></label>
+    <button id="close" class="rec" type="button"></button>
+    <button id="reset" class="reset" type="button" data-m="optReset"></button>
+  </div>
+  <p class="note" data-m="optNote"></p>
+</main>
+<script type="module" src="options.js"></script>
+</body>
+</html>

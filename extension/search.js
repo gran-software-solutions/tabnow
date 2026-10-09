@@ -1,4 +1,5 @@
 import { search, hl } from "./fuzzy.js";
+import { matches, caps, loadClose } from "./keys.js";
 
 const params = new URLSearchParams(location.search);
 const popup = params.has("popup"), curWin = +params.get("w");
@@ -9,6 +10,8 @@ const el = (tag, cls, ...kids) => { const e = document.createElement(tag); if (c
 const input = document.getElementById("q"), list = document.querySelector("ul");
 input.placeholder = msg("placeholder");
 document.querySelectorAll("[data-m]").forEach(n => n.textContent = msg(n.dataset.m));
+const closeKey = await loadClose(); // set on the options page
+document.getElementById("closeKeys").replaceChildren(...caps(closeKey).map(c => el("kbd", "", c)));
 
 const tabs = (await chrome.tabs.query({ windowType: "normal" })).sort((a, b) => b.lastAccessed - a.lastAccessed);
 const items = tabs.map(t => {
@@ -65,10 +68,10 @@ input.addEventListener("keydown", e => {
   if (e.ctrlKey && e.key === "u") { e.preventDefault(); input.value = ""; return render(); }
   const n = results.length;
   if (!n) return;
+  if (matches(e, closeKey)) { e.preventDefault(); return closeTab(); } // first, so a custom key wins
   if (e.key === "ArrowDown" || (e.ctrlKey && e.key === "j")) { sel = (sel + 1) % n; paint(); e.preventDefault(); }
   else if (e.key === "ArrowUp" || (e.ctrlKey && e.key === "k")) { sel = (sel - 1 + n) % n; paint(); e.preventDefault(); }
   else if (e.key === "Enter") go(sel);
-  else if (e.ctrlKey && e.key === "Backspace") { closeTab(); e.preventDefault(); }
 });
 if (popup) addEventListener("blur", close);
 addEventListener("focus", () => input.focus());

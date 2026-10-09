@@ -4,13 +4,14 @@
   "description": "__MSG_description__",
   "version": "0.1.0",
   "default_locale": "en",
-  "permissions": ["tabs", "activeTab", "scripting", "favicon"],
+  "permissions": ["tabs", "activeTab", "scripting", "favicon", "storage"],
+  "options_ui": { "page": "options.html" },
   "action": { "default_title": "__MSG_name__" },
   "commands": {
     "_execute_action": { "suggested_key": { "default": "Alt+F" } }
   },
   "background": { "service_worker": "background.js", "type": "module" },
   "web_accessible_resources": [
-    { "resources": ["search.html", "search.js", "search.css", "fuzzy.js"], "matches": ["<all_urls>"] }
+    { "resources": ["search.html", "search.js", "search.css", "fuzzy.js", "keys.js"], "matches": ["<all_urls>"] }
   ]
 }

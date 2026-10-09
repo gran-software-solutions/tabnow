@@ -8,5 +8,9 @@
   "footClear": { "message": "clear" },
   "footClose": { "message": "close tab" },
   "footDismiss": { "message": "dismiss" },
-  "otherWin": { "message": "In another window" }
+  "otherWin": { "message": "In another window" },
+  "optClose": { "message": "Close the selected tab" },
+  "optPress": { "message": "Press a key combination…" },
+  "optReset": { "message": "Reset" },
+  "optNote": { "message": "Click the key, then press the combination you want. Esc cancels. Browser-reserved keys such as Ctrl+W or Ctrl+N never reach TabNow." }
 }
