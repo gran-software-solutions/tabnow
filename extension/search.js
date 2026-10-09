@@ -1,5 +1,5 @@
 import { search, hl } from "./fuzzy.js";
-import { matches, caps, loadClose } from "./keys.js";
+import { matches, caps, loadClose, loadOpacity } from "./keys.js";
 
 const params = new URLSearchParams(location.search);
 const popup = params.has("popup"), curWin = +params.get("w");
@@ -7,13 +7,14 @@ const close = () => popup ? window.close() : parent.postMessage("tabnow:close", 
 const msg = chrome.i18n.getMessage;
 const el = (tag, cls, ...kids) => { const e = document.createElement(tag); if (cls) e.className = cls; e.append(...kids); return e; };
 
-const input = document.getElementById("q"), list = document.querySelector("ul");
+const input = document.getElementById("q"), list = document.querySelector("ul"), count = document.getElementById("count");
 input.placeholder = msg("placeholder");
 document.querySelectorAll("[data-m]").forEach(n => n.textContent = msg(n.dataset.m));
 input.focus(); // before any await, so typing works the moment the frame has focus
 addEventListener("message", e => { if (e.data === "tabnow:focus") { window.focus(); input.focus(); } });
-const closeKey = await loadClose(); // set on the options page
-document.getElementById("closeKeys").replaceChildren(...caps(closeKey).map(c => el("kbd", "", c)));
+const [closeKey, opacity] = await Promise.all([loadClose(), loadOpacity()]); // both set on the options page
+document.documentElement.style.setProperty("--alpha", opacity / 100);
+document.getElementById("closeKeys").textContent = caps(closeKey).join(" ");
 
 const tabs = (await chrome.tabs.query({ windowType: "normal" })).sort((a, b) => b.lastAccessed - a.lastAccessed);
 const items = tabs.map(t => {
@@ -29,8 +30,11 @@ function row(r) {
   // Tabs in another window get a faint card stacked behind the favicon; the words live in the tooltip.
   const fav = el("span", "fav", img);
   if (tab.win !== curWin) { fav.classList.add("away"); fav.title = msg("otherWin"); img.alt = msg("otherWin"); }
+  const cut = tab.disp.indexOf("/"), host = cut < 0 ? tab.disp : tab.disp.slice(0, cut);
   return el("li", "", fav,
-    el("div", "txt", el("div", "t trunc", hl(tab.title, r.th)), el("div", "u trunc", hl(tab.disp, r.uh))));
+    el("div", "txt", el("div", "t trunc", hl(tab.title, r.th)),
+      el("div", "u trunc", el("span", "host", hl(host, r.uh)), el("span", "path", hl(tab.disp.slice(host.length), r.uh, host.length)))),
+    el("span", "go", el("kbd", "", "↵")));
 }
 function render(keepSel) {
   results = search(items, input.value).slice(0, 200);
@@ -41,6 +45,7 @@ function render(keepSel) {
     li.onclick = () => go(i);
   });
   list.replaceChildren(...(rows.length ? rows : [el("li", "empty", msg("noMatch"))]));
+  count.textContent = results.length === 1 ? msg("countOne") : msg("countMany", [String(results.length)]);
   paint();
 }
 function paint() {

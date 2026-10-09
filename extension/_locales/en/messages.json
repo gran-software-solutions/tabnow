@@ -3,6 +3,8 @@
   "description": { "message": "Fast fuzzy search across all your open tabs." },
   "placeholder": { "message": "Search tabs" },
   "noMatch": { "message": "No tabs match" },
+  "countOne": { "message": "1 tab" },
+  "countMany": { "message": "$1 tabs" },
   "footNav": { "message": "navigate" },
   "footSwitch": { "message": "open" },
   "footClear": { "message": "clear" },
@@ -13,5 +15,6 @@
   "optClose": { "message": "Close the selected tab" },
   "optPress": { "message": "Press a key combination…" },
   "optReset": { "message": "Reset" },
+  "optOpacity": { "message": "Panel opacity" },
   "optNote": { "message": "Click the key, then press the combination you want. Esc cancels. Browser-reserved keys such as Ctrl+W or Ctrl+N never reach TabNow." }
 }

@@ -14,6 +14,8 @@
   .rec.on { color: var(--muted); }
   .reset { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; text-decoration: underline; text-underline-offset: 2px; }
   .note { color: var(--muted); margin: 0; line-height: 1.5; }
+  input[type=range] { width: 140px; accent-color: var(--hit); }
+  output { min-width: 3.5ch; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -24,6 +26,11 @@
     <button id="reset" class="reset" type="button" data-m="optReset"></button>
   </div>
   <p class="note" data-m="optNote"></p>
+  <div class="row">
+    <label for="opacity" data-m="optOpacity"></label>
+    <input id="opacity" type="range" min="60" max="100" step="2">
+    <output id="opacityVal" for="opacity"></output>
+  </div>
 </main>
 <script type="module" src="options.js"></script>
 </body>

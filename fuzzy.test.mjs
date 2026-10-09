@@ -33,5 +33,5 @@ assert.equal(fromEvent(ev("Control", { ctrlKey: true })), null);
 const altD = fromEvent(ev("D", { altKey: true, shiftKey: true }));
 assert.ok(matches(ev("d", { altKey: true, shiftKey: true }), altD)); // letter case doesn't matter
 assert.deepEqual(caps(DEFAULT_CLOSE), ["ctrl", "⌫"]);
-assert.deepEqual(caps(altD), ["alt", "shift", "D"]);
+assert.deepEqual(caps(altD), ["alt", "shift", "d"]);
 console.log("ok");

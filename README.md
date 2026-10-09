@@ -61,6 +61,8 @@ Change the opening shortcut and the `Alt+Z` previous-tab shortcut at `brave://ex
 
 The close-tab key (default `Ctrl+Backspace`) is set on the TabNow options page: right-click the toolbar icon → Options, click the key and press the new combination. It syncs with your browser profile.
 
+The same page has a **Panel opacity** slider (60–100 %, default 86 %) for how see-through the frosted panel is.
+
 Restricted pages (`brave://`, new tab, Web Store) can't host the overlay, so a small popup window opens instead.
 On tiling window managers, add a float rule for it. Hyprland example (classic `hyprland.conf` syntax, which varies by Hyprland version):
 

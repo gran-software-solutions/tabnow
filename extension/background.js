@@ -4,12 +4,19 @@ function overlay(src) {
   if (old) return old.close?.();
   const host = document.createElement("div");
   host.id = "tabnow-host";
-  host.style.cssText = "all:initial;position:fixed;inset:0;z-index:2147483647;background:rgb(0 0 0/.25)";
+  host.style.cssText = "all:initial;position:fixed;inset:0;z-index:2147483647";
   const root = host.attachShadow({ mode: "closed" });
   const f = document.createElement("iframe");
   f.src = src;
-  f.style.cssText = "position:absolute;left:50%;top:12vh;transform:translateX(-50%);width:min(640px,94vw);height:min(480px,80vh);border:0;border-radius:14px;box-shadow:0 24px 60px rgb(0 0 0/.35);color-scheme:normal";
-  root.append(f);
+  // Dim + frost are sibling layers. A backdrop-filter on the host would hide the page from the frost,
+  // and browsers ignore backdrop-filter on the iframe itself.
+  const scrim = document.createElement("div");
+  scrim.style.cssText = "position:absolute;inset:0;background:rgb(20 24 32/.14);backdrop-filter:blur(3px)";
+  const box = "position:absolute;left:50%;top:12vh;transform:translateX(-50%);width:min(640px,94vw);height:min(480px,80vh);border-radius:16px;";
+  const frost = document.createElement("div");
+  frost.style.cssText = box + "backdrop-filter:blur(24px) saturate(1.4);box-shadow:0 30px 80px rgb(0 0 0/.25)";
+  f.style.cssText = box + "border:0;color-scheme:normal";
+  root.append(scrim, frost, f);
   const origin = new URL(src).origin;
   const close = () => {
     host.remove();
@@ -23,7 +30,7 @@ function overlay(src) {
   const trap = e => { if (e.target !== host) focus(); };
   const focus = () => { f.focus(); f.contentWindow?.postMessage("tabnow:focus", origin); };
   host.close = close;
-  host.addEventListener("click", e => { if (e.target === host) close(); });
+  scrim.addEventListener("click", close);
   addEventListener("message", onMsg);
   addEventListener("keydown", onKey, true);
   addEventListener("focusin", trap, true);

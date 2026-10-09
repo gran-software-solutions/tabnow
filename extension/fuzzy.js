@@ -37,10 +37,10 @@ export function search(items, q) {
   return out.sort((x, y) => y.score - x.score); // stable: ties keep MRU order
 }
 
-export function hl(text, hits) {
+export function hl(text, hits, from = 0) {
   const set = new Set(hits), frag = document.createDocumentFragment();
   let buf = "", on = false;
   const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
-  [...text].forEach((ch, i) => { const h = set.has(i); if (h !== on) { flush(); on = h; } buf += ch; });
+  [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
   flush(); return frag;
 }
