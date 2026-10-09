@@ -2,6 +2,8 @@
 
 Fuzzy search across every open tab in every window. Press `Alt+F`, type, hit Enter.
 
+![TabNow demo](docs/demo.gif)
+
 ## Features
 
 - Searches all windows. Most recently used first, with the previous tab preselected, so `Alt+F` then `Enter` flips back.
