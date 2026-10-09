@@ -2,7 +2,7 @@
 
 Fuzzy search across every open tab in every window. Press `Alt+F`, type, hit Enter.
 
-![TabNow demo](docs/demo.gif)
+![TabNow demo: fuzzy match a tab, scope to bookmarks with /, switch to dark with Alt+T](docs/demo.gif)
 
 ## Features
 
