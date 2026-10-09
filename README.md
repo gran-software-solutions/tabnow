@@ -21,23 +21,43 @@ Not in the Web Store yet.
 2. Open `brave://extensions` (or `chrome://extensions`) and turn on Developer mode.
 3. Load unpacked, pick the `extension/` folder.
 
-## Use
+## Keyboard shortcuts
 
-Press `Alt+F` or click the toolbar button. TabNow opens as a centered overlay on the current page.
+Open TabNow with `Alt+F` or the toolbar button. It shows as a centered overlay on the current page. Pressing `Alt+F` again while it is open closes it.
 
-| Key | Action |
+On open, tabs are listed most recently used first and the previous tab is preselected.
+
+**Navigate**
+
+| Key | What it does |
 | --- | --- |
-| `↑` / `↓`, `Ctrl+J` / `Ctrl+K` | Move selection |
-| `Enter` | Switch to tab |
-| `Ctrl+U` | Clear query |
-| `Ctrl+Backspace` | Close selected tab |
-| `Esc` | Dismiss |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | Move the selection. Wraps around at both ends. |
+| <kbd>Ctrl</kbd>+<kbd>J</kbd> / <kbd>Ctrl</kbd>+<kbd>K</kbd> | Same, vim-style (down / up). |
+| Mouse | Hover selects a row, click switches to it. |
 
-`Ctrl+N` / `Ctrl+P` are reserved by the browser and can't be used.
+**Act**
+
+| Key | What it does |
+| --- | --- |
+| <kbd>Enter</kbd> | Switch to the selected tab. Focuses its window if it is in another one. |
+| <kbd>Ctrl</kbd>+<kbd>Backspace</kbd> | Close the selected tab and stay in the list. |
+| <kbd>Esc</kbd> | Dismiss. Clicking the dimmed background does the same. |
+
+**Search**
+
+| Key | What it does |
+| --- | --- |
+| Type | Space-separated words must all match. Matches in the domain rank above the title, the title above the rest of the URL. |
+| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Clear the query and return to the full list. |
+
+Tips:
+
+- `Alt+F`, `Enter` jumps back to your previous tab, like `Alt+Tab`.
+- `Ctrl+N` is not used for moving down: the browser reserves it for "new window" and pages cannot intercept it. Use `Ctrl+J` / `Ctrl+K` instead.
+
+Change the opening shortcut at `brave://extensions/shortcuts` (or `chrome://extensions/shortcuts`): TabNow, "Activate the extension".
 
 ## Configure
-
-Change the shortcut at `brave://extensions/shortcuts` (or `chrome://extensions/shortcuts`), row "Activate the extension".
 
 Restricted pages (`brave://`, new tab, Web Store) can't host the overlay, so a small popup window opens instead.
 On tiling window managers, add a float rule for it. Hyprland example (classic `hyprland.conf` syntax, which varies by Hyprland version):
