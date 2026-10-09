@@ -6,5 +6,5 @@
   "footSwitch": { "message": "switch" },
   "footClose": { "message": "close tab" },
   "footDismiss": { "message": "dismiss" },
-  "otherWin": { "message": "other window" }
+  "otherWin": { "message": "In another window" }
 }

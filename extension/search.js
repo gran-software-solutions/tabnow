@@ -19,11 +19,13 @@ const items = tabs.map(t => {
 let results = [], sel = 0, rows = [];
 function row(r) {
   const { tab } = r;
-  const img = el("img", "fav");
+  const img = el("img");
   img.src = chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(tab.url)}&size=32`);
-  return el("li", "", img,
-    el("div", "txt", el("div", "t trunc", hl(tab.title, r.th)), el("div", "u trunc", hl(tab.disp, r.uh))),
-    ...(tab.win !== curWin ? [el("span", "w", msg("otherWin"))] : []));
+  // Tabs in another window get a faint card stacked behind the favicon; the words live in the tooltip.
+  const fav = el("span", "fav", img);
+  if (tab.win !== curWin) { fav.classList.add("away"); fav.title = msg("otherWin"); img.alt = msg("otherWin"); }
+  return el("li", "", fav,
+    el("div", "txt", el("div", "t trunc", hl(tab.title, r.th)), el("div", "u trunc", hl(tab.disp, r.uh))));
 }
 function render(keepSel) {
   results = search(items, input.value).slice(0, 200);
