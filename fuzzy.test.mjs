@@ -13,4 +13,14 @@ assert.equal(search(items, "arx")[0].tab, items[1]);
 assert.equal(search(items, "x list")[0].tab, items[2]);
 assert.equal(search(items, "nope").length, 0);
 assert.deepEqual(search(items, "mail.google")[0].uh.length, 11); // url match -> url hits
+// The "google" case: domain beats a mid-title word, scattered letters don't match at all.
+const g = [
+  t("Catching Developers in the Flow: Program Repair at Google Scale", "arxiv.org/pdf/2610.07289"),
+  t("Search results - someone@example.com - Gmail", "mail.google.com/mail/u/1/#search"),
+  t("Harness Engineering: Anatomy, Architecture, and Evolution of Coding Agents", "arxiv.org/pdf/2609.00006"),
+  t("XA · Kartik on X: \"if you are paying for a coding plan\"", "x.com/code_kartik/status/1"),
+];
+const r = search(g, "google");
+assert.equal(r[0].tab, g[1]);
+assert.equal(r.length, 2);
 console.log("ok");

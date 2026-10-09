@@ -5,5 +5,6 @@
   "noMatch": { "message": "No tabs match" },
   "footSwitch": { "message": "switch" },
   "footClose": { "message": "close tab" },
-  "footDismiss": { "message": "dismiss" }
+  "footDismiss": { "message": "dismiss" },
+  "winTitle": { "message": "In window $1 (you are in window $2)" }
 }

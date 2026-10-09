@@ -11,7 +11,8 @@ export function match(q, text) {
     score += j === last + 1 ? 5 : (j === 0 || /\W/.test(t[j - 1]) ? 3 : 1);
     hits.push(j); last = j; k++;
   }
-  return k === q.length ? { score, hits } : null;
+  // Letters spread over a long stretch ("Harness En·g·ineering … ·o·") are noise, not a match.
+  return k === q.length && hits[k - 1] - hits[0] < q.length * 3 ? { score, hits } : null;
 }
 
 // items: [{title, disp, ...}] already in MRU order. Returns [{tab, score, th, uh}].
@@ -22,10 +23,14 @@ export function search(items, q) {
   for (const tab of items) {
     let score = 0; const th = [], uh = [];
     for (const w of words) {
-      const a = match(w, tab.title), b = match(w, tab.disp);
-      if (!a && !b) { score = -1; break; }
-      if (a && (!b || a.score * 1.2 >= b.score)) { score += a.score * 1.2; th.push(...a.hits); }
-      else { score += b.score; uh.push(...b.hits); }
+      // Weights: domain 1.5 > title 1.2 > rest of URL 1. The domain is the start of disp, so its hits index disp.
+      const d = match(w, tab.disp.split("/")[0]), a = match(w, tab.title), b = match(w, tab.disp);
+      const best = Math.max((d?.score ?? -1) * 1.5, (a?.score ?? -1) * 1.2, b?.score ?? -1);
+      if (best < 0) { score = -1; break; }
+      score += best;
+      if (d && best === d.score * 1.5) uh.push(...d.hits);
+      else if (a && best === a.score * 1.2) th.push(...a.hits);
+      else uh.push(...b.hits);
     }
     if (score >= 0) out.push({ tab, score, th, uh });
   }
