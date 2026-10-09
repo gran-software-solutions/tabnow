@@ -14,7 +14,7 @@
     "default_icon": { "16": "icons/icon-16.png", "20": "icons/icon-20.png", "24": "icons/icon-24.png", "32": "icons/icon-32.png" }
   },
   "commands": {
-    "_execute_action": { "suggested_key": { "default": "Alt+F" } },
+    "_execute_action": { "suggested_key": { "default": "Ctrl+E" } },
     "previous-tab": { "suggested_key": { "default": "Alt+Z" }, "description": "__MSG_cmdPrevious__" }
   },
   "background": { "service_worker": "background.js", "type": "module" },

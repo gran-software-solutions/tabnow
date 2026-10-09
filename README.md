@@ -1,12 +1,12 @@
 # TabNow
 
-Fuzzy search across every open tab in every window. Press `Alt+F`, type, hit Enter.
+Fuzzy search across every open tab in every window. Press `Ctrl+E`, type, hit Enter.
 
 ![TabNow demo: fuzzy match a tab, scope to bookmarks with /, switch to dark with Alt+T](docs/demo.gif)
 
 ## Features
 
-- Searches all windows. Most recently used first, with the previous tab preselected, so `Alt+F` then `Enter` flips back.
+- Searches all windows. Most recently used first, with the previous tab preselected, so `Ctrl+E` then `Enter` flips back.
 - Fuzzy matching ranks domain over title over the rest of the URL.
 - Tabs from other windows show a faint second card behind their favicon (hover it for "In another window").
 - Optionally searches history and bookmarks too (off by default), listed below the open tabs.
@@ -32,13 +32,13 @@ Not in the Web Store yet. TabNow needs Chrome 121+ or another Chromium browser o
 1. Clone this repo.
 2. Open `brave://extensions` (or `chrome://extensions`) and turn on Developer mode.
 3. Click Load unpacked, pick the `extension/` folder.
-4. Optional: check the shortcuts at `chrome://extensions/shortcuts`, then press `Alt+F` on any page.
+4. Optional: check the shortcuts at `chrome://extensions/shortcuts`, then press `Ctrl+E` on any page.
 
 `brave://` and `edge://` pages work the same as `chrome://`.
 
 ## Keyboard shortcuts
 
-Open TabNow with `Alt+F` or the toolbar button. It shows as a centered overlay on the current page. Pressing `Alt+F` again while it is open closes it.
+Open TabNow with `Ctrl+E` (`Cmd+E` on macOS) or the toolbar button. It shows as a centered overlay on the current page. Pressing `Ctrl+E` again while it is open closes it.
 
 On open, tabs are listed most recently used first and the previous tab is preselected.
 
@@ -69,7 +69,7 @@ On open, tabs are listed most recently used first and the previous tab is presel
 
 Tips:
 
-- `Alt+Z` switches straight to your previous tab without opening TabNow, in any window. Press it again to flip back. (`Alt+F`, `Enter` does the same through the list.)
+- `Alt+Z` switches straight to your previous tab without opening TabNow, in any window. Press it again to flip back. (`Ctrl+E`, `Enter` does the same through the list.)
 - `Ctrl+N` is not used for moving down: the browser reserves it for "new window" and pages cannot intercept it. Use `Ctrl+J` / `Ctrl+K` instead.
 
 Change the opening shortcut and the `Alt+Z` previous-tab shortcut at `brave://extensions/shortcuts` (or `chrome://extensions/shortcuts`): TabNow, "Activate the extension" and "Switch to previous tab".
