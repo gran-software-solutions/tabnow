@@ -3,6 +3,7 @@
   "name": "__MSG_name__",
   "description": "__MSG_description__",
   "version": "0.1.0",
+  "minimum_chrome_version": "121",
   "default_locale": "en",
   "permissions": ["tabs", "activeTab", "scripting", "favicon", "storage"],
   "options_ui": { "page": "options.html" },

@@ -15,7 +15,7 @@ Fuzzy search across every open tab in every window. Press `Alt+F`, type, hit Ent
 
 ## Install
 
-Not in the Web Store yet.
+Not in the Web Store yet. TabNow needs Chrome 121+ or another Chromium browser of that version (Edge, Brave, Opera, Vivaldi, Arc).
 
 1. Clone this repo.
 2. Open `brave://extensions` (or `chrome://extensions`) and turn on Developer mode.
@@ -40,7 +40,7 @@ On open, tabs are listed most recently used first and the previous tab is presel
 | Key | What it does |
 | --- | --- |
 | <kbd>Enter</kbd> | Switch to the selected tab. Focuses its window if it is in another one. |
-| <kbd>Ctrl</kbd>+<kbd>Backspace</kbd> | Close the selected tab and stay in the list. Change the key on the options page. |
+| <kbd>Ctrl</kbd>+<kbd>Backspace</kbd> (<kbd>Cmd</kbd>+<kbd>Backspace</kbd> on macOS) | Close the selected tab and stay in the list. Change the key on the options page. |
 | <kbd>Esc</kbd> | Dismiss. Clicking the dimmed background does the same. |
 
 **Search**
@@ -49,6 +49,7 @@ On open, tabs are listed most recently used first and the previous tab is presel
 | --- | --- |
 | Type | Space-separated words must all match. Matches in the domain rank above the title, the title above the rest of the URL. |
 | <kbd>Ctrl</kbd>+<kbd>U</kbd> | Clear the query and return to the full list. |
+| <kbd>Alt</kbd>+<kbd>T</kbd> | Switch theme: Auto → Light → Dark (also the button next to the tab count). Change the key on the options page. |
 
 Tips:
 
@@ -59,11 +60,13 @@ Change the opening shortcut and the `Alt+Z` previous-tab shortcut at `brave://ex
 
 ## Configure
 
-The close-tab key (default `Ctrl+Backspace`) is set on the TabNow options page: right-click the toolbar icon → Options, click the key and press the new combination. It syncs with your browser profile.
+The close-tab key (default `Ctrl+Backspace`, `Cmd+Backspace` on macOS) is set on the TabNow options page: right-click the toolbar icon → Options, click the key and press the new combination. It syncs with your browser profile.
 
 The same page has an **Opacity** slider (60–100 %, default 86 %): lower lets the page show through the search panel.
 
 A **Blur** slider (off to 40 px, default 24 px) sets how strongly the page behind is blurred.
+
+**Theme** picks Light, Dark or Auto (follows your system).
 
 Restricted pages (`brave://`, new tab, Web Store) can't host the overlay, so a small popup window opens instead.
 On tiling window managers, add a float rule for it. Hyprland example (classic `hyprland.conf` syntax, which varies by Hyprland version):

@@ -6,11 +6,11 @@
 <style>
   /* Settings rows: label + one-line hint on the left, control on the right, hairlines between. */
   :root {
-    --fg: #1b1f27; --muted: #69707d; --faint: #9aa1ad; --line: #e3e6eb; --pill: #f0f2f5; --hit: #1f5fd6;
+    --fg: #1b1f27; --muted: #69707d; --faint: #9aa1ad; --line: #e3e6eb; --pill: #f0f2f5; --card: #fff; --hit: #1f5fd6;
     --sans: system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) { :root {
-    --fg: #e6e9ef; --muted: #8b93a3; --faint: #646c7a; --line: #2f3541; --pill: #2a303b; --hit: #8fb4ff; color-scheme: dark } }
+    --fg: #e6e9ef; --muted: #8b93a3; --faint: #646c7a; --line: #2f3541; --pill: #2a303b; --card: #3a414e; --hit: #8fb4ff; color-scheme: dark } }
 
   html, body { margin: 0; overflow: hidden; font: 13px/1.4 var(--sans); color: var(--fg); }
   main { box-sizing: border-box; width: 500px; padding: 12px 32px 28px; }
@@ -33,6 +33,12 @@
   input[type=range]:focus-visible { outline: 2px solid var(--hit); outline-offset: 6px; }
   output { min-width: 5ch; text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 
+  .seg { gap: 2px; padding: 2px; border-radius: 8px; background: var(--pill); }
+  .seg label { position: relative; }
+  .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .seg span { display: block; padding: 4px 12px; border-radius: 6px; color: var(--muted); font-size: 12px; }
+  .seg input:checked + span { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+  .seg input:focus-visible + span { outline: 2px solid var(--hit); outline-offset: 1px; }
   .note { margin: 20px 0 0; color: var(--faint); font-size: 12px; line-height: 1.5; }
 </style>
 </head>
@@ -40,7 +46,19 @@
 <main>
   <div class="row">
     <div class="lbl"><label class="name" for="close" data-m="optClose"></label><span class="hint" data-m="optCloseHint"></span></div>
-    <div class="ctl"><button id="reset" class="reset" type="button" data-m="optReset"></button><button id="close" class="rec" type="button"></button></div>
+    <div class="ctl"><button id="closeReset" class="reset" type="button" data-m="optReset"></button><button id="close" class="rec" type="button"></button></div>
+  </div>
+  <div class="row">
+    <div class="lbl"><label class="name" for="themeKey" data-m="optThemeKey"></label><span class="hint" data-m="optThemeKeyHint"></span></div>
+    <div class="ctl"><button id="themeKeyReset" class="reset" type="button" data-m="optReset"></button><button id="themeKey" class="rec" type="button"></button></div>
+  </div>
+  <div class="row">
+    <div class="lbl"><span class="name" data-m="optTheme"></span><span class="hint" data-m="optThemeHint"></span></div>
+    <div class="ctl seg" id="theme" role="radiogroup">
+      <label><input type="radio" name="theme" value="auto"><span data-m="optAuto"></span></label>
+      <label><input type="radio" name="theme" value="light"><span data-m="optLight"></span></label>
+      <label><input type="radio" name="theme" value="dark"><span data-m="optDark"></span></label>
+    </div>
   </div>
   <div class="row">
     <div class="lbl"><label class="name" for="opacity" data-m="optOpacity"></label><span class="hint" data-m="optOpacityHint"></span></div>
