@@ -17,9 +17,23 @@ Fuzzy search across every open tab in every window. Press `Alt+F`, type, hit Ent
 
 Not in the Web Store yet. TabNow needs Chrome 121+ or another Chromium browser of that version (Edge, Brave, Opera, Vivaldi, Arc).
 
+![Install steps](docs/install.gif)
+
+<table><tr>
+<td align="center"><a href="docs/install/1-developer-mode.png"><img src="docs/install/1-developer-mode.png" width="150" alt="1. Developer mode"></a><br><sub>1. Developer mode</sub></td>
+<td align="center"><a href="docs/install/2-load-unpacked.png"><img src="docs/install/2-load-unpacked.png" width="150" alt="2. Load unpacked"></a><br><sub>2. Load unpacked</sub></td>
+<td align="center"><a href="docs/install/3-loaded.png"><img src="docs/install/3-loaded.png" width="150" alt="3. Loaded"></a><br><sub>3. Loaded</sub></td>
+<td align="center"><a href="docs/install/4-shortcuts.png"><img src="docs/install/4-shortcuts.png" width="150" alt="4. Shortcuts"></a><br><sub>4. Shortcuts</sub></td>
+<td align="center"><a href="docs/install/5-search.png"><img src="docs/install/5-search.png" width="150" alt="5. Search"></a><br><sub>5. Search</sub></td>
+<td align="center"><a href="docs/install/6-options.png"><img src="docs/install/6-options.png" width="150" alt="Options"></a><br><sub>Options</sub></td>
+</tr></table>
+
 1. Clone this repo.
 2. Open `brave://extensions` (or `chrome://extensions`) and turn on Developer mode.
-3. Load unpacked, pick the `extension/` folder.
+3. Click Load unpacked, pick the `extension/` folder.
+4. Optional: check the shortcuts at `chrome://extensions/shortcuts`, then press `Alt+F` on any page.
+
+`brave://` and `edge://` pages work the same as `chrome://`.
 
 ## Keyboard shortcuts
 
