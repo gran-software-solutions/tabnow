@@ -82,3 +82,7 @@ Plain JS, no build, no dependencies. Run the matcher tests with:
 ```
 node fuzzy.test.mjs
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE). Made by [GRAN Software Solutions](https://www.gransoftware.de).

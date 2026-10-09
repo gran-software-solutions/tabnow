@@ -18,6 +18,6 @@
   },
   "background": { "service_worker": "background.js", "type": "module" },
   "web_accessible_resources": [
-    { "resources": ["search.html", "search.js", "search.css", "fuzzy.js", "keys.js"], "matches": ["<all_urls>"] }
+    { "resources": ["search.html", "search.js", "search.css", "fuzzy.js", "keys.js"], "matches": ["<all_urls>"], "use_dynamic_url": true }
   ]
 }

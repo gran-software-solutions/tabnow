@@ -27,7 +27,6 @@ function overlay(src, blur, theme) {
   };
   paint(dark);
   root.append(scrim, frost, f);
-  const origin = new URL(src).origin;
   const close = () => {
     host.remove();
     removeEventListener("message", onMsg);
@@ -35,14 +34,14 @@ function overlay(src, blur, theme) {
     removeEventListener("focusin", trap, true);
   };
   const onMsg = e => {
-    if (e.origin !== origin) return;
+    if (e.source !== f.contentWindow) return; // only our frame (its origin is randomised by use_dynamic_url)
     if (e.data === "tabnow:close") close();
     else if (e.data?.tabnow === "theme") paint(e.data.dark);
   };
   const onKey = e => { if (e.key === "Escape") close(); };
   // Modal focus trap: if the page grabs focus back (Gmail, X do), return it to the overlay.
   const trap = e => { if (e.target !== host) focus(); };
-  const focus = () => { f.focus(); f.contentWindow?.postMessage("tabnow:focus", origin); };
+  const focus = () => { f.focus(); f.contentWindow?.postMessage("tabnow:focus", "*"); };
   host.close = close;
   scrim.addEventListener("click", close);
   addEventListener("message", onMsg);
