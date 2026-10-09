@@ -10,6 +10,8 @@ const el = (tag, cls, ...kids) => { const e = document.createElement(tag); if (c
 const input = document.getElementById("q"), list = document.querySelector("ul");
 input.placeholder = msg("placeholder");
 document.querySelectorAll("[data-m]").forEach(n => n.textContent = msg(n.dataset.m));
+input.focus(); // before any await, so typing works the moment the frame has focus
+addEventListener("message", e => { if (e.data === "tabnow:focus") { window.focus(); input.focus(); } });
 const closeKey = await loadClose(); // set on the options page
 document.getElementById("closeKeys").replaceChildren(...caps(closeKey).map(c => el("kbd", "", c)));
 

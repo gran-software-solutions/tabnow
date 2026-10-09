@@ -11,14 +11,24 @@ function overlay(src) {
   f.style.cssText = "position:absolute;left:50%;top:12vh;transform:translateX(-50%);width:min(640px,94vw);height:min(480px,80vh);border:0;border-radius:14px;box-shadow:0 24px 60px rgb(0 0 0/.35);color-scheme:normal";
   root.append(f);
   const origin = new URL(src).origin;
-  const close = () => { host.remove(); removeEventListener("message", onMsg); removeEventListener("keydown", onKey, true); };
+  const close = () => {
+    host.remove();
+    removeEventListener("message", onMsg);
+    removeEventListener("keydown", onKey, true);
+    removeEventListener("focusin", trap, true);
+  };
   const onMsg = e => { if (e.origin === origin && e.data === "tabnow:close") close(); };
   const onKey = e => { if (e.key === "Escape") close(); };
+  // Modal focus trap: if the page grabs focus back (Gmail, X do), return it to the overlay.
+  const trap = e => { if (e.target !== host) focus(); };
+  const focus = () => { f.focus(); f.contentWindow?.postMessage("tabnow:focus", origin); };
   host.close = close;
   host.addEventListener("click", e => { if (e.target === host) close(); });
   addEventListener("message", onMsg);
   addEventListener("keydown", onKey, true);
-  f.onload = () => f.focus();
+  addEventListener("focusin", trap, true);
+  f.onload = focus;
+  document.activeElement?.blur?.(); // so the page's own field lets go before the overlay appears
   document.documentElement.append(host);
 }
 
