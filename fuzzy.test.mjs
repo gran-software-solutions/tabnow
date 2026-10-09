@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { match, search } from "./extension/fuzzy.js";
+import { match, search, group, parseScope } from "./extension/fuzzy.js";
 import { isMac, DEFAULT_CLOSE, fromEvent, matches, caps, nextTheme } from "./extension/keys.js";
 
 assert.equal(match("zz", "gmail"), null);
@@ -24,6 +24,20 @@ const g = [
 const r = search(g, "google");
 assert.equal(r[0].tab, g[1]);
 assert.equal(r.length, 2);
+// Grouping: tabs, bookmarks, history; each capped, score order kept.
+const k = (kind, n) => ({ tab: { kind, n } });
+const gr = group([k("history", 1), k("bookmark", 2), k("tab", 3), k("history", 4), k("bookmark", 5), k("history", 6), k("tab", 7)], { bookmark: 1, history: 2 });
+assert.deepEqual(gr.map(r => r.tab.n), [3, 7, 2, 1, 4]);
+assert.equal(group([{ tab: {} }], {}).length, 1); // no kind = tab
+// Slash scopes.
+assert.deepEqual(parseScope("/b docs"), { kind: "bookmark", rest: "docs" });
+assert.deepEqual(parseScope("/H "), { kind: "history", rest: "" });
+assert.deepEqual(parseScope("/t").menu.map(s => s.code), ["t"]);
+assert.deepEqual(parseScope("/").menu.map(s => s.code), ["t", "b", "h"]);
+assert.deepEqual(parseScope("/hist").menu.map(s => s.code), ["h"]);
+assert.deepEqual(parseScope("/x").menu, []);
+assert.deepEqual(parseScope("/x docs"), {}); // unknown code: plain text
+assert.deepEqual(parseScope("a /b "), {});
 // Close-tab key combos.
 const ev = (key, mods = {}) => ({ key, code: /^[a-z]$/i.test(key) ? "Key" + key.toUpperCase() : key, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
 assert.ok(matches(ev("Backspace", { [isMac ? "metaKey" : "ctrlKey"]: true }), DEFAULT_CLOSE));

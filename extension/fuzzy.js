@@ -37,10 +37,24 @@ export function search(items, q) {
   return out.sort((x, y) => y.score - x.score); // stable: ties keep MRU order
 }
 
+// Tabs first, then bookmarks, then history; each keeps its score order and is cut to caps[kind].
+export function group(results, caps) {
+  return ["tab", "bookmark", "history"].flatMap(k => results.filter(r => (r.tab.kind ?? "tab") === k).slice(0, caps[k] ?? Infinity));
+}
+
 export function hl(text, hits, from = 0) {
   const set = new Set(hits), frag = document.createDocumentFragment();
   let buf = "", on = false;
   const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
   [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
   flush(); return frag;
+}
+
+// Slash scopes. "/b " locks a scope; a bare "/" (plus letters) lists the scopes whose code or name starts with them.
+export const SCOPES = [{ code: "t", kind: "tab" }, { code: "b", kind: "bookmark" }, { code: "h", kind: "history" }];
+export function parseScope(v) {
+  const m = /^\/([a-z]) /i.exec(v), hit = m && SCOPES.find(s => s.code === m[1].toLowerCase());
+  if (hit) return { kind: hit.kind, rest: v.slice(3) };
+  const f = /^\/([a-z]*)$/i.exec(v)?.[1].toLowerCase();
+  return f === undefined ? {} : { menu: SCOPES.filter(s => s.code.startsWith(f) || s.kind.startsWith(f)) };
 }

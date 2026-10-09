@@ -2,11 +2,11 @@
 :root {
   --fg: #14171d; --muted: #5f6672; --faint: #9ba1ac; --line: #e4e7ec; --hit: #1f5fd6;
   --alpha: .86; --glass: rgb(255 255 255 / var(--alpha)); --hair: rgb(15 20 30 / .07);
-  --sans: system-ui, sans-serif; --mono: ui-monospace, monospace; color-scheme: light;
+  --solid: #fff; --sans: system-ui, sans-serif; --mono: ui-monospace, monospace; color-scheme: light;
 }
 :root[data-theme="dark"] {
   --fg: #eceef2; --muted: #a0a7b4; --faint: #6d7585; --line: #2c313b; --hit: #9cbcff;
-  --glass: rgb(22 25 31 / var(--alpha)); --hair: rgb(255 255 255 / .08); color-scheme: dark;
+  --solid: #1b1f27; --glass: rgb(22 25 31 / var(--alpha)); --hair: rgb(255 255 255 / .08); color-scheme: dark;
 }
 
 html, body { height: 100%; margin: 0; background: transparent; font-family: var(--sans); color: var(--fg); }
@@ -23,7 +23,7 @@ mark { background: color-mix(in srgb, var(--hit) 28%, transparent); color: var(-
 li.on mark { background: color-mix(in srgb, var(--hit) 38%, transparent); }
 .trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .empty { padding: 18px; color: var(--muted); cursor: default !important; }
-.q { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--hair); font-size: 20px; font-weight: 300; }
+.q { position: relative; display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--hair); font-size: 20px; font-weight: 300; }
 .n { flex: none; font-size: 12px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .q svg { flex: none; color: var(--muted); }
 .tb { flex: none; display: grid; place-items: center; width: 28px; height: 28px; margin: -4px -6px -4px 0; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--faint); cursor: pointer; }
@@ -32,6 +32,8 @@ li.on mark { background: color-mix(in srgb, var(--hit) 38%, transparent); }
 .fav { flex: none; position: relative; width: 16px; height: 16px; }
 .fav img { position: relative; display: block; width: 16px; height: 16px; }
 .fav.away::before { content: ""; position: absolute; inset: -4px -4px 4px 4px; border: 1.5px solid var(--muted); border-radius: 4px; opacity: .45; }
+.kind { display: inline-block; margin-right: 6px; vertical-align: -1px; color: var(--faint); }
+li.on .kind { color: inherit; }
 .t { font-size: 14px; }
 .u { font-size: 12px; }
 .u .host { color: var(--fg); opacity: .78; }
@@ -45,3 +47,16 @@ li.on mark { background: color-mix(in srgb, var(--hit) 38%, transparent); }
 .foot .end { margin-left: auto; }
 kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; font: 500 11px/1 var(--sans); word-spacing: 2px; color: var(--fg); opacity: .75; background: color-mix(in srgb, var(--fg) 7%, transparent); border-radius: 6px; }
 @media (max-width: 560px) { .foot .opt { display: none; } }
+
+/* Scopes: chip before the input, menu under the field, section headers in the list. */
+.chip { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 7px; font: 500 14px var(--sans); color: var(--hit); background: color-mix(in srgb, var(--hit) 14%, transparent); }
+.chip:empty { display: none; }
+.menu { position: absolute; left: 44px; top: calc(100% + 4px); z-index: 5; min-width: 280px; padding: 5px; border-radius: 10px; background: var(--solid); box-shadow: 0 12px 40px rgb(0 0 0 / .2), inset 0 0 0 1px var(--hair); font-size: 13px; font-weight: 400; }
+.menu div { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 7px; cursor: pointer; }
+.menu div.on { background: color-mix(in srgb, var(--hit) 12%, transparent); }
+.menu div.off { color: var(--faint); }
+.menu code { font: 600 12px var(--mono); color: var(--hit); min-width: 22px; }
+.menu div.off code { color: inherit; }
+.menu span { color: var(--muted); margin-left: auto; }
+.menu div.off span { color: var(--faint); }
+.ov li.sec { cursor: default; padding: 10px 12px 3px; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); }

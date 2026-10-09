@@ -49,3 +49,10 @@ document.querySelectorAll("#theme input").forEach(r => {
 
 slider("opacity", await loadOpacity(), v => v + "%");
 slider("blur", await loadBlur(), v => (v ? v + " px" : msg("optOff")));
+
+// History and bookmarks are optional permissions: asked for here, from the click.
+const extra = document.getElementById("extra"), PERMS = { permissions: ["history", "bookmarks"] };
+extra.checked = await chrome.permissions.contains(PERMS);
+extra.addEventListener("change", async () => {
+  extra.checked = await (extra.checked ? chrome.permissions.request(PERMS) : chrome.permissions.remove(PERMS).then(() => false));
+});

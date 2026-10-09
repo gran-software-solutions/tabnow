@@ -9,6 +9,7 @@ Fuzzy search across every open tab in every window. Press `Alt+F`, type, hit Ent
 - Searches all windows. Most recently used first, with the previous tab preselected, so `Alt+F` then `Enter` flips back.
 - Fuzzy matching ranks domain over title over the rest of the URL.
 - Tabs from other windows show a faint second card behind their favicon (hover it for "In another window").
+- Optionally searches history and bookmarks too (off by default), listed below the open tabs.
 - Close tabs straight from the list.
 - No network requests. Nothing leaves your browser.
 - Light and dark.
@@ -62,7 +63,8 @@ On open, tabs are listed most recently used first and the previous tab is presel
 | Key | What it does |
 | --- | --- |
 | Type | Space-separated words must all match. Matches in the domain rank above the title, the title above the rest of the URL. |
-| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Clear the query and return to the full list. |
+| <kbd>/</kbd> | Pick what to search. A menu lists `/t` Tabs, `/b` Bookmarks, `/h` History (type letters to filter, <kbd>↑</kbd> <kbd>↓</kbd> then <kbd>Enter</kbd> or <kbd>Tab</kbd> to pick). `/b ` with a space locks it directly. The scope shows as a chip before the field; <kbd>Backspace</kbd> on an empty field removes it. Bookmarks and history need the option on the options page. |
+| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Clear the query and keep the scope. Press again on an empty query to clear the scope. |
 | <kbd>Alt</kbd>+<kbd>T</kbd> | Switch theme: Auto → Light → Dark (also the button next to the tab count). Change the key on the options page. |
 
 Tips:
@@ -79,6 +81,8 @@ The close-tab key (default `Ctrl+Backspace`, `Cmd+Backspace` on macOS) is set on
 The same page has an **Opacity** slider (60–100 %, default 86 %): lower lets the page show through the search panel.
 
 A **Blur** slider (off to 40 px, default 24 px) sets how strongly the page behind is blurred.
+
+**Search history and bookmarks** is off by default. Turning it on shows the browser's permission prompt (history and bookmarks); matches then follow the open tabs, bookmarks first, then history of the last 90 days, and open in a new tab.
 
 **Theme** picks Light, Dark or Auto (follows your system).
 

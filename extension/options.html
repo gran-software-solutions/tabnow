@@ -33,6 +33,7 @@
   input[type=range]:focus-visible { outline: 2px solid var(--hit); outline-offset: 6px; }
   output { min-width: 5ch; text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 
+  input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--hit); cursor: pointer; }
   .seg { gap: 2px; padding: 2px; border-radius: 8px; background: var(--pill); }
   .seg label { position: relative; }
   .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
@@ -67,6 +68,10 @@
   <div class="row">
     <div class="lbl"><label class="name" for="blur" data-m="optBlur"></label><span class="hint" data-m="optBlurHint"></span></div>
     <div class="ctl"><input id="blur" type="range" min="0" max="40" step="2"><output id="blurVal" for="blur"></output></div>
+  </div>
+  <div class="row">
+    <div class="lbl"><label class="name" for="extra" data-m="optExtra"></label><span class="hint" data-m="optExtraHint"></span></div>
+    <div class="ctl"><input id="extra" type="checkbox"></div>
   </div>
   <p class="note" data-m="optNote"></p>
 </main>
