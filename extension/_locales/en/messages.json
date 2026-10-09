@@ -9,6 +9,7 @@
   "footClose": { "message": "close tab" },
   "footDismiss": { "message": "dismiss" },
   "otherWin": { "message": "In another window" },
+  "cmdPrevious": { "message": "Switch to previous tab" },
   "optClose": { "message": "Close the selected tab" },
   "optPress": { "message": "Press a key combination…" },
   "optReset": { "message": "Reset" },

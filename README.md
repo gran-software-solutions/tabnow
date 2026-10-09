@@ -52,10 +52,10 @@ On open, tabs are listed most recently used first and the previous tab is presel
 
 Tips:
 
-- `Alt+F`, `Enter` jumps back to your previous tab, like `Alt+Tab`.
+- `Alt+Z` switches straight to your previous tab without opening TabNow, in any window. Press it again to flip back. (`Alt+F`, `Enter` does the same through the list.)
 - `Ctrl+N` is not used for moving down: the browser reserves it for "new window" and pages cannot intercept it. Use `Ctrl+J` / `Ctrl+K` instead.
 
-Change the opening shortcut at `brave://extensions/shortcuts` (or `chrome://extensions/shortcuts`): TabNow, "Activate the extension".
+Change the opening shortcut and the `Alt+Z` previous-tab shortcut at `brave://extensions/shortcuts` (or `chrome://extensions/shortcuts`): TabNow, "Activate the extension" and "Switch to previous tab".
 
 ## Configure
 

@@ -39,4 +39,13 @@ async function open(tab) {
   }
 }
 
+// Jump to the most recently used tab other than the current one, in any window. Pressing it again flips back.
+async function previousTab() {
+  const [, prev] = (await chrome.tabs.query({ windowType: "normal" })).sort((a, b) => b.lastAccessed - a.lastAccessed);
+  if (!prev) return;
+  chrome.tabs.update(prev.id, { active: true });
+  chrome.windows.update(prev.windowId, { focused: true });
+}
+
 chrome.action.onClicked.addListener(open);
+chrome.commands.onCommand.addListener(cmd => cmd === "previous-tab" && previousTab());
