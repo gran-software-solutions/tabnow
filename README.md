@@ -8,7 +8,7 @@ Fuzzy search across every open tab in every window. Press `Alt+F`, type, hit Ent
 
 - Searches all windows. Most recently used first, with the previous tab preselected, so `Alt+F` then `Enter` flips back.
 - Fuzzy matching ranks domain over title over the rest of the URL.
-- Tabs from other windows carry an "other window" badge.
+- Tabs from other windows show a faint second card behind their favicon (hover it for "In another window").
 - Close tabs straight from the list.
 - No network requests. Nothing leaves your browser.
 - Light and dark.
