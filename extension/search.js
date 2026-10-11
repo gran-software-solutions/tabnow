@@ -1,5 +1,5 @@
 import { search, group, hl, parseScope } from "./fuzzy.js";
-import { matches, caps, loadClose, loadOpacity, loadTheme, isDark, nextTheme, loadThemeKey } from "./keys.js";
+import { matches, caps, loadClose, loadOpacity, loadZoom, loadTheme, isDark, nextTheme, loadThemeKey } from "./keys.js";
 
 const params = new URLSearchParams(location.search);
 const popup = params.has("popup"), curWin = +params.get("w");
@@ -14,8 +14,9 @@ input.focus(); // before any await, so typing works the moment the frame has foc
 addEventListener("message", e => { if (e.data === "tabnow:focus") { window.focus(); input.focus(); } });
 let theme = await loadTheme();
 document.documentElement.dataset.theme = params.get("t") ?? (isDark(theme) ? "dark" : "light");
-const [closeKey, themeKey, opacity] = await Promise.all([loadClose(), loadThemeKey(), loadOpacity()]); // set on the options page
+const [closeKey, themeKey, opacity, zoom] = await Promise.all([loadClose(), loadThemeKey(), loadOpacity(), loadZoom()]); // set on the options page
 document.documentElement.style.setProperty("--alpha", opacity / 100);
+document.body.style.zoom = zoom / 100;
 document.getElementById("closeKeys").textContent = caps(closeKey).join(" ");
 
 // Theme button and key cycle Auto → Light → Dark; the overlay outside the frame restyles its dim and frost to match.

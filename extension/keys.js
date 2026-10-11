@@ -37,6 +37,13 @@ export async function loadBlur() {
   catch { return DEFAULT_BLUR; }
 }
 
+// Panel size in percent; the box and everything in it scale together. Set on the options page.
+export const DEFAULT_ZOOM = 100;
+export async function loadZoom() {
+  try { return (await chrome.storage.sync.get("zoom")).zoom ?? DEFAULT_ZOOM; }
+  catch { return DEFAULT_ZOOM; }
+}
+
 // Theme: "auto" (follow the system), "light" or "dark", set on the options page.
 export async function loadTheme() {
   try { return (await chrome.storage.sync.get("theme")).theme ?? "auto"; }

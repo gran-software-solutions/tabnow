@@ -1,4 +1,4 @@
-import { DEFAULT_CLOSE, DEFAULT_THEME_KEY, fromEvent, caps, loadClose, loadThemeKey, loadOpacity, loadBlur, loadTheme } from "./keys.js";
+import { DEFAULT_CLOSE, DEFAULT_THEME_KEY, fromEvent, caps, loadClose, loadThemeKey, loadOpacity, loadZoom, loadBlur, loadTheme } from "./keys.js";
 
 const msg = chrome.i18n.getMessage;
 document.querySelectorAll("[data-m]").forEach(n => n.textContent = msg(n.dataset.m));
@@ -47,6 +47,7 @@ document.querySelectorAll("#theme input").forEach(r => {
   r.addEventListener("change", () => chrome.storage.sync.set({ theme: r.value }));
 });
 
+slider("zoom", await loadZoom(), v => v + "%");
 slider("opacity", await loadOpacity(), v => v + "%");
 slider("blur", await loadBlur(), v => (v ? v + " px" : msg("optOff")));
 

@@ -37,6 +37,8 @@
   "optOff": { "message": "Off" },
   "optReset": { "message": "Reset" },
   "optOpacity": { "message": "Opacity" },
+  "optZoom": { "message": "Size" },
+  "optZoomHint": { "message": "Makes the search box and its text bigger or smaller." },
   "optTheme": { "message": "Theme" },
   "optThemeKey": { "message": "Switch theme" },
   "optThemeKeyHint": { "message": "Cycles Auto, Light, Dark while TabNow is open." },

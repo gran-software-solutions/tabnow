@@ -1,7 +1,7 @@
-import { loadBlur, loadTheme } from "./keys.js";
+import { loadBlur, loadTheme, loadZoom } from "./keys.js";
 
 // Page-side overlay: self-contained, injected into the active tab. Calling it again toggles it off.
-function overlay(src, blur, theme) {
+function overlay(src, blur, theme, zoom) {
   const old = document.getElementById("tabnow-host");
   if (old) return old.close?.();
   const host = document.createElement("div");
@@ -15,7 +15,7 @@ function overlay(src, blur, theme) {
   // and browsers ignore backdrop-filter on the iframe itself.
   const scrim = document.createElement("div");
   scrim.style.cssText = "position:absolute;inset:0";
-  const box = "position:absolute;left:50%;top:12vh;transform:translateX(-50%);width:min(640px,94vw);height:min(480px,80vh);border-radius:16px;";
+  const box = "position:absolute;left:50%;top:12vh;transform:translateX(-50%);width:min(" + 6.4 * zoom + "px,94vw);height:min(" + 4.8 * zoom + "px,80vh);border-radius:" + 0.16 * zoom + "px;";
   const frost = document.createElement("div");
   frost.style.cssText = box + "box-shadow:0 30px 80px rgb(0 0 0/.25)";
   f.style.cssText = box + "border:0";
@@ -56,15 +56,16 @@ async function open(tab) {
   if (!tab?.id) [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   const src = chrome.runtime.getURL(`search.html?w=${tab.windowId}`);
   try {
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: overlay, args: [src, ...(await Promise.all([loadBlur(), loadTheme()]))] });
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: overlay, args: [src, ...(await Promise.all([loadBlur(), loadTheme(), loadZoom()]))] });
   } catch { // restricted page (chrome://, Web Store, new tab): fall back to a popup window
     const prefix = chrome.runtime.getURL("search.html");
     const [mine] = await chrome.tabs.query({ url: prefix + "*" });
     if (mine) return chrome.windows.remove(mine.windowId); // toggle
-    const w = await chrome.windows.get(tab.windowId);
+    const [w, zoom] = await Promise.all([chrome.windows.get(tab.windowId), loadZoom()]);
+    const width = Math.round(6.4 * zoom), height = Math.round(4.8 * zoom);
     chrome.windows.create({
-      url: src + "&popup", type: "popup", width: 640, height: 480,
-      left: Math.round(w.left + (w.width - 640) / 2), top: Math.round(w.top + (w.height - 480) / 3),
+      url: src + "&popup", type: "popup", width, height,
+      left: Math.round(w.left + (w.width - width) / 2), top: Math.round(w.top + (w.height - height) / 3),
     });
   }
 }
