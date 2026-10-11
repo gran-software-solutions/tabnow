@@ -29,6 +29,7 @@ li.on mark { background: color-mix(in srgb, var(--hit) 38%, transparent); }
 .n { flex: none; font-size: 12px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .q svg { flex: none; color: var(--muted); }
 .tb { flex: none; display: grid; place-items: center; width: 28px; height: 28px; margin: -4px -6px -4px 0; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--faint); cursor: pointer; }
+.tb:not(:last-child) { margin-right: 0; }
 .tb svg { color: inherit; }
 .tb:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); }
 .fav { flex: none; position: relative; width: 16px; height: 16px; }

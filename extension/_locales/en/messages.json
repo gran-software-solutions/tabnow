@@ -43,6 +43,7 @@
   "optThemeKey": { "message": "Switch theme" },
   "optThemeKeyHint": { "message": "Cycles Auto, Light, Dark while TabNow is open." },
   "themeTip": { "message": "Theme: $1 ($2 to switch)" },
+  "optionsTip": { "message": "Settings" },
   "optThemeHint": { "message": "Auto follows your system." },
   "optAuto": { "message": "Auto" },
   "optLight": { "message": "Light" },
