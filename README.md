@@ -1,4 +1,4 @@
-# TabNow
+# <img src="extension/icons/icon-128.png" width="40" align="center" alt=""> TabNow
 
 Fuzzy search across every open tab in every window. Press `Ctrl+E`, type, hit Enter.
 
