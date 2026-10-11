@@ -19,14 +19,13 @@ document.documentElement.style.setProperty("--alpha", opacity / 100);
 document.body.style.zoom = zoom / 100;
 document.getElementById("closeKeys").textContent = caps(closeKey).join(" ");
 
-// Theme button and key cycle Auto → Light → Dark; the overlay outside the frame restyles its dim and frost to match.
+// Theme button and key toggle Light and Dark; the overlay outside the frame restyles its dim and frost to match.
 const ICON = {
-  auto: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',
   light: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
   dark: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
 };
 const themeBtn = document.getElementById("themeBtn");
-const NAME = { auto: "optAuto", light: "optLight", dark: "optDark" };
+const NAME = { light: "optLight", dark: "optDark" };
 function showTheme() {
   themeBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${ICON[theme]}</svg>`;
   themeBtn.title = msg("themeTip", [msg(NAME[theme]), caps(themeKey).join(" ")]);

@@ -65,7 +65,7 @@ On open, tabs are listed most recently used first and the previous tab is presel
 | Type | Space-separated words must all match. Matches in the domain rank above the title, the title above the rest of the URL. |
 | <kbd>/</kbd> | Pick what to search. A menu lists `/t` Tabs, `/b` Bookmarks, `/h` History (type letters to filter, <kbd>↑</kbd> <kbd>↓</kbd> then <kbd>Enter</kbd> or <kbd>Tab</kbd> to pick). `/b ` with a space locks it directly. The scope shows as a chip before the field; <kbd>Backspace</kbd> on an empty field removes it. Bookmarks and history need the option on the options page. |
 | <kbd>Ctrl</kbd>+<kbd>U</kbd> | Clear the query and keep the scope. Press again on an empty query to clear the scope. |
-| <kbd>Alt</kbd>+<kbd>T</kbd> | Switch theme: Auto → Light → Dark (also the button next to the tab count). Change the key on the options page. |
+| <kbd>Alt</kbd>+<kbd>T</kbd> | Switch between light and dark (also the button next to the tab count). Change the key on the options page. |
 
 Tips:
 
@@ -84,7 +84,7 @@ A **Blur** slider (off to 40 px, default 24 px) sets how strongly the page behin
 
 **Search history and bookmarks** is off by default. Turning it on shows the browser's permission prompt (history and bookmarks); matches then follow the open tabs, bookmarks first, then history of the last 90 days, and open in a new tab.
 
-**Theme** picks Light, Dark or Auto (follows your system).
+**Theme** picks Light or Dark.
 
 Restricted pages (`brave://`, new tab, Web Store) can't host the overlay, so a small popup window opens instead.
 On tiling window managers, add a float rule for it. Hyprland example (classic `hyprland.conf` syntax, which varies by Hyprland version):

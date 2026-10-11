@@ -8,7 +8,7 @@ function overlay(src, blur, theme, zoom) {
   host.id = "tabnow-host";
   host.style.cssText = "all:initial;position:fixed;inset:0;z-index:2147483647";
   const root = host.attachShadow({ mode: "closed" });
-  const dark = theme === "dark" || (theme === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  const dark = theme === "dark";
   const f = document.createElement("iframe");
   f.src = src + "&t=" + (dark ? "dark" : "light");
   // Dim + frost are sibling layers. A backdrop-filter on the host would hide the page from the frost,

@@ -44,14 +44,14 @@ export async function loadZoom() {
   catch { return DEFAULT_ZOOM; }
 }
 
-// Theme: "auto" (follow the system), "light" or "dark", set on the options page.
+// Theme: "light" or "dark", set on the options page. Anything else stored (the old "auto") reads as light.
 export async function loadTheme() {
-  try { return (await chrome.storage.sync.get("theme")).theme ?? "auto"; }
-  catch { return "auto"; }
+  try { return (await chrome.storage.sync.get("theme")).theme === "dark" ? "dark" : "light"; }
+  catch { return "light"; }
 }
-export const isDark = theme => theme === "dark" || (theme === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+export const isDark = theme => theme === "dark";
 
-export const nextTheme = t => ({ auto: "light", light: "dark", dark: "auto" })[t] ?? "auto";
+export const nextTheme = t => t === "dark" ? "light" : "dark";
 
 // Stored key combos, set on the options page.
 export const DEFAULT_THEME_KEY = { ctrl: false, alt: true, shift: false, meta: false, key: "t" };

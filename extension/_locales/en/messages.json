@@ -41,11 +41,9 @@
   "optZoomHint": { "message": "Makes the search box and its text bigger or smaller." },
   "optTheme": { "message": "Theme" },
   "optThemeKey": { "message": "Switch theme" },
-  "optThemeKeyHint": { "message": "Cycles Auto, Light, Dark while TabNow is open." },
+  "optThemeKeyHint": { "message": "Switches between Light and Dark while TabNow is open." },
   "themeTip": { "message": "Theme: $1 ($2 to switch)" },
   "optionsTip": { "message": "Settings" },
-  "optThemeHint": { "message": "Auto follows your system." },
-  "optAuto": { "message": "Auto" },
   "optLight": { "message": "Light" },
   "optDark": { "message": "Dark" },
   "optNote": { "message": "Keys the browser reserves, such as Ctrl+W or Ctrl+N, never reach TabNow. The open and previous-tab shortcuts are set in your browser's extension shortcuts page." }
