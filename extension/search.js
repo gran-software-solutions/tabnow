@@ -97,7 +97,7 @@ function row(r) {
   const { tab } = r;
   const img = el("img");
   img.src = chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(tab.url)}&size=32`);
-  // Tabs in another window get a faint card stacked behind the favicon; the words live in the tooltip.
+  // Tabs in another window get a small window badge on the favicon corner; the words live in the tooltip.
   const fav = el("span", "fav", img);
   if (tab.kind === "tab" && tab.win !== curWin) { fav.classList.add("away"); fav.title = msg("otherWin"); img.alt = msg("otherWin"); }
   const cut = tab.disp.indexOf("/"), host = cut < 0 ? tab.disp : tab.disp.slice(0, cut);
