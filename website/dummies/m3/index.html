@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TabNow: every tab, one keystroke away</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+/* Colours are exactly the extension's two themes (extension/search.css). JS tweens between them on scroll. */
+:root {
+  --bg: #fff; --solid: #fff; --fg: #14171d; --muted: #5f6672; --faint: #9ba1ac; --line: #e4e7ec; --hit: #1f5fd6;
+  --hair: rgb(15 20 30 / .07); --onhit: #fff;
+  --ui: "Geist", system-ui, sans-serif; --serif: "Newsreader", Georgia, serif; --mono: ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--serif); font-size: 19px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+h1, h2, h3, .ui { font-family: var(--ui); }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; font: 500 12px/1 var(--ui); color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); border-radius: 6px; }
+mark { background: color-mix(in srgb, var(--hit) 28%, transparent); color: var(--fg); font-weight: 600; border-radius: 3px; }
+
+/* nav */
+nav { position: fixed; z-index: 20; inset: 0 0 auto 0; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: var(--bg); border-bottom: 1px solid var(--line); font-family: var(--ui); font-size: 14px; }
+nav .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 16px; text-decoration: none; letter-spacing: -.01em; }
+nav .brand img { width: 22px; height: 22px; border-radius: 5px; }
+nav .links { display: flex; gap: 28px; color: var(--muted); align-items: center; }
+nav .links a { text-decoration: none; }
+nav .links a:hover { color: var(--fg); }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 9px; font: 500 15px var(--ui); text-decoration: none; border: 1px solid var(--line); color: var(--fg); background: var(--solid); cursor: pointer; }
+.btn:hover { border-color: var(--faint); }
+.btn.pri { background: var(--hit); border-color: var(--hit); color: var(--onhit); }
+.btn.pri:hover { opacity: .9; }
+nav .btn { height: 34px; padding: 0 14px; font-size: 14px; }
+
+/* hero */
+#hero { position: relative; height: 100vh; min-height: 820px; padding-top: 56px; overflow: hidden; display: grid; place-items: center; }
+#field { position: absolute; inset: 56px 0 0 0; display: flex; flex-direction: column; justify-content: space-evenly; }
+.row { display: flex; width: max-content; will-change: transform; animation: drift linear infinite; }
+.row.rev { animation-direction: reverse; }
+@keyframes drift { to { transform: translateX(-50%); } }
+body.typing .row { animation-play-state: paused; }
+.chip { flex: none; width: 192px; height: 42px; margin-right: 14px; display: flex; align-items: center; gap: 9px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: color-mix(in srgb, var(--fg) 4%, var(--bg)); font: 400 13px var(--ui); color: var(--muted); transition: opacity .25s, border-color .2s, background .2s; }
+.chip .ct { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.fav { flex: none; width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; font: 600 9px/1 var(--ui); }
+.chip .fav { opacity: .85; }
+body.typing .chip { opacity: .07; }
+body.typing .chip.hit { opacity: 1; color: var(--fg); background: var(--solid); }
+body.typing .chip.hit mark { background: none; color: var(--hit); font-weight: 600; }
+body.typing .chip.sel { border-color: var(--hit); box-shadow: 0 0 0 1px var(--hit); }
+.chip.gone { opacity: 0 !important; pointer-events: none; }
+
+.card { position: relative; z-index: 2; width: 760px; padding: 40px 40px 32px; background: var(--solid); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 10px 40px rgb(15 20 30 / .06); text-align: center; }
+.card h1 { margin: 0; font-weight: 600; font-size: 46px; line-height: 1.08; letter-spacing: -.03em; }
+.card .sub { margin: 14px auto 0; max-width: 560px; color: var(--muted); font-size: 19px; }
+.cta { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 22px 0 26px; }
+.hint { font: 400 13px var(--ui); color: var(--faint); display: flex; align-items: center; gap: 6px; margin-left: 10px; }
+
+/* the panel (mirrors search.css) */
+.ov { text-align: left; border-radius: 16px; background: var(--solid); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; font-family: var(--ui); }
+.q { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--hair); font-size: 20px; font-weight: 300; }
+.q svg { flex: none; color: var(--muted); }
+.q input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; }
+.q input::placeholder { color: var(--faint); }
+.n { flex: none; font-size: 12px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+.ov ul { list-style: none; margin: 0; padding: 6px; height: 324px; overflow-y: auto; scrollbar-width: none; position: relative; }
+.ov li { cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; }
+.ov li.on { background: color-mix(in srgb, var(--hit) 12%, transparent); }
+.ov li.on .t { color: var(--hit); }
+.ov li.on mark { background: color-mix(in srgb, var(--hit) 38%, transparent); }
+.txt { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.t { font-size: 14px; } .u { font-size: 12px; }
+.u .host { color: var(--fg); opacity: .78; } .u .path { color: var(--faint); }
+.go { flex: none; visibility: hidden; color: var(--hit); } li.on .go { visibility: visible; }
+.empty { padding: 18px 12px; color: var(--muted); font-size: 14px; }
+.foot { display: flex; align-items: center; gap: 16px; padding: 9px 16px; border-top: 1px solid var(--hair); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.foot .k { display: inline-flex; align-items: center; gap: 5px; } .foot .end { margin-left: auto; }
+.foot kbd { height: 20px; font-size: 11px; opacity: .8; }
+#toast { position: absolute; left: 50%; bottom: 22px; transform: translate(-50%, 10px); z-index: 5; padding: 9px 16px; border-radius: 9px; background: var(--fg); color: var(--bg); font: 400 13px var(--ui); opacity: 0; pointer-events: none; transition: .25s; white-space: nowrap; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* sections */
+section { padding: 120px 0; border-top: 1px solid var(--line); }
+.wrap { width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 340px 1fr; gap: 80px; }
+.eyebrow { font: 500 13px var(--ui); color: var(--hit); letter-spacing: .02em; margin: 0 0 14px; }
+h2 { margin: 0; font-weight: 600; font-size: 34px; line-height: 1.12; letter-spacing: -.025em; }
+.lede { margin: 18px 0 0; color: var(--muted); }
+.list > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: baseline; padding: 18px 0; border-top: 1px solid var(--line); }
+.list > div:last-child { border-bottom: 1px solid var(--line); }
+.list h3 { margin: 0; font: 500 16px var(--ui); letter-spacing: -.005em; }
+.list p { margin: 0; color: var(--muted); font-size: 18px; }
+.keys > div { grid-template-columns: 1fr auto; align-items: center; }
+.keys .combo { display: flex; gap: 5px; align-items: center; font: 400 13px var(--ui); color: var(--faint); }
+.keys span.d { font: 400 17px var(--ui); }
+.feat > div { grid-template-columns: 56px 220px 1fr; }
+.feat .no { font: 400 13px var(--ui); color: var(--faint); font-variant-numeric: tabular-nums; }
+code { font: 500 14px var(--mono); background: color-mix(in srgb, var(--fg) 7%, transparent); padding: 1px 6px; border-radius: 5px; }
+
+.big { margin: 0; font: 600 64px/1.02 var(--ui); letter-spacing: -.035em; }
+.perm > div { grid-template-columns: 160px 1fr auto; }
+.perm .tag { font: 500 12px var(--ui); color: var(--faint); }
+.steps { counter-reset: s; }
+.steps > div { grid-template-columns: 56px 1fr; }
+.steps .no { font: 400 13px var(--ui); color: var(--faint); }
+.steps p { color: var(--fg); }
+.steps p small { display: block; margin-top: 2px; color: var(--muted); font-size: 16px; }
+footer { border-top: 1px solid var(--line); padding: 56px 0 48px; font-family: var(--ui); font-size: 14px; }
+footer .in { width: 1080px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; }
+footer .in > div { display: grid; gap: 8px; color: var(--muted); }
+footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+footer .links { display: flex; gap: 28px; }
+footer .name { color: var(--fg); font-weight: 600; font-size: 16px; display: flex; gap: 9px; align-items: center; }
+footer .name img { width: 22px; border-radius: 5px; }
+</style>
+</head>
+<body>
+<nav>
+  <a class="brand" href="#"><img src="../../../extension/icons/icon-128.png" alt="">TabNow</a>
+  <div class="links"><a href="#keys">Keys</a><a href="#features">Features</a><a href="#privacy">Privacy</a><a href="#install">Install</a>
+  <a class="btn pri" href="https://github.com/gran-software-solutions/tabnow">Install</a></div>
+</nav>
+
+<header id="hero">
+  <div id="field" aria-hidden="true"></div>
+  <div class="card">
+    <h1>Every tab, one keystroke away.</h1>
+    <p class="sub">TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.</p>
+    <div class="cta">
+      <a class="btn pri" href="https://github.com/gran-software-solutions/tabnow">Install from GitHub</a>
+      <a class="btn" href="#keys">See how it works</a>
+      <span class="hint"><kbd>Ctrl</kbd><kbd>E</kbd> to try it here</span>
+    </div>
+    <div class="ov" id="panel">
+      <div class="q">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" placeholder="Search 80 tabs, try “gh pr”" autocomplete="off" spellcheck="false">
+        <span class="n" id="n"></span>
+      </div>
+      <ul id="rows"></ul>
+      <div class="foot"><span class="k"><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span class="k"><kbd>↵</kbd> open</span><span class="k"><kbd>Ctrl</kbd><kbd>⌫</kbd> close tab</span><span class="k end"><kbd>esc</kbd> dismiss</span></div>
+    </div>
+    <div id="toast"></div>
+  </div>
+</header>
+
+<section id="keys">
+  <div class="wrap">
+    <div><p class="eyebrow">Keys</p><h2>Your hands stay on the keyboard.</h2><p class="lede">Open, type, Enter. The previous tab is already selected, so Ctrl+E then Enter flips back.</p></div>
+    <div class="list keys">
+      <div><span class="d">Open TabNow</span><span class="combo"><kbd>Ctrl</kbd><kbd>E</kbd> (<kbd>Cmd</kbd><kbd>E</kbd> on Mac)</span></div>
+      <div><span class="d">Jump to the previous tab</span><span class="combo"><kbd>Alt</kbd><kbd>Z</kbd></span></div>
+      <div><span class="d">Move through results</span><span class="combo"><kbd>↑</kbd><kbd>↓</kbd> or <kbd>Ctrl</kbd><kbd>J</kbd><kbd>K</kbd></span></div>
+      <div><span class="d">Switch to the tab</span><span class="combo"><kbd>↵</kbd></span></div>
+      <div><span class="d">Close the selected tab</span><span class="combo"><kbd>Ctrl</kbd><kbd>⌫</kbd></span></div>
+      <div><span class="d">Clear the search</span><span class="combo"><kbd>Ctrl</kbd><kbd>U</kbd></span></div>
+      <div><span class="d">Light or dark</span><span class="combo"><kbd>Alt</kbd><kbd>T</kbd></span></div>
+      <div><span class="d">Dismiss</span><span class="combo"><kbd>esc</kbd></span></div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div><p class="eyebrow">Features</p><h2>Small, and it does one thing well.</h2><p class="lede">About 600 lines of plain JavaScript. No dependencies.</p></div>
+    <div class="list feat">
+      <div><span class="no">01</span><h3>Find any tab</h3><p>Ctrl+E, a few letters, Enter. All windows, most recently used first.</p></div>
+      <div><span class="no">02</span><h3>Fast and fuzzy</h3><p>“gh pr” finds the GitHub pull request. Every word must match. The domain ranks above the title, the title above the rest of the URL.</p></div>
+      <div><span class="no">03</span><h3>Keyboard first</h3><p>You never need the mouse. It works if you do.</p></div>
+      <div><span class="no">04</span><h3>Private by design</h3><p>No network requests, no account, no analytics.</p></div>
+      <div><span class="no">05</span><h3>Every window</h3><p>Tabs from other windows carry a small window badge. Bookmarks and history are one scope away: <code>/b</code> and <code>/h</code>, off until you turn them on.</p></div>
+      <div><span class="no">06</span><h3>Fits your browser</h3><p>Light and dark. Set the opacity, blur and size of the panel on the options page.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="privacy">
+  <div class="wrap" style="grid-template-columns:1fr">
+    <div><p class="eyebrow">Privacy</p><p class="big">No network requests.<br>Ever.</p>
+    <p class="lede" style="max-width:620px">TabNow never talks to a server. Your tabs stay in your browser. The code is open source, so you can check. This is what it asks for, and why.</p></div>
+    <div class="list perm" style="margin-top:56px">
+      <div><h3>tabs</h3><p>Read titles and addresses of your open tabs, and switch to one.</p><span class="tag">Required</span></div>
+      <div><h3>activeTab, scripting</h3><p>Show the panel on top of the page you are looking at.</p><span class="tag">Required</span></div>
+      <div><h3>favicon</h3><p>Show each tab’s icon, read locally from the browser.</p><span class="tag">Required</span></div>
+      <div><h3>storage</h3><p>Remember your options on this device.</p><span class="tag">Required</span></div>
+      <div><h3>bookmarks, history</h3><p>Search them with <code>/b</code> and <code>/h</code>. The browser asks first.</p><span class="tag">Optional</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <div><p class="eyebrow">Install</p><h2>Four steps. Web Store coming soon.</h2><p class="lede">Chrome 121 or newer, Edge, Brave, Opera, Vivaldi or Arc.</p>
+    <p style="margin-top:28px"><a class="btn pri" href="https://github.com/gran-software-solutions/tabnow">Open on GitHub</a></p></div>
+    <div class="list steps">
+      <div><span class="no">01</span><p>Clone the repository<small><code>git clone https://github.com/gran-software-solutions/tabnow</code></small></p></div>
+      <div><span class="no">02</span><p>Open <code>chrome://extensions</code></p></div>
+      <div><span class="no">03</span><p>Turn on Developer mode</p></div>
+      <div><span class="no">04</span><p>Click Load unpacked and pick the <code>extension/</code> folder<small>Then press Ctrl+E on any page.</small></p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="in">
+    <div><span class="name"><img src="../../../extension/icons/icon-128.png" alt="">TabNow</span><span>Made by <a href="https://www.gransoftware.de" style="color:var(--fg)">GRAN Software Solutions</a></span><span>MIT licence. Version 0.1.0.</span></div>
+    <div class="links"><a href="https://github.com/gran-software-solutions/tabnow">GitHub</a><a href="#">LinkedIn</a><a href="#">X</a><a href="#">Reddit</a></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+"use strict";
+/* ===== fuzzy.js, ported verbatim (match, search, hl) ===== */
+function match(q, text) {
+  const t = text.toLowerCase(), at = t.indexOf(q);
+  if (at >= 0) {
+    const start = at === 0 || /\W/.test(t[at - 1]);
+    return { score: 100 + q.length * 10 + (start ? 40 : 0) - at * 0.1, hits: [...Array(q.length)].map((_, k) => at + k) };
+  }
+  let score = 0, last = -2, k = 0; const hits = [];
+  for (let j = 0; j < t.length && k < q.length; j++) {
+    if (t[j] !== q[k]) continue;
+    score += j === last + 1 ? 5 : (j === 0 || /\W/.test(t[j - 1]) ? 3 : 1);
+    hits.push(j); last = j; k++;
+  }
+  return k === q.length && hits[k - 1] - hits[0] < q.length * 3 ? { score, hits } : null;
+}
+function search(items, q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return items.map(tab => ({ tab, th: [], uh: [] }));
+  const out = [];
+  for (const tab of items) {
+    let score = 0; const th = [], uh = [];
+    for (const w of words) {
+      const d = match(w, tab.disp.split("/")[0]), a = match(w, tab.title), b = match(w, tab.disp);
+      const best = Math.max((d?.score ?? -1) * 1.5, (a?.score ?? -1) * 1.2, b?.score ?? -1);
+      if (best < 0) { score = -1; break; }
+      score += best;
+      if (d && best === d.score * 1.5) uh.push(...d.hits);
+      else if (a && best === a.score * 1.2) th.push(...a.hits);
+      else uh.push(...b.hits);
+    }
+    if (score >= 0) out.push({ tab, score, th, uh });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+function hl(text, hits, from = 0) {
+  const set = new Set(hits), frag = document.createDocumentFragment();
+  let buf = "", on = false;
+  const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
+  [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
+  flush(); return frag;
+}
+
+const FAV = {
+  gh: ["#24292f", "#fff", "G"], li: ["#2b2f36", "#fff", "L"], fg: ["#f24e1e", "#fff", "F"], gm: ["#d93025", "#fff", "M"], gd: ["#1a73e8", "#fff", "D"],
+  gs: ["#188038", "#fff", "S"], gp: ["#e8a000", "#fff", "P"], so: ["#f48024", "#fff", "S"], md: ["#1b1b1b", "#fff", "M"], ch: ["#1f5fd6", "#fff", "C"],
+  yt: ["#e62117", "#fff", "Y"], no: ["#1b1b1b", "#fff", "N"], ji: ["#0052cc", "#fff", "J"], aw: ["#232f3e", "#ff9900", "A"], lo: ["#6b7280", "#fff", "L"],
+  rd: ["#ff4500", "#fff", "R"], xx: ["#000", "#fff", "X"], in: ["#0a66c2", "#fff", "in"], wk: ["#e8e6df", "#222", "W"], np: ["#cb3837", "#fff", "n"],
+  vc: ["#000", "#fff", "V"], sl: ["#3c3f44", "#fff", "S"], cl: ["#c4724a", "#fff", "C"], pg: ["#336791", "#fff", "P"], k8: ["#326ce5", "#fff", "K"],
+  gf: ["#e0752d", "#fff", "G"], se: ["#362d59", "#fff", "S"], db: ["#e8e6df", "#222", "d"], dl: ["#0f2b46", "#fff", "D"], bn: ["#ec0016", "#fff", "B"],
+  hs: ["#d1332a", "#fff", "h"], ci: ["#3d6fa8", "#fff", "c"], am: ["#232f3e", "#fff", "a"], cu: ["#3b82a0", "#fff", "c"]
+};
+const PAPER = ["#fbf9f3", "#f6f2e8", "#fdfcf9", "#eef0f2", "#f3ead6", "#faf7ef"];
+const TABS = [
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/38", "feat: scope prefixes for bookmarks and history · Pull Request #38 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/41", "fix: keep the previous tab preselected after closing a tab · Pull Request #41 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/consultingcockpit/pull/812", "Add month-close checklist to the timesheet view · Pull Request #812 · gran-software-solutions/consultingcockpit"],
+  ["gh", "github.com/gran-software-solutions/pigmo/pull/57", "Debounce the pin sync on slow connections · Pull Request #57 · gran-software-solutions/pigmo"],
+  ["gh", "github.com/gran-software-solutions/tabnow/actions/runs/9412", "lint and package #127 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/issues/29", "Window badge overlaps favicon in dark mode · Issue #29 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/pulls", "Pull requests · GitHub"],
+  ["gh", "github.com/notifications", "Notifications · GitHub"],
+  ["li", "linear.app/gran/issue/GRAN-82/release-checklist", "GRAN-82 Release checklist for the Web Store listing"],
+  ["li", "linear.app/gran/issue/GRAN-77/deepseek-runs-end-as-failed", "GRAN-77 OpenCode DeepSeek runs end as failed"],
+  ["li", "linear.app/gran/project/tabnow/overview", "TabNow · Overview · Linear"],
+  ["fg", "figma.com/design/Kq3x/Tabnow-landing", "TabNow landing – Figma"],
+  ["fg", "figma.com/design/Zr2p/Cockpit-onboarding", "Onboarding flow v3 – Figma"],
+  ["gm", "mail.google.com/mail/u/0/#inbox", "Inbox (14) - dusan@gransoftware.de - Gmail"],
+  ["gm", "mail.google.com/mail/u/0/#search/invoice", "invoice - Search results - Gmail"],
+  ["gd", "docs.google.com/document/d/1xK/edit", "Q3 planning notes - Google Docs"],
+  ["gs", "docs.google.com/spreadsheets/d/9aB/edit", "Invoice tracker 2026 - Google Sheets"],
+  ["gp", "docs.google.com/presentation/d/4cD/edit", "Client workshop deck - Google Slides"],
+  ["so", "stackoverflow.com/questions/5767325", "How can I remove a specific item from an array in JavaScript? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/1789945", "How to check whether a string contains a substring in JavaScript? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/40358", "Why does flex-basis ignore my width in a grid? - Stack Overflow"],
+  ["ch", "developer.chrome.com/docs/extensions/reference/api/tabs", "chrome.tabs | API | Chrome for Developers"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/CSS/color-mix", "color-mix() - CSS: Cascading Style Sheets | MDN"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/API/Intl/Collator", "Intl.Collator - JavaScript | MDN"],
+  ["yt", "youtube.com/watch?v=Kx3jQ9", "How Chrome extensions work, in 20 minutes - YouTube"],
+  ["yt", "youtube.com/watch?v=Zm81Pq", "Postgres indexes, explained - YouTube"],
+  ["no", "notion.so/gran/Roadmap-2026-7c1", "Roadmap 2026 | Notion"],
+  ["no", "notion.so/gran/Weekly-sync-notes", "Weekly sync: meeting notes | Notion"],
+  ["ji", "gran.atlassian.net/browse/CC-1042", "[CC-1042] Leave balance wrong after year switch - Jira"],
+  ["ji", "gran.atlassian.net/jira/software/projects/CC/boards/3", "Board - Consulting Cockpit - Jira"],
+  ["aw", "eu-central-1.console.aws.amazon.com/ec2/home", "EC2 Management Console"],
+  ["aw", "eu-central-1.console.aws.amazon.com/s3/buckets", "S3 buckets - S3 - eu-central-1"],
+  ["aw", "eu-central-1.console.aws.amazon.com/cloudwatch/home", "CloudWatch Management Console"],
+  ["lo", "localhost:3000/dashboard", "Dashboard – Consulting Cockpit (dev)"],
+  ["lo", "localhost:4321/", "TabNow – landing (dev)"],
+  ["lo", "localhost:5173/timesheet", "Timesheet · Vite + React"],
+  ["rd", "reddit.com/r/chrome_extensions/comments/1abc", "How do you manage 100+ tabs? : r/chrome_extensions"],
+  ["rd", "reddit.com/r/ExperiencedDevs/comments/1xyz", "Small team, one repo: is a monorepo worth it? : r/ExperiencedDevs"],
+  ["xx", "x.com/home", "Home / X"],
+  ["xx", "x.com/gransoftware", "GRAN Software (@gransoftware) / X"],
+  ["in", "linkedin.com/feed", "Feed | LinkedIn"],
+  ["in", "linkedin.com/company/gran-software-solutions", "GRAN Software Solutions | LinkedIn"],
+  ["in", "linkedin.com/messaging", "Messaging | LinkedIn"],
+  ["wk", "en.wikipedia.org/wiki/Approximate_string_matching", "Approximate string matching - Wikipedia"],
+  ["np", "npmjs.com/package/esbuild", "esbuild - npm"],
+  ["vc", "vercel.com/gran/tabnow-site", "tabnow-site – Overview – Vercel"],
+  ["sl", "app.slack.com/client/T01/C02", "gran-software (Channel) - Slack"],
+  ["cl", "claude.ai/chat/7f2e", "Tab search ranking ideas - Claude"],
+  ["pg", "postgresql.org/docs/16/indexes.html", "PostgreSQL: Documentation: 16: Chapter 11. Indexes"],
+  ["k8", "kubernetes.io/docs/reference/kubectl/quick-reference", "kubectl Quick Reference | Kubernetes"],
+  ["gf", "grafana.gran.dev/d/api/api-latency", "API latency – Dashboards – Grafana"],
+  ["se", "sentry.io/organizations/gran/issues", "Issues – gran – Sentry"],
+  ["db", "dbxdata.com/docs/connections", "Connections · DBX docs"],
+  ["dl", "deepl.com/translator", "DeepL Translate: The world's most accurate translator"],
+  ["bn", "bahn.de/buchung/fahrplan", "Fahrplanauskunft: Berlin Hbf – Hamburg Hbf | bahn.de"],
+  ["hs", "heise.de/", "heise online – IT-News, Nachrichten und Hintergründe"],
+  ["ci", "caniuse.com/css-has", ":has() CSS relational pseudo-class | Can I use"],
+  ["am", "amazon.de/dp/B0CT4QXN", "Logitech MX Keys S Wireless Keyboard : Amazon.de"],
+  ["cu", "cursor.com/docs", "Cursor Docs"],
+  ["gh", "github.com/gran-software-solutions/stepkeep/pull/9", "Reorder steps by drag and drop · Pull Request #9 · gran-software-solutions/stepkeep"],
+  ["gh", "github.com/gran-software-solutions/tabnow/blob/main/extension/fuzzy.js", "tabnow/extension/fuzzy.js at main · gran-software-solutions/tabnow"],
+  ["li", "linear.app/gran/view/this-week", "This week · Linear"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key", "KeyboardEvent: key property - Web APIs | MDN"],
+  ["so", "stackoverflow.com/questions/2020/git-rebase-onto", "git rebase --onto explained - Stack Overflow"],
+  ["gd", "docs.google.com/document/d/8pL/edit", "Consulting Cockpit: leave policy draft - Google Docs"],
+  ["no", "notion.so/gran/Pigmo-launch-plan", "Pigmo launch plan | Notion"],
+  ["aw", "eu-central-1.console.aws.amazon.com/iam/home", "IAM Management Console"],
+  ["lo", "localhost:8080/health", "localhost:8080/health"],
+  ["rd", "reddit.com/r/webdev/comments/1def", "What do you use instead of tabs for 'read later'? : r/webdev"],
+  ["yt", "youtube.com/watch?v=Ab12Cd", "Keyboard-first UI design - YouTube"],
+  ["gh", "github.com/gran-software-solutions/pigmo/issues/12", "Pins vanish after browser restart · Issue #12 · gran-software-solutions/pigmo"],
+  ["li", "linear.app/gran/issue/GRAN-91/landing-page", "GRAN-91 TabNow landing page: pick a concept"],
+  ["gd", "docs.google.com/document/d/2qW/edit", "Privacy policy draft - Google Docs"],
+  ["so", "stackoverflow.com/questions/9331/chrome-tabs-query", "chrome.tabs.query returns an empty array - Stack Overflow"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter", "backdrop-filter - CSS | MDN"],
+  ["no", "notion.so/gran/Hiring-plan", "Hiring plan Q4 | Notion"],
+  ["rd", "reddit.com/r/programming/comments/1k2m", "The command palette is the new menu bar : r/programming"],
+  ["yt", "youtube.com/watch?v=Pq77Lm", "Vim motions for browsers - YouTube"],
+  ["gm", "mail.google.com/mail/u/0/#starred", "Starred - dusan@gransoftware.de - Gmail"],
+  ["fg", "figma.com/design/Ab9c/Icons", "Icon set – Figma"]
+];
+
+/* ===== data ===== */
+const $ = s => document.querySelector(s);
+const tabs = TABS.map(([k, disp, title], i) => ({ k, disp, title, i, alive: true, chips: [], host: disp.split("/")[0], path: disp.slice(disp.split("/")[0].length) }));
+$("#q").placeholder = `Search ${tabs.length} tabs, try “gh pr”`;
+const short = t => t.title.split(/ [·|–-] /)[0];
+
+/* ===== the field: 12 tidy rows, alternate directions, very slow ===== */
+const field = $("#field"), ROWS = 12, PER = 8;
+const mkChip = t => {
+  const [bg, fg, ch] = FAV[t.k], el = document.createElement("div");
+  el.className = "chip";
+  el.innerHTML = `<i class="fav" style="background:${bg};color:${fg}">${ch}</i><span class="ct"></span>`;
+  el.lastChild.textContent = short(t);
+  t.chips.push(el); return el;
+};
+for (let r = 0; r < ROWS; r++) {
+  const row = document.createElement("div");
+  row.className = "row" + (r % 2 ? " rev" : "");
+  row.style.animationDuration = (150 + (r % 3) * 20) + "s";
+  row.style.animationDelay = -(r * 37 % 120) + "s";
+  for (let rep = 0; rep < 2; rep++)
+    for (let c = 0; c < PER; c++) row.append(mkChip(tabs[(r * 13 + c * 11 + (r % 2) * 3) % tabs.length]));
+  field.append(row);
+}
+
+/* ===== panel ===== */
+const input = $("#q"), rowsEl = $("#rows"), nEl = $("#n"), toast = $("#toast");
+let results = [], sel = 0, query = "";
+const alive = () => tabs.filter(t => t.alive);
+function run() {
+  query = input.value;
+  results = search(alive(), query);
+  sel = query.trim() ? 0 : Math.min(1, results.length - 1);
+  render(true);
+}
+function render(reset) {
+  const typing = !!query.trim();
+  document.body.classList.toggle("typing", typing);
+  for (const t of tabs) for (const c of t.chips) {
+    c.classList.remove("hit", "sel");
+    c.classList.toggle("gone", !t.alive);
+    const ct = c.lastChild; if (ct._h) { ct.textContent = short(t); ct._h = false; }
+  }
+  if (typing) results.forEach((r, i) => {
+    const t = r.tab;
+    for (const c of t.chips) {
+      c.classList.add("hit"); c.classList.toggle("sel", i === sel);
+      const s = short(t), hits = r.th.filter(h => h < s.length);
+      if (hits.length) { c.lastChild.replaceChildren(hl(s, hits)); c.lastChild._h = true; }
+    }
+  });
+  nEl.textContent = typing ? `${results.length} / ${alive().length}` : `${alive().length} tabs`;
+  rowsEl.replaceChildren();
+  if (!results.length) { const e = document.createElement("li"); e.className = "empty"; e.style.cursor = "default"; e.textContent = "No tab matches."; rowsEl.append(e); return; }
+  results.forEach((r, i) => {
+    const t = r.tab, [bg, fg, ch] = FAV[t.k], li = document.createElement("li");
+    li.className = i === sel ? "on" : "";
+    li.innerHTML = `<i class="fav" style="background:${bg};color:${fg}">${ch}</i><div class="txt"><div class="t trunc"></div><div class="u trunc"><span class="host"></span><span class="path"></span></div></div><span class="go">↵</span>`;
+    li.querySelector(".t").replaceChildren(hl(t.title, r.th));
+    li.querySelector(".host").replaceChildren(hl(t.host, r.uh.filter(h => h < t.host.length)));
+    li.querySelector(".path").replaceChildren(hl(t.path, r.uh.filter(h => h >= t.host.length), t.host.length));
+    li.onmousemove = () => { if (sel !== i) move(i, false); };
+    li.onclick = () => { sel = i; open(); };
+    rowsEl.append(li);
+  });
+  reveal(reset);
+}
+function reveal(reset) {
+  const li = rowsEl.children[sel]; if (!li) return;
+  if (reset) rowsEl.scrollTop = 0;
+  const top = li.offsetTop - 6, bot = li.offsetTop + li.offsetHeight + 6;
+  if (top < rowsEl.scrollTop) rowsEl.scrollTop = top;
+  else if (bot > rowsEl.scrollTop + rowsEl.clientHeight) rowsEl.scrollTop = bot - rowsEl.clientHeight;
+}
+function move(i, scroll = true) {
+  if (!results.length) return;
+  sel = (i + results.length) % results.length;
+  [...rowsEl.children].forEach((li, k) => li.classList.toggle("on", k === sel));
+  const typing = !!query.trim();
+  if (typing) for (const t of tabs) for (const c of t.chips) c.classList.remove("sel");
+  if (typing) for (const c of results[sel].tab.chips) c.classList.add("sel");
+  if (scroll) reveal(false);
+}
+let tt;
+function say(msg) { toast.textContent = msg; toast.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => toast.classList.remove("on"), 1800); }
+function open() {
+  const r = results[sel]; if (!r) return;
+  say(`Switched to ${short(r.tab)}`);
+  // most recently used first: move the tab to the front
+  const i = tabs.indexOf(r.tab); tabs.splice(i, 1); tabs.unshift(r.tab);
+  input.value = ""; run();
+}
+function closeTab() {
+  const r = results[sel]; if (!r) return;
+  r.tab.alive = false; const keep = sel;
+  results.splice(sel, 1); sel = Math.min(keep, results.length - 1);
+  render(false); say(`Closed ${short(r.tab)}`);
+}
+input.addEventListener("input", run);
+input.addEventListener("keydown", e => {
+  const k = e.key, c = e.ctrlKey || e.metaKey;
+  if (k === "ArrowDown" || (c && k === "j")) { e.preventDefault(); move(sel + 1); }
+  else if (k === "ArrowUp" || (c && k === "k")) { e.preventDefault(); move(sel - 1); }
+  else if (k === "Enter") { e.preventDefault(); open(); }
+  else if (c && k === "Backspace") { e.preventDefault(); closeTab(); }
+  else if (c && k === "u") { e.preventDefault(); input.value = ""; run(); }
+  else if (k === "Escape") { input.value = ""; input.blur(); run(); }
+});
+addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "e") {
+    e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); input.focus({ preventScroll: true });
+  } else if (e.altKey && e.key.toLowerCase() === "t") { e.preventDefault(); manual = (p > .5 ? 0 : 1); tween(manual); }
+});
+
+/* ===== day to night: the two extension themes, mixed by scroll ===== */
+const LIGHT = { bg: [255, 255, 255, 1], solid: [255, 255, 255, 1], fg: [20, 23, 29, 1], muted: [95, 102, 114, 1], faint: [155, 161, 172, 1], line: [228, 231, 236, 1], hit: [31, 95, 214, 1], hair: [15, 20, 30, .07], onhit: [255, 255, 255, 1] };
+const DARK  = { bg: [22, 25, 31, 1],   solid: [27, 31, 39, 1],    fg: [236, 238, 242, 1], muted: [160, 167, 180, 1], faint: [109, 117, 133, 1], line: [44, 49, 59, 1], hit: [156, 188, 255, 1], hair: [255, 255, 255, .08], onhit: [20, 23, 29, 1] };
+let p = -1, manual = null, raf = 0;
+const root = document.documentElement;
+function paint(v) {
+  v = Math.max(0, Math.min(1, v)); if (Math.abs(v - p) < .002) return; p = v;
+  for (const k in LIGHT) {
+    const a = LIGHT[k], b = DARK[k], m = a.map((x, i) => x + (b[i] - x) * v);
+    root.style.setProperty("--" + k, `rgb(${m[0] | 0} ${m[1] | 0} ${m[2] | 0} / ${m[3].toFixed(3)})`);
+  }
+  root.style.colorScheme = v > .5 ? "dark" : "light"; root.dataset.theme = v > .5 ? "dark" : "light";
+}
+function fromScroll() {
+  if (manual !== null) return;
+  const top = $("#privacy").getBoundingClientRect().top, H = innerHeight;
+  paint((H * .9 - top) / (H * .55));
+}
+function tween(to) {
+  cancelAnimationFrame(raf); const from = p, t0 = performance.now();
+  const step = now => { const k = Math.min(1, (now - t0) / 350); paint(from + (to - from) * k); if (k < 1) raf = requestAnimationFrame(step); };
+  p = from; raf = requestAnimationFrame(step);
+}
+addEventListener("scroll", () => { if (manual !== null) return; fromScroll(); }, { passive: true });
+fromScroll(); paint(Math.max(0, p));
+run();
+})();
+</script>
+</body>
+</html>
