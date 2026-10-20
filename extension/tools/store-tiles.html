@@ -1,0 +1,55 @@
+<!doctype html>
+<!--
+  Chrome Web Store promo tiles, rendered by store-images.mjs: ?size=small (440 x 280) | marquee (1400 x 560).
+  White, Geist and Instrument Serif, the same words as the landing page hero. The marquee shows the real panel.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #14171d; --muted: #5f6672; --line: #e4e7ec; --hit: #1f5fd6; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; overflow: hidden; background: #fff; color: var(--ink); font-family: Geist, system-ui, sans-serif; }
+  .brand { display: flex; align-items: center; gap: 14px; font-weight: 600; letter-spacing: -.01em; }
+  .brand img { border-radius: 22%; display: block; }
+  h1 { margin: 0; font: 400 1em/1.04 "Instrument Serif", serif; letter-spacing: -.01em; text-wrap: balance; }
+  h1 em { color: var(--hit); }
+  kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 1.7em; height: 1.7em; padding: 0 .5em; font: 500 1em/1 Geist, sans-serif;
+    color: var(--ink); background: #f0f2f5; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--line); }
+  .keys { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+
+  .small { width: 440px; height: 280px; padding: 40px 36px; display: flex; flex-direction: column; justify-content: space-between; }
+  .small .brand { font-size: 30px; gap: 12px; }
+  .small .brand img { width: 44px; height: 44px; }
+  .small h1 { font-size: 50px; }
+  .small .keys { font-size: 15px; }
+
+  .marquee { width: 1400px; height: 560px; position: relative; }
+  .marquee .copy { position: absolute; left: 96px; top: 0; bottom: 0; width: 640px; display: flex; flex-direction: column; justify-content: center; gap: 30px; }
+  .marquee .brand { font-size: 34px; }
+  .marquee .brand img { width: 52px; height: 52px; }
+  .marquee h1 { font-size: 92px; }
+  .marquee p { margin: 0; font-size: 22px; line-height: 1.45; color: var(--muted); max-width: 520px; }
+  .marquee .keys { font-size: 17px; }
+  .marquee iframe { position: absolute; right: 80px; top: 62px; width: 576px; height: 432px; border: 0; border-radius: 14px;
+    box-shadow: 0 24px 64px rgb(15 20 30 / .14), 0 0 0 1px rgb(15 20 30 / .08); background: #fff; }
+</style>
+</head>
+<body>
+<div id="t"></div>
+<script>
+  const q = new URLSearchParams(location.search), size = q.get("size") ?? "small";
+  const brand = '<div class="brand"><img src="/ext/icons/icon-128.png" alt="">TabNow</div>';
+  const keys = '<div class="keys"><kbd>Ctrl</kbd><kbd>E</kbd>then type, then Enter</div>';
+  const s = encodeURIComponent(JSON.stringify({ q: "gh pr" }));
+  document.getElementById("t").className = size;
+  document.getElementById("t").innerHTML = size === "small"
+    ? `${brand}<h1>Every tab, <em>one keystroke</em> away.</h1>${keys}`
+    : `<div class="copy">${brand}<h1>Every tab, <em>one keystroke</em> away.</h1>
+        <p>A fuzzy finder for your open tabs, in every window. No account, no network requests.</p>${keys}</div>
+       <iframe src="/ext/search.html?w=1&t=light&s=${s}"></iframe>`;
+</script>
+</body>
+</html>
