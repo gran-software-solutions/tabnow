@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>This website has 73 tabs open - TabNow</title>
+<meta name="description" content="TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.">
+<style>
+/* Concept J. The page is a browser with 73 tabs open; TabNow is how you move around in it.
+   Chrome-ish frame: neutral greys. Site pages: white, ink, one accent (#1f5fd6). */
+:root { --ink: #14171d; --mut: #5f6672; --faint: #9ba1ac; --line: #e4e7ec; --acc: #1f5fd6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #dee1e6; font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+#win { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+/* ---------- tab strip ---------- */
+#strip { flex: none; height: 40px; display: flex; align-items: flex-end; padding-left: 8px; background: #dee1e6; user-select: none; }
+#tabs { flex: none; width: min(calc(var(--nt, 73) * 240px), calc(100vw - 196px)); min-width: 0; display: flex; align-items: flex-end; height: 34px; }
+.tab { position: relative; flex: 1 1 240px; min-width: 0; max-width: 240px; height: 34px; container-type: inline-size; cursor: default; }
+.tab.on { flex: 0 0 200px; z-index: 2; }
+.tab .bg { position: absolute; left: 0; right: 0; top: 6px; bottom: 0; border-radius: 8px 8px 0 0; }
+.tab:not(.on):hover .bg { background: rgb(255 255 255 / .55); top: 4px; bottom: 4px; left: 1px; right: 1px; border-radius: 8px; }
+.tab.on .bg { background: #fff; }
+.tab:not(.on)::after { content: ""; position: absolute; right: 0; top: 11px; height: 16px; width: 1px; background: #8f949b; opacity: .55; }
+.tab:hover::after, .tab.on::after, .tab:has(+ .tab.on)::after, .tab:has(+ .tab:hover)::after { opacity: 0; }
+.tab .in { position: relative; height: 100%; padding-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.tt { display: none; flex: 1; min-width: 0; font-size: 12px; color: #3c4043; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab.on .tt { color: #202124; }
+.tab.on .in { justify-content: flex-start; padding: 6px 8px 0 12px; }
+.tab.on .tt { display: block; }
+@container (min-width: 70px) { .tab:not(.on) .in { justify-content: flex-start; padding: 6px 8px 0 12px; } .tab:not(.on) .tt { display: block; } }
+.x { flex: none; width: 18px; height: 18px; border: 0; border-radius: 50%; background: none; display: grid; place-items: center; color: #5f6368; padding: 0; }
+.x:hover { background: rgb(60 64 67 / .14); }
+#newtab { flex: none; align-self: center; margin: 3px 0 0 4px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: #3c4043; display: grid; place-items: center; }
+#newtab:hover { background: rgb(60 64 67 / .12); }
+#grow { flex: 1; align-self: stretch; }
+.wc { align-self: flex-start; display: flex; }
+.wc span { width: 46px; height: 32px; display: grid; place-items: center; color: #3c4043; }
+.wc span:hover { background: rgb(60 64 67 / .1); }
+.wc span:last-child:hover { background: #e81123; color: #fff; }
+
+/* favicon stand-ins: brand colour + letter, no logos */
+.fv { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; background: var(--c); color: #fff; font: 700 9.5px/1 var(--sans); font-style: normal; letter-spacing: -.02em; }
+.fv::before { content: attr(data-l); }
+.fv.tn { background: var(--win) center / 100% 100% no-repeat; }
+.fv.tn::before { content: none; }
+#tabs .fv { width: 12px; height: 12px; font-size: 7px; border-radius: 3px; }
+#tabs .tab.on .fv { width: 16px; height: 16px; font-size: 9.5px; }
+:root { --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1.5' y='1.5' width='21' height='21' rx='3' fill='none' stroke='%231f5fd6' stroke-width='3'/%3E%3Crect x='1.5' y='1.5' width='21' height='6' fill='%231f5fd6'/%3E%3C/svg%3E"); }
+
+/* ---------- toolbar ---------- */
+#bar { flex: none; height: 40px; display: flex; align-items: center; gap: 4px; padding: 0 8px; background: #fff; box-shadow: 0 -0.5px 0 #dadce0 inset; position: relative; z-index: 1; }
+.ib { width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: #5f6368; display: grid; place-items: center; padding: 0; }
+.ib:hover { background: #f1f3f4; }
+#omni { flex: 1; height: 30px; margin: 0 6px; border-radius: 15px; background: #f1f3f4; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 10px; font-size: 14px; min-width: 0; }
+#omni svg { flex: none; color: #5f6368; }
+#url { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #202124; }
+#url em { font-style: normal; color: #5f6368; }
+#ext { position: relative; }
+#ext img, #ext i { display: block; }
+#ext .fv { width: 18px; height: 18px; }
+.av { width: 26px; height: 26px; border-radius: 50%; background: #5f6368; color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 500; margin: 0 4px 0 2px; }
+#bm { flex: none; height: 30px; display: flex; align-items: center; gap: 2px; padding: 0 8px; background: #fff; border-bottom: 1px solid #dadce0; font-size: 12px; color: #3c4043; white-space: nowrap; overflow: hidden; }
+#bm span { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; }
+#bm span:hover { background: #f1f3f4; }
+#bm .fv { width: 14px; height: 14px; font-size: 8px; border-radius: 3.5px; }
+#card { position: fixed; z-index: 50; width: 250px; padding: 10px 12px; border-radius: 8px; background: #fff; box-shadow: 0 2px 10px rgb(0 0 0 / .25), 0 0 0 1px rgb(0 0 0 / .08); pointer-events: none; opacity: 0; transition: opacity .1s; }
+#card.show { opacity: 1; }
+#card b { display: block; font-size: 13px; font-weight: 600; line-height: 1.3; color: #202124; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#card span { display: block; margin-top: 2px; font-size: 12px; color: #5f6368; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- viewport ---------- */
+#view { flex: 1; position: relative; overflow: hidden; background: #fff; min-height: 0; }
+#page { position: absolute; inset: 0; overflow-y: auto; display: flex; flex-direction: column; }
+#page > .site { flex: 1; }
+.ft { flex: none; display: flex; align-items: center; gap: 28px; padding: 18px 112px; border-top: 1px solid var(--line); font-size: 13px; color: var(--mut); }
+.ft nav { margin-left: auto; display: flex; gap: 22px; }
+.ft a { text-decoration: none; }
+.ft a:hover { color: var(--acc); text-decoration: underline; }
+.ft button { border: 0; background: none; padding: 0; color: var(--acc); font-size: 13px; text-decoration: underline; }
+
+/* site pages */
+.pg { display: grid; grid-template-columns: minmax(0, 740px) 300px; gap: 104px; padding: 60px 0 56px 112px; }
+.pg.one { grid-template-columns: minmax(0, 860px); }
+.crumb { font: 12.5px var(--mono); color: var(--faint); margin-bottom: 22px; display: flex; align-items: center; gap: 8px; }
+.crumb .fv { width: 16px; height: 16px; }
+h1 { margin: 0; font-size: 54px; line-height: 1.04; font-weight: 650; letter-spacing: -.025em; }
+h2 { margin: 44px 0 12px; font-size: 22px; line-height: 1.25; font-weight: 650; letter-spacing: -.01em; }
+.lead { margin: 22px 0 0; font-size: 21px; line-height: 1.5; color: var(--mut); max-width: 620px; }
+.pg p { margin: 14px 0 0; font-size: 16.5px; line-height: 1.65; max-width: 640px; }
+.pg p.lead { font-size: 21px; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; font: 500 12px/1 var(--sans); color: var(--ink); background: #f3f4f6; border-radius: 6px; box-shadow: inset 0 -1.5px 0 rgb(0 0 0 / .13), 0 0 0 1px #d6dae1; vertical-align: 1px; }
+code { font: 13.5px var(--mono); background: #f3f4f6; border-radius: 5px; padding: 2px 6px; }
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 20px; border-radius: 8px; border: 1px solid #cdd2da; background: #fff; font-size: 15px; font-weight: 550; text-decoration: none; color: var(--ink); }
+.btn:hover { border-color: #9ba1ac; }
+.btn.pri { background: var(--acc); border-color: var(--acc); color: #fff; }
+.btn.pri:hover { background: #1a52bb; }
+.btn small { font-size: 11.5px; font-weight: 500; opacity: .8; }
+aside dl { margin: 0; border-top: 1px solid var(--ink); }
+aside dt { margin-top: 14px; font: 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); }
+aside dd { margin: 3px 0 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); font-size: 15.5px; line-height: 1.45; }
+a.go, button.go { color: var(--acc); text-decoration: underline; text-underline-offset: 3px; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+mark { background: color-mix(in srgb, var(--acc) 22%, transparent); color: inherit; font-weight: 600; border-radius: 3px; }
+
+/* home */
+.home { padding: 0 0 0 112px; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+.home .brand { position: absolute; top: 34px; left: 112px; display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 17px; }
+.home .brand .fv { width: 24px; height: 24px; }
+.home h1 { font-size: 78px; line-height: 1; letter-spacing: -.035em; max-width: 1300px; }
+.home h1 .n { font-variant-numeric: tabular-nums; color: var(--acc); }
+.home h1 .find { display: block; margin-top: 14px; color: #9ba1ac; font-weight: 500; }
+.home h1 .find u { text-decoration-thickness: 5px; text-underline-offset: 9px; text-decoration-color: var(--acc); color: var(--ink); }
+.home .hint { margin-top: 44px; display: flex; align-items: center; gap: 14px; font-size: 19px; color: var(--mut); }
+.home .hint kbd { height: 32px; min-width: 36px; font-size: 15px; padding: 0 11px; border-radius: 8px; }
+.home .sub { margin-top: 30px; font-size: 17px; line-height: 1.55; color: var(--mut); max-width: 560px; }
+.home .try { margin-top: 26px; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--faint); }
+.home .try button { border: 1px solid #d6dae1; background: #fff; border-radius: 999px; height: 30px; padding: 0 14px; font-size: 14px; color: var(--ink); }
+.home .try button:hover { border-color: var(--acc); color: var(--acc); }
+
+/* features list */
+.feat { list-style: none; margin: 40px 0 0; padding: 0; border-top: 1px solid var(--ink); }
+.feat li { display: grid; grid-template-columns: 48px 1fr; gap: 0 12px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.feat .no { font: 13px var(--mono); color: var(--faint); padding-top: 5px; }
+.feat h3 { margin: 0; font-size: 20px; line-height: 1.3; font-weight: 650; }
+.feat p { margin: 6px 0 0; font-size: 16px; color: var(--mut); }
+/* keys table */
+.keys { width: 100%; border-collapse: collapse; margin-top: 8px; max-width: 700px; }
+.keys td { padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 16px; vertical-align: middle; }
+.keys td:first-child { width: 270px; white-space: nowrap; }
+.keys kbd + kbd, .keys kbd + span + kbd { margin-left: 4px; }
+.keys .or { color: var(--faint); font-size: 13px; margin: 0 6px; }
+.steps { list-style: none; counter-reset: s; margin: 32px 0 0; padding: 0; display: flex; gap: 0; max-width: 700px; border-top: 1px solid var(--ink); }
+.steps li { counter-increment: s; flex: 1; padding: 14px 18px 0 0; font-size: 17px; line-height: 1.45; }
+.steps li::before { content: "0" counter(s); display: block; font: 12px var(--mono); color: var(--faint); margin-bottom: 6px; }
+.mini { margin-top: 16px; max-width: 640px; border-radius: 12px; box-shadow: 0 0 0 1px #d6dae1; }
+/* permission list */
+.perm { margin: 8px 0 0; max-width: 700px; }
+.perm div { display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 16px; line-height: 1.5; }
+.perm dt { font: 600 14px var(--mono); padding-top: 1px; }
+.perm dd { margin: 0; }
+.perm.opt dt::after { content: "optional"; margin-left: 8px; font: 500 11px var(--sans); color: var(--faint); border: 1px solid #d6dae1; border-radius: 4px; padding: 1px 5px; vertical-align: 1px; }
+.big { font-size: 15px; }
+/* install */
+.cta { margin-top: 30px; display: flex; gap: 12px; align-items: center; }
+.note { margin-top: 12px; font-size: 14px; color: var(--mut); }
+.inst { list-style: none; counter-reset: i; margin: 12px 0 0; padding: 0; max-width: 700px; }
+.inst li { counter-increment: i; display: grid; grid-template-columns: 44px 1fr; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16.5px; line-height: 1.5; }
+.inst li::before { content: counter(i); font: 600 14px var(--mono); color: var(--acc); padding-top: 2px; }
+.inst pre { margin: 8px 0 0; padding: 10px 14px; background: #14171d; color: #e8eaee; border-radius: 8px; font: 13.5px var(--mono); overflow: auto; }
+/* themes */
+.ctl { margin-top: 18px; display: grid; gap: 14px; max-width: 460px; }
+.ctl label { display: grid; grid-template-columns: 90px 1fr 56px; align-items: center; font-size: 15px; gap: 12px; }
+.ctl output { font: 13px var(--mono); color: var(--mut); text-align: right; }
+.ctl input[type=range] { accent-color: var(--acc); width: 100%; }
+.seg { display: inline-flex; border: 1px solid #cdd2da; border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: #fff; height: 36px; padding: 0 18px; font-size: 14px; }
+.seg button[aria-pressed=true] { background: var(--ink); color: #fff; }
+.specwrap { position: relative; height: 330px; overflow: hidden; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px #d6dae1; }
+.art { position: absolute; inset: 0; }
+.art i { position: absolute; display: block; }
+.sp { position: absolute; left: 20px; right: 20px; top: 34px; height: 262px; --z: 100; }
+.sp .ov { zoom: .8; }
+
+/* ---------- junk page mocks ---------- */
+.jm { min-height: 100%; background: #fff; display: flex; flex-direction: column; }
+.jm-top { flex: none; height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 40px; border-bottom: 1px solid #eceef1; color: #7a808a; font-size: 14px; }
+.jm-top .fv { width: 22px; height: 22px; font-size: 12px; border-radius: 5px; }
+.jm-top b { font-weight: 600; color: #6a707a; }
+.jm-top i.sk { margin-left: 12px; }
+.jm-body { flex: 1; padding: 34px 40px 120px; filter: grayscale(1); opacity: .62; max-width: 1000px; width: 100%; }
+.jm h1 { font-size: 24px; line-height: 1.3; letter-spacing: -.01em; color: #4a4f58; max-width: 760px; font-weight: 600; }
+.jm .meta { margin-top: 8px; font-size: 13.5px; color: #8a909a; }
+i.sk { display: block; background: #e3e5e9; border-radius: 4px; height: 10px; margin-top: 12px; }
+.jm-top i.sk { display: inline-block; height: 8px; margin-top: 0; }
+.row { display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid #eceef1; font-size: 14px; color: #6a707a; }
+.row b { width: 150px; flex: none; font-weight: 600; color: #4a4f58; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row i { width: 64px; flex: none; font-style: normal; text-align: right; font-size: 12.5px; color: #9ba1ac; }
+.diff { margin-top: 18px; border: 1px solid #e3e5e9; border-radius: 6px; font: 12.5px/1.7 var(--mono); color: #6a707a; overflow: hidden; }
+.diff div { padding: 0 14px; white-space: pre; }
+.diff .h { background: #f3f4f6; color: #4a4f58; font-weight: 600; padding: 6px 14px; }
+.diff .a { background: #d8ecd9; } .diff .d { background: #f4d9d9; }
+.vid { margin-top: 20px; width: 640px; height: 360px; border-radius: 10px; background: #2b2f36; position: relative; }
+.vid::after { content: ""; position: absolute; left: 50%; top: 50%; margin: -22px 0 0 -14px; border-left: 40px solid #d9dce1; border-top: 24px solid transparent; border-bottom: 24px solid transparent; }
+.qa { display: flex; gap: 22px; margin-top: 24px; }
+.qa .v { width: 44px; flex: none; text-align: center; font-size: 22px; color: #6a707a; }
+.qa .v small { display: block; font-size: 11px; }
+.bars { display: flex; align-items: flex-end; gap: 10px; height: 170px; margin-top: 22px; padding-bottom: 1px; border-bottom: 1px solid #cfd2d8; }
+.bars i { flex: 1; background: #cfd2d8; border-radius: 3px 3px 0 0; }
+.stats { display: flex; gap: 40px; margin-top: 26px; }
+.stats div { font-size: 12.5px; color: #8a909a; } .stats b { display: block; font-size: 30px; font-weight: 600; color: #4a4f58; letter-spacing: -.02em; }
+.codeb { margin-top: 20px; padding: 16px 20px; border-radius: 8px; background: #f3f4f6; font: 13px/1.75 var(--mono); color: #5a606a; white-space: pre; overflow: hidden; }
+.nudge { position: sticky; bottom: 22px; align-self: center; margin-top: -70px; display: flex; align-items: center; gap: 18px; padding: 10px 10px 10px 20px; border-radius: 999px; background: #202124; color: #fff; font-size: 14px; box-shadow: 0 6px 24px rgb(0 0 0 / .3); z-index: 3; }
+.nudge b { font-weight: 600; }
+.nudge button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: #fff; color: #202124; font-size: 13.5px; font-weight: 550; }
+.nudge kbd { height: 20px; min-width: 20px; font-size: 11px; padding: 0 5px; box-shadow: none; background: #e8eaed; }
+
+/* ---------- TabNow panel: copied from extension/search.css, scoped to .pnl ---------- */
+.pnl { --fg: #14171d; --muted: #5f6672; --faint: #9ba1ac; --hair: rgb(15 20 30 / .07); --hit: #1f5fd6; --solid: #fff; --glass: rgb(255 255 255 / var(--alpha)); color-scheme: light; font-family: var(--sans); color: var(--fg); }
+.pnl[data-theme="dark"] { --fg: #eceef2; --muted: #a0a7b4; --faint: #6d7585; --hit: #9cbcff; --solid: #1b1f27; --glass: rgb(22 25 31 / var(--alpha)); --hair: rgb(255 255 255 / .08); color-scheme: dark;
+  --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1.5' y='1.5' width='21' height='21' rx='3' fill='none' stroke='%239cbcff' stroke-width='3'/%3E%3Crect x='1.5' y='1.5' width='21' height='6' fill='%239cbcff'/%3E%3C/svg%3E"); }
+.pnl .ov { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--glass); border-radius: 16px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--hair); position: relative; zoom: calc(var(--z) / 100); }
+.pnl .ov input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; }
+.pnl .ov ul { list-style: none; margin: 0; padding: 6px; overflow-y: auto; flex: 1; }
+.pnl .ov li { cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; --rb: var(--solid); }
+.pnl .ov li.on { background: color-mix(in srgb, var(--hit) 12%, transparent); --rb: color-mix(in srgb, var(--hit) 12%, var(--solid)); }
+.pnl .ov li.on .t { color: var(--hit); }
+.pnl .go { flex: none; visibility: hidden; }
+.pnl li.on .go { visibility: visible; }
+.pnl mark { background: color-mix(in srgb, var(--hit) 28%, transparent); color: var(--fg); font-weight: 600; border-radius: 3px; }
+.pnl li.on mark { background: color-mix(in srgb, var(--hit) 38%, transparent); }
+.pnl .trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pnl .empty { padding: 18px; color: var(--muted); cursor: default !important; }
+.pnl .q { position: relative; display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--hair); font-size: 20px; font-weight: 300; }
+.pnl .n { flex: none; font-size: 12px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+.pnl .q > svg { flex: none; color: var(--muted); }
+.pnl .tb { flex: none; display: grid; place-items: center; width: 28px; height: 28px; margin: -4px -6px -4px 0; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--faint); cursor: pointer; }
+.pnl .tb:not(:last-child) { margin-right: 0; }
+.pnl .tb:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); }
+.pnl .fav { flex: none; position: relative; width: 16px; height: 16px; }
+.pnl .fav .fv { position: relative; display: grid; }
+.pnl .fav.away::after { content: ""; position: absolute; right: -6px; bottom: -5px; width: 13px; height: 11px; border-radius: 2.5px; background: var(--win) center / 100% 100% no-repeat var(--rb); box-shadow: 0 0 0 1.5px var(--rb); }
+.pnl .t { font-size: 14px; }
+.pnl .u { font-size: 12px; }
+.pnl .u .host { color: var(--fg); opacity: .78; }
+.pnl .u .path { color: var(--faint); }
+.pnl .txt { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.pnl .foot { display: flex; align-items: center; gap: 16px; padding: 9px 16px; border-top: 1px solid var(--hair); font-size: 11.5px; color: var(--muted); opacity: .9; white-space: nowrap; overflow: hidden; }
+.pnl .foot .k { display: inline-flex; align-items: center; gap: 4px; }
+.pnl .foot .k i { font-style: normal; margin-left: 2px; }
+.pnl .foot .end { margin-left: auto; }
+.pnl kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; font: 500 11px/1 var(--sans); word-spacing: 2px; color: var(--fg); opacity: .75; background: color-mix(in srgb, var(--fg) 7%, transparent); border-radius: 6px; box-shadow: none; vertical-align: baseline; }
+/* host: dim + frost are sibling layers (as in background.js) */
+#scrim { position: absolute; inset: 0; z-index: 20; background: rgb(10 14 20 / .26); backdrop-filter: blur(3px); }
+#pw { position: absolute; z-index: 21; left: 50%; top: 12%; transform: translateX(-50%); width: calc(6.4px * var(--z)); height: calc(4.8px * var(--z)); border-radius: calc(.16px * var(--z)); box-shadow: 0 24px 80px rgb(0 0 0 / .32); }
+.frost { position: absolute; inset: 0; border-radius: inherit; backdrop-filter: blur(var(--blur)) saturate(1.3) brightness(1.15); }
+.pnl[data-theme="dark"] .frost { backdrop-filter: blur(var(--blur)) saturate(1.3) brightness(.7); }
+.sp .frost { border-radius: 16px; }
+:root { --alpha: .86; --blur: 20px; --z: 100; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="win">
+  <div id="strip">
+    <div id="tabs"></div>
+    <button id="newtab" aria-label="New tab" tabindex="-1"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.6" fill="none"><path d="M7 1.5v11M1.5 7h11"/></svg></button>
+    <div id="grow"></div>
+    <div class="wc" aria-hidden="true">
+      <span><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" fill="none"><path d="M0 5h10"/></svg></span>
+      <span><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" fill="none"><rect x=".5" y=".5" width="9" height="9"/></svg></span>
+      <span><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" fill="none"><path d="M0 0l10 10M10 0L0 10"/></svg></span>
+    </div>
+  </div>
+  <div id="bar">
+    <button class="ib" tabindex="-1" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+    <button class="ib" tabindex="-1" aria-label="Forward" style="opacity:.4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <button class="ib" tabindex="-1" aria-label="Reload"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5"/></svg></button>
+    <div id="omni">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg>
+      <div id="url"></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-3-5.4 3 1.1-6L3.2 9.4l6.1-.8z"/></svg>
+    </div>
+    <button class="ib" id="ext" title="TabNow (Ctrl+E)" aria-label="TabNow"><i class="fv tn"></i></button>
+    <div class="av">D</div>
+    <button class="ib" tabindex="-1" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+  </div>
+  <div id="bm" aria-hidden="true"></div>
+  <div id="view">
+    <div id="page"></div>
+    <div id="scrim" hidden></div>
+    <div id="pw" class="pnl" data-theme="light" role="dialog" aria-label="TabNow" hidden>
+      <div class="frost"></div>
+      <div class="ov">
+        <label class="q"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input id="q" autocomplete="off" spellcheck="false" placeholder="Search tabs"><span id="count" class="n"></span><button id="themeBtn" class="tb" type="button" tabindex="-1" title="Theme"></button><button id="optsBtn" class="tb" type="button" tabindex="-1" title="Options"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></label>
+        <ul id="list"></ul>
+        <div class="foot">
+          <span class="k"><kbd>↑ ↓</kbd><kbd>ctrl j k</kbd><i>navigate</i></span>
+          <span class="k"><kbd>↵</kbd><i>open</i></span>
+          <span class="k"><kbd>ctrl ⌫</kbd><i>close tab</i></span>
+          <span class="k end"><kbd>esc</kbd><i>dismiss</i></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="card"><b></b><span></span></div>
+
+<script>
+/* ===== fuzzy.js, copied verbatim from extension/fuzzy.js (match, search, hl; export keywords dropped) ===== */
+function match(q, text) {
+  const t = text.toLowerCase(), at = t.indexOf(q);
+  if (at >= 0) {
+    const start = at === 0 || /\W/.test(t[at - 1]);
+    return { score: 100 + q.length * 10 + (start ? 40 : 0) - at * 0.1, hits: [...Array(q.length)].map((_, k) => at + k) };
+  }
+  let score = 0, last = -2, k = 0; const hits = [];
+  for (let j = 0; j < t.length && k < q.length; j++) {
+    if (t[j] !== q[k]) continue;
+    score += j === last + 1 ? 5 : (j === 0 || /\W/.test(t[j - 1]) ? 3 : 1);
+    hits.push(j); last = j; k++;
+  }
+  // Letters spread over a long stretch ("Harness En·g·ineering … ·o·") are noise, not a match.
+  return k === q.length && hits[k - 1] - hits[0] < q.length * 3 ? { score, hits } : null;
+}
+function search(items, q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return items.map(tab => ({ tab, th: [], uh: [] }));
+  const out = [];
+  for (const tab of items) {
+    let score = 0; const th = [], uh = [];
+    for (const w of words) {
+      // Weights: domain 1.5 > title 1.2 > rest of URL 1. The domain is the start of disp, so its hits index disp.
+      const d = match(w, tab.disp.split("/")[0]), a = match(w, tab.title), b = match(w, tab.disp);
+      const best = Math.max((d?.score ?? -1) * 1.5, (a?.score ?? -1) * 1.2, b?.score ?? -1);
+      if (best < 0) { score = -1; break; }
+      score += best;
+      if (d && best === d.score * 1.5) uh.push(...d.hits);
+      else if (a && best === a.score * 1.2) th.push(...a.hits);
+      else uh.push(...b.hits);
+    }
+    if (score >= 0) out.push({ tab, score, th, uh });
+  }
+  return out.sort((x, y) => y.score - x.score); // stable: ties keep MRU order
+}
+function hl(text, hits, from = 0) {
+  const set = new Set(hits), frag = document.createDocumentFragment();
+  let buf = "", on = false;
+  const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
+  [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
+  flush(); return frag;
+}
+
+/* ===== the 73 tabs ===== */
+const GH = "https://github.com/gran-software-solutions/tabnow";
+const FAVS = [
+  [/github\.com/, "#24292f", "G"], [/gitlab\.com/, "#e24329", "G"], [/atlassian\.net/, "#1868db", "J"], [/linear\.app/, "#4a55c8", "L"],
+  [/mail\.google/, "#d93025", "M"], [/docs\.google\.com\/spreadsheets/, "#188038", "S"], [/docs\.google\.com\/presentation/, "#e8a200", "P"],
+  [/docs\.google/, "#1a73e8", "D"], [/drive\.google/, "#1e8e5a", "D"], [/calendar\.google/, "#1a73e8", "C"], [/youtube/, "#e62117", "Y"],
+  [/stackoverflow/, "#f48024", "S"], [/mozilla/, "#1b1b1b", "M"], [/figma/, "#1e1e1e", "F"], [/aws\.amazon/, "#e48a00", "A"], [/notion/, "#111", "N"],
+  [/slack/, "#4a154b", "S"], [/reddit/, "#ff4500", "R"], [/x\.com/, "#000", "X"], [/linkedin/, "#0a66c2", "in"], [/localhost/, "#6b7280", "L"],
+  [/npmjs/, "#cb3837", "n"], [/vercel/, "#000", "V"], [/sentry/, "#3b3156", "S"], [/datadog/, "#6d3ba8", "D"], [/grafana/, "#f05a28", "G"],
+  [/stripe/, "#5469d4", "S"], [/wikipedia/, "#6b6f76", "W"], [/google\.com\/maps/, "#2f9e4f", "M"], [/spotify/, "#1db954", "S"], [/amazon/, "#232f3e", "a"],
+  [/bahn/, "#ec0016", "DB"], [/zoom/, "#0b5cff", "Z"], [/tailwind/, "#0ea5b7", "T"], [/typescriptlang/, "#3178c6", "TS"], [/postgresql/, "#336791", "P"],
+  [/kubernetes/, "#326ce5", "K"], [/terraform/, "#6d4aaa", "T"], [/claude/, "#cc785c", "C"], [/chatgpt/, "#10a37f", "G"], [/docker/, "#2496ed", "D"],
+  [/canva/, "#0aa5ad", "C"], [/miro/, "#d9a800", "M"], [/google\.com\/search/, "#4285f4", "G"], [/chromewebstore/, "#4285f4", "C"], [/hetzner/, "#d50c2d", "H"],
+  [/cloudflare/, "#e8741a", "C"], [/guardian/, "#052962", "G"], [/newtab/, "#9aa0a6", ""], [/atlassian\.com|bitbucket/, "#1868db", "B"],
+];
+const favOf = url => { const f = FAVS.find(f => f[0].test(url)); return f ? [f[1], f[2]] : ["#7a808a", (url.replace(/^https?:\/\/(www\.)?/, "")[0] || "?").toUpperCase()]; };
+
+// [title, url, mock type, meta line]
+const JUNK = [
+  ["Fix tab ordering when windows are merged · Pull Request #482 · gran-software-solutions/consulting-cockpit", "https://github.com/gran-software-solutions/consulting-cockpit/pull/482", "pr", "Open · priya-k wants to merge 3 commits into main · 2 checks passing"],
+  ["Bump vite from 5.4.8 to 5.4.11 · Pull Request #1291 · acme/web-app", "https://github.com/acme/web-app/pull/1291", "pr", "Open · dependabot wants to merge 1 commit into main"],
+  ["Pull requests · acme/payments-api", "https://github.com/acme/payments-api/pulls", "list", "14 Open · 312 Closed"],
+  ["Actions · deploy-staging · acme/web-app", "https://github.com/acme/web-app/actions/workflows/deploy-staging.yml", "code", "Workflow run #3091 · failed in 4m 12s"],
+  ["[PLAT-2214] Checkout times out for EU customers - Jira", "https://acme.atlassian.net/browse/PLAT-2214", "doc", "Priority High · Assignee Mara Voss · Sprint 42"],
+  ["Sprint 42 - Board - Jira", "https://acme.atlassian.net/jira/software/projects/PLAT/boards/12", "dash", ""],
+  ["[PLAT-2230] Rate limit the export endpoint - Jira", "https://acme.atlassian.net/browse/PLAT-2230", "doc", "Priority Medium · Unassigned · Sprint 42"],
+  ["ENG-512 Flaky e2e test on Safari - Linear", "https://linear.app/acme/issue/ENG-512/flaky-e2e-test-on-safari", "doc", "In Progress · Backend · 3 points"],
+  ["Inbox (47) - dusan@acme.com - Gmail", "https://mail.google.com/mail/u/0/#inbox", "mail", ""],
+  ["Re: Quarterly planning - Gmail", "https://mail.google.com/mail/u/0/#inbox/FMfcgzQXKbWj", "mail", ""],
+  ["Q4 roadmap - Google Docs", "https://docs.google.com/document/d/1xK9pWqLm2/edit", "doc", "Last edit was seconds ago"],
+  ["Budget 2027 - Google Sheets", "https://docs.google.com/spreadsheets/d/1mT7vQa8/edit", "dash", ""],
+  ["Onboarding deck - Google Slides", "https://docs.google.com/presentation/d/1aZq0Rp3/edit", "doc", ""],
+  ["My Drive - Google Drive", "https://drive.google.com/drive/my-drive", "list", ""],
+  ["Calendar - Week of 19 October 2026", "https://calendar.google.com/calendar/u/0/r/week/2026/10/19", "dash", ""],
+  ["Lo-fi beats to refactor to - YouTube", "https://www.youtube.com/watch?v=jfKfPfyJRdk", "video", "1.2M views · Lofi Girl"],
+  ["Understanding B-trees in 10 minutes - YouTube", "https://www.youtube.com/watch?v=aZjYr87r1b8", "video", "384K views · Hussein Nasser"],
+  ["Kubernetes networking, explained - YouTube", "https://www.youtube.com/watch?v=NFApeJRXos4", "video", "211K views · TechWorld"],
+  ["javascript - Why does Array.prototype.sort mutate the array? - Stack Overflow", "https://stackoverflow.com/questions/9592740/why-does-array-sort-mutate", "qa", "Asked 9 years ago · Viewed 410k times"],
+  ["postgresql - How to speed up a COUNT(*) on a large table - Stack Overflow", "https://stackoverflow.com/questions/7943233/fast-way-to-discover-the-row-count", "qa", "Asked 13 years ago · Viewed 640k times"],
+  ["css - Center a div vertically and horizontally - Stack Overflow", "https://stackoverflow.com/questions/19461521/how-to-center-an-element", "qa", "Asked 11 years ago · Viewed 2.1M times"],
+  ["Array.prototype.toSorted() - JavaScript | MDN", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/toSorted", "doc", "Baseline 2023 · Widely available"],
+  ["backdrop-filter - CSS: Cascading Style Sheets | MDN", "https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter", "doc", "Baseline 2024 · Newly available"],
+  ["Checkout flow v3 – Figma", "https://www.figma.com/design/Qk3vXz8/Checkout-flow-v3", "dash", ""],
+  ["Design system – Figma", "https://www.figma.com/design/Rt9aMn2/Design-system", "dash", ""],
+  ["EC2 Management Console", "https://eu-central-1.console.aws.amazon.com/ec2/home?region=eu-central-1", "dash", ""],
+  ["CloudWatch · Log groups · eu-central-1", "https://eu-central-1.console.aws.amazon.com/cloudwatch/home?region=eu-central-1#logsV2:log-groups", "list", ""],
+  ["S3 buckets - S3 Management Console", "https://s3.console.aws.amazon.com/s3/buckets?region=eu-central-1", "list", ""],
+  ["Weekly sync notes - Notion", "https://www.notion.so/acme/Weekly-sync-notes-8f3a1c2b", "doc", ""],
+  ["#eng-backend - Acme - 3 new items - Slack", "https://app.slack.com/client/T01ABCDEF/C02GHIJKL", "mail", ""],
+  ["programming - Reddit", "https://www.reddit.com/r/programming/", "list", ""],
+  ["How do you handle 50+ open tabs? : r/ExperiencedDevs", "https://www.reddit.com/r/ExperiencedDevs/comments/1g8x2k/how_do_you_handle_50_open_tabs/", "qa", "412 comments · posted 3 days ago"],
+  ["Home / X", "https://x.com/home", "list", ""],
+  ["(3) Feed | LinkedIn", "https://www.linkedin.com/feed/", "list", ""],
+  ["Acme Admin · Orders", "http://localhost:3000/admin/orders", "dash", ""],
+  ["Storybook", "http://localhost:6006/?path=/story/button--primary", "doc", ""],
+  ["Vite + React + TS", "http://localhost:5173/", "doc", ""],
+  ["react-window - npm", "https://www.npmjs.com/package/react-window", "code", "v1.8.10 · Public · Published 2 years ago"],
+  ["acme-web – Deployments – Vercel", "https://vercel.com/acme/acme-web/deployments", "list", ""],
+  ["TypeError: Cannot read properties of undefined (reading 'id') - Sentry", "https://acme.sentry.io/issues/5120934/", "code", "Seen 1,284 times · 212 users"],
+  ["Services - APM - Datadog", "https://app.datadoghq.eu/apm/services", "dash", ""],
+  ["Node Exporter / Nodes - Dashboards - Grafana", "https://grafana.acme.internal/d/rYdddlPWk/node-exporter-nodes", "dash", ""],
+  ["Payments - Stripe Dashboard", "https://dashboard.stripe.com/payments", "list", ""],
+  ["Approximate string matching - Wikipedia", "https://en.wikipedia.org/wiki/Approximate_string_matching", "doc", "From Wikipedia, the free encyclopedia"],
+  ["Levenshtein distance - Wikipedia", "https://en.wikipedia.org/wiki/Levenshtein_distance", "doc", "From Wikipedia, the free encyclopedia"],
+  ["Berlin Hauptbahnhof - Google Maps", "https://www.google.com/maps/place/Berlin+Hauptbahnhof", "dash", ""],
+  ["Discover Weekly - playlist by Spotify", "https://open.spotify.com/playlist/37i9dQZEVXcJZyENOWUFo7", "list", ""],
+  ["Amazon.de: mechanical keyboard", "https://www.amazon.de/s?k=mechanical+keyboard", "list", ""],
+  ["Bahn.de - Berlin Hbf nach Hamburg Hbf", "https://int.bahn.de/de/buchung/fahrplan/suche", "list", ""],
+  ["Launch Meeting - Zoom", "https://acme.zoom.us/j/84213377019", "doc", ""],
+  ["grid-template-columns - Tailwind CSS", "https://tailwindcss.com/docs/grid-template-columns", "doc", ""],
+  ["TypeScript: Documentation - Utility Types", "https://www.typescriptlang.org/docs/handbook/utility-types.html", "doc", ""],
+  ["PostgreSQL: Documentation: 16: CREATE INDEX", "https://www.postgresql.org/docs/16/sql-createindex.html", "doc", ""],
+  ["Pods | Kubernetes", "https://kubernetes.io/docs/concepts/workloads/pods/", "doc", ""],
+  ["Terraform Registry - aws_s3_bucket", "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket", "doc", ""],
+  ["Claude", "https://claude.ai/new", "doc", ""],
+  ["ChatGPT", "https://chatgpt.com/", "doc", ""],
+  ["Pipeline #88123 · acme / infra · GitLab", "https://gitlab.com/acme/infra/-/pipelines/88123", "code", "Failed · 6 jobs · 11 minutes ago"],
+  ["postgres - Official Image | Docker Hub", "https://hub.docker.com/_/postgres", "doc", ""],
+  ["Q4 offsite - Canva", "https://www.canva.com/design/DAGx7Lq2/edit", "doc", ""],
+  ["Retro board - Miro", "https://miro.com/app/board/uXjVK3abc=/", "dash", ""],
+  ["tab search shortcut chrome - Google Search", "https://www.google.com/search?q=tab+search+shortcut+chrome", "list", ""],
+  ["Extensions - Chrome Web Store", "https://chromewebstore.google.com/category/extensions", "list", ""],
+  ["acme.dev - DNS - Cloudflare", "https://dash.cloudflare.com/ab12cd34/acme.dev/dns/records", "list", ""],
+  ["Technology | The Guardian", "https://www.theguardian.com/uk/technology", "list", ""],
+  ["New Tab", "chrome://newtab/", "doc", ""],
+];
+const SECS = [
+  { key: "home", title: "", url: "https://tabnow.app/" },
+  { key: "about", title: "What TabNow is - TabNow", url: "https://tabnow.app/about" },
+  { key: "keys", title: "How it works: keys and matching - TabNow", url: "https://tabnow.app/keys" },
+  { key: "features", title: "Features - TabNow", url: "https://tabnow.app/features" },
+  { key: "privacy", title: "Privacy: no network requests - TabNow", url: "https://tabnow.app/privacy" },
+  { key: "install", title: "Install - TabNow", url: "https://tabnow.app/install" },
+  { key: "themes", title: "Themes and settings - TabNow", url: "https://tabnow.app/themes" },
+];
+function rng(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+const shuffle = (arr, seed) => { const r = rng(seed), a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const mkTab = (t, i) => ({ ...t, id: i, disp: t.url.replace(/^https?:\/\/(www\.)?/, "") });
+
+let nextId = 0;
+const junkTabs = shuffle(JUNK, 7).map((j, i) => ({ id: nextId++, kind: "junk", title: j[0], url: j[1], type: j[2], meta: j[3], fav: favOf(j[1]), win: i % 6 === 4 ? 2 : 1 }));
+const secTabs = SECS.map(s => ({ id: nextId++, kind: "site", key: s.key, title: s.title, url: s.url, fav: null, win: 1 }));
+const byKey = k => secTabs.find(t => t.key === k);
+// strip order: sections buried at fixed spots in the junk
+let tabs = junkTabs.slice();
+[[0, "home"], [11, "about"], [24, "keys"], [33, "install"], [46, "privacy"], [55, "features"], [64, "themes"]].forEach(([at, k]) => tabs.splice(at, 0, byKey(k)));
+tabs.forEach(t => t.disp = t.url.replace(/^https?:\/\/(www\.)?/, ""));
+const INIT_TOTAL = tabs.length;
+// most recently used: home now, then a PR you were just on; sections deep down
+let mru = [byKey("home").id];
+const rest = shuffle(junkTabs.map(t => t.id), 3);
+rest.splice(0, 0, junkTabs.find(t => /Pull Request #482/.test(t.title)).id);
+rest.splice(13, 0, byKey("about").id); rest.splice(22, 0, byKey("install").id); rest.splice(31, 0, byKey("features").id);
+rest.splice(38, 0, byKey("keys").id); rest.splice(47, 0, byKey("privacy").id); rest.splice(54, 0, byKey("themes").id);
+mru.push(...rest.filter((x, i) => rest.indexOf(x) === i));
+let cur = byKey("home").id, closed = [];
+const get = id => tabs.find(t => t.id === id);
+
+/* ===== helpers ===== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const el = (tag, cls, ...kids) => { const e = document.createElement(tag); if (cls) e.className = cls; e.append(...kids); return e; };
+const favHTML = (t, cls = "") => t.fav ? `<i class="fv ${cls}" style="--c:${t.fav[0]}" data-l="${esc(t.fav[1])}"></i>` : `<i class="fv tn ${cls}"></i>`;
+const hostOf = u => u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+const siteName = u => { const h = hostOf(u).replace(/:\d+$/, "").split(".").slice(-2)[0]; return h === "stackoverflow" ? "Stack Overflow" : h === "localhost" ? "localhost" : h.charAt(0).toUpperCase() + h.slice(1); };
+
+/* ===== browser chrome ===== */
+function renderStrip() {
+  $("#tabs").style.setProperty("--nt", tabs.length);
+  $("#tabs").innerHTML = tabs.map(t => `<div class="tab${t.id === cur ? " on" : ""}" data-id="${t.id}"><div class="bg"></div><div class="in">${favHTML(t)}<span class="tt">${esc(t.title)}</span>${t.id === cur ? '<button class="x" data-x tabindex="-1" aria-label="Close tab"><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.3" fill="none"><path d="M1 1l8 8M9 1L1 9"/></svg></button>' : ""}</div></div>`).join("");
+}
+function renderUrl() {
+  const t = get(cur), d = t.disp.replace(/\/$/, ""), i = d.indexOf("/");
+  $("#url").innerHTML = i < 0 ? esc(d) : esc(d.slice(0, i)) + "<em>" + esc(d.slice(i)) + "</em>";
+}
+$("#bm").innerHTML = [["Jira", "atlassian.net"], ["Grafana", "grafana"], ["Mail", "mail.google"], ["Drive", "drive.google"], ["Staging", "localhost"], ["Runbook", "notion"], ["AWS", "aws.amazon"], ["Sentry", "sentry"]]
+  .map(([n, k]) => `<span>${favHTML({ fav: favOf(k) })}${n}</span>`).join("");
+const card = $("#card"); let cardT;
+$("#tabs").addEventListener("mouseover", e => {
+  const tb = e.target.closest(".tab"); clearTimeout(cardT);
+  if (!tb) return card.classList.remove("show");
+  const t = get(+tb.dataset.id), r = tb.getBoundingClientRect();
+  cardT = setTimeout(() => {
+    card.firstChild.textContent = t.title; card.lastChild.textContent = hostOf(t.url);
+    card.style.left = Math.min(Math.max(8, r.left + r.width / 2 - 125), innerWidth - 258) + "px"; card.style.top = "38px";
+    card.classList.add("show");
+  }, card.classList.contains("show") ? 0 : 260);
+});
+$("#strip").addEventListener("mouseleave", () => { clearTimeout(cardT); card.classList.remove("show"); });
+$("#tabs").addEventListener("click", e => {
+  const tb = e.target.closest(".tab"); if (!tb) return;
+  card.classList.remove("show");
+  if (e.target.closest("[data-x]")) return closeTab(+tb.dataset.id);
+  activate(+tb.dataset.id);
+});
+$("#tabs").addEventListener("auxclick", e => { const tb = e.target.closest(".tab"); if (tb && e.button === 1) closeTab(+tb.dataset.id); });
+$("#ext").addEventListener("click", () => togglePanel());
+
+/* ===== site pages ===== */
+const Sk = k => `<span class="crumb">${favHTML(byKey(k))}${esc(byKey(k).disp)}</span>`;
+const go = (k, label) => `<button class="go" data-go="${k}">${label}</button>`;
+const FOOT = () => `<footer class="ft"><span>Made by <a href="https://www.gransoftware.de" target="_blank" rel="noopener">GRAN Software Solutions</a></span><span>MIT licence</span>${closed.length ? '<button data-reopen>Reopen closed tab (Ctrl+Shift+T)</button>' : ""}<nav><a href="${GH}" target="_blank" rel="noopener">GitHub</a><a href="#">LinkedIn</a><a href="#">X</a><a href="#">Reddit</a></nav></footer>`;
+const PAGES = {
+  home: () => `<div class="site"><div class="home">
+    <div class="brand"><i class="fv tn"></i>TabNow</div>
+    <h1>This website has <span class="n js-n">${tabs.length}</span> tabs open.<span class="find">Find the one about <u>privacy</u>.</span></h1>
+    <div class="hint"><span>Press</span><span><kbd>Ctrl</kbd> <kbd>E</kbd></span><span>to search them. Or</span><button class="btn pri" data-open style="height:38px;padding:0 16px;font-size:14.5px">Open TabNow</button></div>
+    <p class="sub">TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter. This page is the demo, and the tabs above are the page.</p>
+    <div class="try"><span>Try:</span><button data-open="privacy">privacy</button><button data-open="keys">keys</button><button data-open="install">install</button><button data-open="themes">themes</button><button data-open="gh pr">gh pr</button></div>
+  </div></div>`,
+  about: () => `<div class="site"><div class="pg"><main>${Sk("about")}
+    <h1>Every tab, one keystroke away.</h1>
+    <p class="lead">TabNow is a fuzzy finder for your open tabs. Press <kbd>Ctrl</kbd> <kbd>E</kbd>, type a few letters, hit <kbd>Enter</kbd>.</p>
+    <p>A frosted overlay opens on the page you are on. It lists every tab in every window, most recently used first. Type, press Enter, and you are on the tab.</p>
+    <p>The previous tab is already selected, so <kbd>Ctrl</kbd> <kbd>E</kbd> then <kbd>Enter</kbd> flips you back. <kbd>Alt</kbd> <kbd>Z</kbd> does the same without opening anything.</p>
+    <p>It is made for people who live in the browser with 30 to 200 tabs: developers, consultants, researchers, product managers. If you already use Ctrl+P in VS Code or Spotlight, you know how this feels.</p>
+    <p>${go("keys", "How the keys and matching work")} &nbsp;·&nbsp; ${go("install", "Install it")}</p>
+  </main><aside><dl>
+    <dt>Version</dt><dd>0.1.0</dd>
+    <dt>Works in</dt><dd>Chrome 121+, Edge, Brave, Opera, Vivaldi, Arc</dd>
+    <dt>Size</dt><dd>Plain JavaScript, no dependencies, about 600 lines</dd>
+    <dt>Licence</dt><dd>MIT, open source</dd>
+    <dt>Made by</dt><dd>GRAN Software Solutions</dd>
+  </dl></aside></div></div>`,
+  keys: () => `<div class="site"><div class="pg one"><main>${Sk("keys")}
+    <h1>How it works</h1>
+    <ol class="steps"><li>Press <kbd>Ctrl</kbd> <kbd>E</kbd><br><span style="color:var(--faint);font-size:14px">Cmd+E on a Mac</span></li><li>Type a few letters</li><li>Press <kbd>Enter</kbd></li></ol>
+    <h2>Matching</h2>
+    <p>Words are separated by spaces and every word has to match. Letters can be spread out: <code>gh pr</code> finds the GitHub pull request. The domain ranks above the title, and the title above the rest of the URL. The letters that matched are highlighted.</p>
+    <div class="mini pnl" data-theme="light" style="--alpha:1"><div class="ov" style="height:auto"><ul class="slot" data-q="gh pr"></ul></div></div>
+    <p>Tabs from other windows get a small window badge on their icon.</p>
+    <h2>Keys</h2>
+    <table class="keys">
+      <tr><td><kbd>Ctrl</kbd> <kbd>E</kbd></td><td>Open or close TabNow</td></tr>
+      <tr><td><kbd>↑</kbd> <kbd>↓</kbd><span class="or">or</span><kbd>Ctrl</kbd> <kbd>J</kbd> <kbd>K</kbd></td><td>Move through the list</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Switch to the tab</td></tr>
+      <tr><td><kbd>Ctrl</kbd> <kbd>Backspace</kbd></td><td>Close the selected tab</td></tr>
+      <tr><td><kbd>Ctrl</kbd> <kbd>U</kbd></td><td>Clear the search</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Dismiss</td></tr>
+      <tr><td><kbd>Alt</kbd> <kbd>Z</kbd></td><td>Jump to the previous tab, nothing opens</td></tr>
+      <tr><td><kbd>Alt</kbd> <kbd>T</kbd></td><td>Switch light and dark</td></tr>
+      <tr><td><kbd>/</kbd> then <code>t</code> <code>b</code> <code>h</code></td><td>Scope to tabs, bookmarks or history of the last 90 days (bookmarks and history are off until you turn them on)</td></tr>
+    </table>
+    <p>The mouse works too: click a row. You are using all of this right now, on this page.</p>
+  </main></div></div>`,
+  features: () => `<div class="site"><div class="pg one"><main>${Sk("features")}
+    <h1>What you get</h1>
+    <ol class="feat">
+      <li><span class="no">01</span><div><h3>Find any tab in a keystroke</h3><p>Ctrl+E, a few letters, Enter.</p></div></li>
+      <li><span class="no">02</span><div><h3>Fast and fuzzy</h3><p>"gh pr" finds the GitHub pull request. The domain counts most, then the title, then the rest of the URL. Matched letters are highlighted.</p></div></li>
+      <li><span class="no">03</span><div><h3>Keyboard-only, but the mouse works too</h3><p>Arrows or Ctrl+J and Ctrl+K to move, Enter to switch, Ctrl+Backspace to close a tab from the list.</p></div></li>
+      <li><span class="no">04</span><div><h3>Private by design</h3><p>Zero network requests. Open source. Nothing to sign up for. ${go("privacy", "What it asks the browser for")}</p></div></li>
+      <li><span class="no">05</span><div><h3>Every window, plus bookmarks and history when you want them</h3><p>Tabs from other windows get a small window badge. Type /b for bookmarks or /h for history from the last 90 days. Both are off until you turn them on and the browser asks you.</p></div></li>
+      <li><span class="no">06</span><div><h3>Fits your browser</h3><p>Light and dark, a glass panel you can adjust. ${go("themes", "See the settings")}</p></div></li>
+    </ol>
+  </main></div></div>`,
+  privacy: () => `<div class="site"><div class="pg"><main>${Sk("privacy")}
+    <h1>No network requests. Ever.</h1>
+    <p class="lead">TabNow does not talk to any server. No account, no analytics, nothing leaves your browser.</p>
+    <p>It is plain JavaScript with no dependencies, about 600 lines, MIT licensed. You can read all of it on GitHub and look for yourself: there is no <code>fetch</code> in it.</p>
+    <h2>What it asks the browser for, in plain words</h2>
+    <dl class="perm">
+      <div><dt>tabs</dt><dd>See the titles and addresses of your open tabs, so it can search them.</dd></div>
+      <div><dt>activeTab</dt><dd>Show the panel on the page you are looking at.</dd></div>
+      <div><dt>scripting</dt><dd>Put that panel onto the page.</dd></div>
+      <div><dt>favicon</dt><dd>Show the small site icons your browser already has.</dd></div>
+      <div><dt>storage</dt><dd>Remember your settings: theme, opacity, keys.</dd></div>
+    </dl>
+    <h2>Only if you turn it on</h2>
+    <dl class="perm opt">
+      <div><dt>history</dt><dd>Search pages from the last 90 days. The browser asks you first.</dd></div>
+      <div><dt>bookmarks</dt><dd>Search your bookmarks. The browser asks you first.</dd></div>
+    </dl>
+    <p><a class="go" href="${GH}" target="_blank" rel="noopener">Read the source on GitHub</a></p>
+  </main><aside><dl>
+    <dt>Network requests</dt><dd>0</dd>
+    <dt>Accounts</dt><dd>None</dd>
+    <dt>Analytics</dt><dd>None</dd>
+    <dt>Dependencies</dt><dd>None</dd>
+    <dt>Source</dt><dd>Open, MIT</dd>
+  </dl></aside></div></div>`,
+  install: () => `<div class="site"><div class="pg one"><main>${Sk("install")}
+    <h1>Install TabNow</h1>
+    <p class="lead">Free, open source, takes a minute.</p>
+    <div class="cta"><a class="btn pri" href="#">Add to Chrome <small>Chrome Web Store</small></a><a class="btn" href="${GH}" target="_blank" rel="noopener">View on GitHub</a></div>
+    <p class="note">The Web Store listing is not live yet. Until it is, load it from source. Four steps:</p>
+    <ol class="inst">
+      <li><div>Clone the repo<pre>git clone ${GH}.git</pre></div></li>
+      <li><div>Open <code>chrome://extensions</code></div></li>
+      <li><div>Turn on <b>Developer mode</b></div></li>
+      <li><div>Click <b>Load unpacked</b> and pick the <code>extension/</code> folder</div></li>
+    </ol>
+    <p>Then press <kbd>Ctrl</kbd> <kbd>E</kbd> on any page. Needs Chrome 121 or newer; also works in Edge, Brave, Opera, Vivaldi and Arc.</p>
+  </main></div></div>`,
+  themes: () => `<div class="site"><div class="pg" style="grid-template-columns:minmax(0,520px) 560px;gap:80px"><main>${Sk("themes")}
+    <h1>Fits your browser</h1>
+    <p class="lead">Light and dark, with a glass panel you can tune.</p>
+    <p>Press <kbd>Alt</kbd> <kbd>T</kbd> in the panel to switch themes. On the options page you set opacity (60 to 100 %), blur (0 to 40 px), size (70 to 150 %) and the keys. Try them here, then open TabNow to see them on the real panel.</p>
+    <div class="ctl">
+      <label>Theme <span class="seg"><button data-theme-set="light" aria-pressed="true">Light</button><button data-theme-set="dark" aria-pressed="false">Dark</button></span><span></span></label>
+      <label>Opacity <input type="range" min="60" max="100" value="${Math.round(S.alpha * 100)}" data-v="alpha"><output>${Math.round(S.alpha * 100)} %</output></label>
+      <label>Blur <input type="range" min="0" max="40" value="${S.blur}" data-v="blur"><output>${S.blur} px</output></label>
+      <label>Size <input type="range" min="70" max="150" value="${S.z}" data-v="z"><output>${S.z} %</output></label>
+    </div>
+    <p style="margin-top:24px"><button class="btn pri" data-open>Open TabNow</button></p>
+  </main><aside><div class="specwrap">
+    <div class="art">
+      <i style="left:0;top:0;width:100%;height:46px;background:#1f2937"></i>
+      <i style="left:28px;top:12px;width:120px;height:20px;background:#9cbcff"></i>
+      <i style="left:28px;top:70px;width:260px;height:44px;background:#f48024"></i>
+      <i style="left:320px;top:70px;width:200px;height:44px;background:#1f5fd6"></i>
+      <i style="left:28px;top:140px;width:90px;height:150px;background:#188038"></i>
+      <i style="left:140px;top:150px;width:380px;height:12px;background:#14171d"></i>
+      <i style="left:140px;top:176px;width:330px;height:12px;background:#14171d"></i>
+      <i style="left:140px;top:202px;width:360px;height:12px;background:#14171d"></i>
+      <i style="left:140px;top:240px;width:200px;height:50px;background:#d93025"></i>
+      <i style="left:360px;top:240px;width:160px;height:50px;background:#e8a200"></i>
+    </div>
+    <div class="pnl sp" data-theme="${S.theme}"><div class="frost"></div><div class="ov"><ul class="slot" data-q="" data-n="5"></ul></div></div>
+  </div></aside></div></div>`,
+};
+const S = { alpha: .86, blur: 20, z: 100, theme: "light" };
+
+/* mock page for a junk tab */
+const sk = (w, h) => `<i class="sk" style="width:${w}%${h ? ";height:" + h + "px" : ""}"></i>`;
+const lines = (n, w = [100, 94, 98, 62]) => Array.from({ length: n }, (_, i) => sk(w[i % w.length])).join("");
+const MOCK = {
+  pr: t => `<h1>${esc(t.title.split(" · ")[0])}</h1><div class="meta">${esc(t.meta)}</div>${lines(3)}
+    <div class="diff"><div class="h">src/tabs/order.ts</div><div class="d">- const sorted = tabs.sort(byWindow);</div><div class="a">+ const sorted = [...tabs].sort(byWindowThenIndex);</div><div> </div><div class="h">src/tabs/order.test.ts</div><div class="a">+ it("keeps order after a merge", () => {</div><div class="a">+   expect(order(merged)).toEqual([1, 2, 3]);</div></div>`,
+  list: t => ["Alex Brandt", "Mara Voss", "Priya K.", "Tomasz Nowak", "Lena Fischer", "Jonas Weber"].map((n, i) => `<div class="row"><b>${n}</b><span>${["Update the pipeline config for the new region", "Review requested on the migration script", "Weekly summary for the platform team", "Re: can you take a look before Thursday", "Invoice reminder, second notice", "Notes from yesterday"][i]}</span><i>${["9:41", "9:12", "Mon", "Mon", "Sun", "Fri"][i]}</i></div>`).join(""),
+  get mail() { return this.list; },
+  doc: t => `<h1>${esc(t.title.replace(/ [-–|] .*$/, ""))}</h1>${t.meta ? `<div class="meta">${esc(t.meta)}</div>` : ""}${lines(4)}<div style="height:18px"></div>${sk(34, 16)}${lines(4, [96, 100, 88, 100])}`,
+  video: t => `<div class="vid"></div><h1 style="font-size:20px;margin-top:16px">${esc(t.title.replace(/ - YouTube$/, ""))}</h1><div class="meta">${esc(t.meta)}</div>${lines(2, [70, 52])}`,
+  qa: t => `<h1>${esc(t.title.replace(/ [-:] [^-:]*$/, ""))}</h1><div class="meta">${esc(t.meta)}</div><div class="qa"><div class="v">&#9650;<br>${(t.id * 37) % 900 + 12}<small>votes</small></div><div style="flex:1">${lines(5, [100, 96, 100, 78, 100])}</div></div>`,
+  dash: t => `<h1>${esc(t.title.replace(/ [-–|] [^-–|]*$/, ""))}</h1><div class="stats"><div><b>${(t.id * 53) % 900 + 100}</b>last hour</div><div><b>${(t.id * 7) % 90 + 4}</b>errors</div><div><b>${(t.id * 11) % 40 + 55}.${t.id % 10} %</b>healthy</div></div><div class="bars">${Array.from({ length: 28 }, (_, i) => `<i style="height:${20 + ((i * 37 + t.id * 13) % 75)}%"></i>`).join("")}</div>`,
+  code: t => `<h1>${esc(t.title.replace(/ [-·] [^-·]*$/, ""))}</h1><div class="meta">${esc(t.meta)}</div><div class="codeb">at renderRow (list.tsx:118:24)\nat Array.map (&lt;anonymous&gt;)\nat renderList (list.tsx:96:12)\nat updateFunctionComponent (react-dom.js:19588)\nat beginWork (react-dom.js:21601)</div>${lines(2)}`,
+};
+const NUDGES = ["Not this one.", "Nope. Just a tab you forgot about.", "Not it."];
+function junkPage(t) {
+  const n = tabs.length - 1;
+  return `<div class="jm"><div class="jm-top">${favHTML(t)}<b>${esc(siteName(t.url))}</b>${sk(8)}${sk(6)}${sk(7)}</div>
+    <div class="jm-body">${MOCK[t.type](t)}</div>
+    <div class="nudge"><span><b>${NUDGES[t.id % 3]}</b> ${n} other tabs are still open.</span><button data-open>Search tabs <kbd>Ctrl</kbd><kbd>E</kbd></button></div></div>`;
+}
+
+function showPage() {
+  const t = get(cur), pg = $("#page");
+  pg.innerHTML = t.kind === "site" ? PAGES[t.key]() + FOOT() : junkPage(t);
+  pg.scrollTop = 0;
+  pg.querySelectorAll(".slot").forEach(ul => fillRows(ul, ul.dataset.q, +ul.dataset.n || 1));
+}
+function fillRows(ul, q, n) {
+  const res = search(mru.map(get), q).slice(0, n);
+  ul.replaceChildren(...res.map((r, i) => { const li = rowEl(r, true); if (i === 0) li.classList.add("on"); return li; }));
+}
+function syncCount() {
+  const home = byKey("home"); home.title = `This website has ${tabs.length} tabs open - TabNow`;
+  document.querySelectorAll(".js-n").forEach(n => n.textContent = tabs.length);
+  document.title = get(cur).kind === "site" && get(cur).key === "home" ? home.title : get(cur).title;
+}
+function activate(id) {
+  if (!get(id)) return;
+  mru = [id, ...mru.filter(x => x !== id)]; cur = id;
+  syncCount(); renderStrip(); renderUrl(); showPage();
+}
+function closeTab(id) {
+  const i = tabs.findIndex(t => t.id === id);
+  if (i < 0 || tabs.length <= 1) return;
+  const [t] = tabs.splice(i, 1); closed.push({ t, i });
+  mru = mru.filter(x => x !== id);
+  if (id === cur) return activate(mru[0]);
+  syncCount(); renderStrip();
+  const f = $(".ft"); if (f && closed.length === 1) showPage();
+}
+function reopen() {
+  const c = closed.pop(); if (!c) return;
+  tabs.splice(Math.min(c.i, tabs.length), 0, c.t); mru.unshift(c.t.id); mru = [c.t.id, ...mru.filter((x, i) => x !== c.t.id)];
+  activate(c.t.id);
+}
+$("#page").addEventListener("click", e => {
+  const a = e.target.closest("a[href='#']"); if (a) e.preventDefault();
+  const g = e.target.closest("[data-go]"); if (g) return activate(byKey(g.dataset.go).id);
+  const o = e.target.closest("[data-open]"); if (o) return openPanel(o.dataset.open || "");
+  if (e.target.closest("[data-reopen]")) return reopen();
+  const th = e.target.closest("[data-theme-set]"); if (th) return setTheme(th.dataset.themeSet);
+});
+$("#page").addEventListener("input", e => {
+  const v = e.target.dataset.v; if (!v) return;
+  const val = +e.target.value; S[v] = v === "alpha" ? val / 100 : val; applyVars();
+  e.target.nextElementSibling.textContent = v === "alpha" ? val + " %" : v === "blur" ? val + " px" : val + " %";
+});
+function applyVars() {
+  const r = document.documentElement.style;
+  r.setProperty("--alpha", S.alpha); r.setProperty("--blur", S.blur + "px"); r.setProperty("--z", S.z);
+}
+function setTheme(th) {
+  S.theme = th;
+  document.querySelectorAll(".pnl").forEach(p => { if (!p.classList.contains("mini")) p.dataset.theme = th; });
+  document.querySelectorAll("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeSet === th));
+  showThemeIcon();
+}
+
+/* ===== the TabNow panel ===== */
+const pw = $("#pw"), scrim = $("#scrim"), input = $("#q"), list = $("#list"), count = $("#count");
+const ICON = {
+  light: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
+  dark: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+};
+function showThemeIcon() {
+  $("#themeBtn").innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${ICON[S.theme]}</svg>`;
+  $("#themeBtn").title = `Theme: ${S.theme === "dark" ? "Dark" : "Light"} (Alt T)`;
+}
+let results = [], sel = 0, rows = [];
+function rowEl(r, flat) {
+  const { tab } = r, cut = tab.disp.indexOf("/"), host = cut < 0 ? tab.disp : tab.disp.slice(0, cut);
+  const fav = el("span", "fav"); fav.innerHTML = favHTML(tab);
+  if (tab.win !== 1) { fav.classList.add("away"); fav.title = "In another window"; }
+  const li = el("li", "", fav,
+    el("div", "txt", el("div", "t trunc", hl(tab.title, r.th)),
+      el("div", "u trunc", el("span", "host", hl(host, r.uh)), el("span", "path", hl(tab.disp.slice(host.length), r.uh, host.length)))),
+    el("span", "go", el("kbd", "", "↵")));
+  return li;
+}
+function render(keepSel) {
+  const q = input.value;
+  results = search(mru.map(get), q).slice(0, 200);
+  if (!keepSel) sel = !q && results.length > 1 ? 1 : 0;
+  sel = Math.min(sel, Math.max(results.length - 1, 0));
+  rows = results.map(rowEl);
+  rows.forEach((li, i) => { li.onmousemove = () => { if (sel !== i) { sel = i; paint(); } }; li.onclick = () => pick(i); });
+  list.replaceChildren(...(rows.length ? rows : [el("li", "empty", "No tabs match")]));
+  count.textContent = results.length === 1 ? "1 tab" : `${results.length} tabs`;
+  paint(true);
+}
+function paint(top) {
+  rows.forEach((li, i) => li.classList.toggle("on", i === sel));
+  const on = rows[sel];
+  if (on) { top && sel < 2 ? list.scrollTop = 0 : on.scrollIntoView({ block: "nearest" }); }
+}
+function pick(i) { const r = results[i]; if (!r) return; closePanel(); activate(r.tab.id); }
+function openPanel(q = "") {
+  card.classList.remove("show");
+  scrim.hidden = pw.hidden = false;
+  input.value = q; showThemeIcon(); render(); input.focus();
+}
+function closePanel() { scrim.hidden = pw.hidden = true; input.blur(); }
+const togglePanel = () => pw.hidden ? openPanel() : closePanel();
+scrim.addEventListener("mousedown", closePanel);
+input.addEventListener("input", () => render());
+input.addEventListener("blur", () => { if (!pw.hidden) setTimeout(() => !pw.hidden && document.activeElement === document.body && input.focus(), 0); });
+$("#themeBtn").addEventListener("click", () => { setTheme(S.theme === "dark" ? "light" : "dark"); input.focus(); });
+$("#optsBtn").addEventListener("click", () => { closePanel(); activate(byKey("themes").id); });
+function closeSel() {
+  const r = results[sel]; if (!r) return;
+  closeTab(r.tab.id);
+  if (tabs.length) render(true);
+}
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase(), ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && !e.shiftKey && !e.altKey && k === "e") { e.preventDefault(); return togglePanel(); }
+  if (pw.hidden) {
+    if (e.altKey && k === "z" && mru[1] != null) { e.preventDefault(); activate(mru[1]); }
+    if (ctrl && e.shiftKey && k === "t") { e.preventDefault(); reopen(); }
+    return;
+  }
+  const move = d => { e.preventDefault(); if (results.length) { sel = (sel + d + results.length) % results.length; paint(); } };
+  if (k === "escape") { e.preventDefault(); closePanel(); }
+  else if (k === "arrowdown" || (ctrl && k === "j")) move(1);
+  else if (k === "arrowup" || (ctrl && k === "k")) move(-1);
+  else if (k === "enter") { e.preventDefault(); pick(sel); }
+  else if (ctrl && k === "backspace") { e.preventDefault(); closeSel(); }
+  else if (ctrl && k === "u") { e.preventDefault(); input.value = ""; render(); }
+  else if (e.altKey && k === "t") { e.preventDefault(); setTheme(S.theme === "dark" ? "light" : "dark"); }
+}, true);
+
+/* boot */
+applyVars(); syncCount(); renderStrip(); renderUrl(); showPage();
+window.__tabnow = { total: INIT_TOTAL };
+</script>
+</body>
+</html>

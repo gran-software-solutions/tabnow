@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TabNow: find any tab in a keystroke</title>
+<meta name="description" content="TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.">
+<style>
+:root {
+  --paper: #f1efe9; --ink: #15171c; --mute: #5d626c; --faint: #8f939b; --line: #d6d2c7; --blue: #1f5fd6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body { margin: 0; min-width: 1440px; font-family: var(--sans); color: var(--ink); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; font: 500 12px/1 var(--sans); color: var(--ink); background: #fff; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; }
+button { font: inherit; cursor: pointer; }
+
+/* ---------- Stage ---------- */
+.stage { min-height: max(100vh, 900px); padding: 0 40px; display: flex; flex-direction: column; }
+.top { height: 56px; display: flex; align-items: center; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; text-decoration: none; }
+.brand svg { display: block; }
+.top .sp { flex: 1; }
+.top a.l { font-size: 14px; color: var(--mute); text-decoration: none; }
+.top a.l:hover { color: var(--ink); }
+.rounds { display: flex; align-items: center; gap: 8px; font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.rounds i { width: 10px; height: 10px; border: 1.5px solid var(--ink); display: block; }
+.rounds i.on { background: var(--ink); }
+.rounds i.cur { background: var(--blue); border-color: var(--blue); }
+
+.task { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; padding: 14px 0 22px; height: 168px; }
+.task .eyebrow { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); display: flex; gap: 14px; align-items: center; }
+.task .eyebrow b { color: var(--blue); font-weight: 600; }
+.task h1 { margin: 8px 0 6px; font-size: 44px; line-height: 1.1; font-weight: 600; letter-spacing: -.02em; }
+.task h1 span { color: var(--faint); font-weight: 400; }
+.task .sub { margin: 0; color: var(--mute); font-size: 15px; display: flex; align-items: center; gap: 14px; min-height: 30px; }
+.give { display: none; padding: 5px 12px; border: 1px solid var(--ink); background: transparent; border-radius: 6px; font-size: 13px; }
+.give.show { display: inline-block; }
+.give:hover { background: var(--ink); color: #fff; }
+
+/* Stopwatch */
+.watch { flex: none; width: 520px; background: #16181b; color: #ece9e1; border-radius: 10px; padding: 12px 16px 12px; box-shadow: 0 1px 0 #fff inset, 0 0 0 1px #000; }
+.watch .lab { display: flex; align-items: center; justify-content: space-between; font: 500 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: #8d9096; margin-bottom: 8px; }
+.watch .lamp { display: inline-flex; align-items: center; gap: 7px; }
+.watch .lamp i { width: 8px; height: 8px; background: #3a3d42; display: block; }
+.watch.run .lamp i { background: #e0553a; }
+.watch.stop .lamp i { background: #7fb069; }
+.digits { display: flex; align-items: stretch; gap: 4px; }
+.cell { position: relative; width: 56px; height: 76px; border-radius: 5px; background: linear-gradient(#2a2d32 50%, #212428 50%); display: grid; place-items: center; font: 600 60px/1 var(--sans); font-variant-numeric: tabular-nums; color: #efece4; overflow: hidden; }
+.cell::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: #0c0d0e; }
+.sep { width: 14px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; color: #efece4; }
+.sep i { width: 5px; height: 5px; background: #8d9096; display: block; }
+.sep.dot { justify-content: flex-end; padding-bottom: 8px; }
+.watch.run .cell:nth-last-child(1), .watch.run .cell:nth-last-child(2) { color: #cfcac0; }
+.ledger { display: flex; gap: 24px; margin-top: 9px; font: 500 11.5px var(--mono); color: #8d9096; letter-spacing: .06em; text-transform: uppercase; }
+.ledger b { text-transform: none; color: #efece4; font-weight: 600; margin-left: 6px; font-variant-numeric: tabular-nums; }
+
+/* Browser mock */
+.browser { flex: 1; display: flex; flex-direction: column; min-height: 560px; border: 1px solid #b9b5a9; border-bottom: 0; border-radius: 12px 12px 0 0; overflow: hidden; background: #fff; position: relative; }
+.strip { flex: none; display: flex; height: 40px; padding: 8px 8px 0; background: #dedbd1; gap: 0; }
+.tab { flex: 1 1 0; min-width: 0; height: 32px; border-radius: 6px 6px 0 0; position: relative; cursor: default; border-left: 1px solid rgb(0 0 0 / .1); }
+.tab:first-child { border-left-color: transparent; }
+.tab .fv { position: absolute; left: 50%; top: 11px; margin-left: -4px; width: 8px; height: 8px; border-radius: 2px; }
+.tab:hover { background: rgb(255 255 255 / .55); }
+.tab.act { background: #fff; border-left-color: transparent; }
+.tab.act + .tab { border-left-color: transparent; }
+.tab.hint { outline: 2px solid var(--blue); outline-offset: -2px; background: #fff; }
+.tab.gone { display: none; }
+.bar { flex: none; height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-bottom: 1px solid #e4e1d8; background: #fff; }
+.bar .nav { display: flex; gap: 14px; color: #a7a9ae; font-size: 15px; }
+.bar .addr { flex: 1; height: 26px; border-radius: 13px; background: #f0eee8; display: flex; align-items: center; padding: 0 14px; font-size: 13px; color: var(--mute); white-space: nowrap; overflow: hidden; }
+.bar .addr b { color: var(--ink); font-weight: 400; }
+.page { position: relative; flex: 1; overflow: hidden; background: #fff; }
+.pv { position: absolute; inset: 0; padding: 28px 40px; transition: background .1s; }
+.pv .ph { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--mute); margin-bottom: 22px; }
+.pv .ph .fv { width: 16px; height: 16px; border-radius: 4px; }
+.pv h2 { margin: 0 0 18px; font-size: 26px; font-weight: 600; letter-spacing: -.01em; }
+.pv .bars i { display: block; height: 10px; border-radius: 3px; background: #ece9e1; margin-bottom: 12px; }
+.pv.flash { background: #fbfaf7; }
+.pv .found { display: inline-block; margin-bottom: 12px; font: 600 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #2f7a3d; }
+.pv .wrong { display: inline-block; margin-bottom: 12px; font: 600 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #b3402a; }
+
+.card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -52%); width: 560px; background: #fff; border: 1px solid var(--ink); border-radius: 10px; padding: 26px 30px 28px; box-shadow: 6px 6px 0 var(--ink); }
+.card h3 { margin: 0 0 8px; font-size: 22px; letter-spacing: -.01em; }
+.card p { margin: 0 0 18px; color: var(--mute); font-size: 15px; }
+.card .row { display: flex; align-items: center; gap: 14px; }
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 11px 18px; border-radius: 8px; border: 1px solid var(--ink); background: var(--ink); color: #fff; font-size: 15px; font-weight: 500; text-decoration: none; }
+.btn:hover { background: #2c2f37; }
+.btn.alt { background: transparent; color: var(--ink); }
+.btn.alt:hover { background: var(--ink); color: #fff; }
+.btn.blue { background: var(--blue); border-color: var(--blue); }
+.btn.blue:hover { background: #1a52b8; }
+.hidden { display: none !important; }
+
+/* Result */
+.result { position: absolute; inset: 0; background: var(--paper); padding: 24px 40px 24px; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 56px; }
+.result .l { display: flex; flex-direction: column; justify-content: center; }
+.result .ey { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+.times { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 10px 0 18px; }
+.times .t b { display: block; font: 600 88px/1 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.times .t b small { font-size: 34px; letter-spacing: 0; color: var(--faint); margin-left: 6px; font-weight: 500; }
+.times .t span { display: block; margin-top: 8px; font-size: 15px; color: var(--mute); }
+.times .t.tn b { color: var(--blue); }
+.race { display: grid; gap: 8px; margin-bottom: 20px; }
+.race div { height: 12px; background: #e0ddd3; position: relative; }
+.race div i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink); }
+.race div.tn i { background: var(--blue); }
+.verdict { font-size: 22px; font-weight: 500; line-height: 1.3; margin: 0; max-width: 640px; letter-spacing: -.01em; }
+.result .r { display: flex; flex-direction: column; justify-content: center; gap: 14px; border-left: 1px solid var(--line); padding-left: 48px; }
+.result .r .btn { justify-content: center; font-size: 16px; padding: 14px 18px; }
+.result .note { margin: 0; font-size: 13.5px; color: var(--mute); }
+.share { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: 13.5px; color: var(--mute); }
+.share a { padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; text-decoration: none; color: var(--ink); font-size: 13.5px; }
+.share a:hover { border-color: var(--ink); }
+.again { background: none; border: 0; padding: 0; color: var(--mute); text-decoration: underline; font-size: 13.5px; align-self: flex-start; margin-top: 4px; }
+
+/* Tooltip */
+.tip { position: fixed; z-index: 50; pointer-events: none; max-width: 420px; padding: 6px 10px 7px; background: #fff; color: #202124; border: 1px solid #c9c6bc; border-radius: 4px; box-shadow: 0 2px 8px rgb(0 0 0 / .18); font-size: 12px; line-height: 1.4; }
+.tip b { display: block; font-weight: 500; font-size: 12.5px; }
+.tip span { color: #6b6e75; }
+
+/* ---------- TabNow panel (search.css, scoped) ---------- */
+.pwrap { position: absolute; inset: 0; z-index: 20; display: flex; justify-content: center; align-items: flex-start; padding-top: 34px; background: rgb(20 23 29 / .10); }
+.tnp {
+  --fg: #14171d; --muted: #5f6672; --faint: #9ba1ac; --hit: #1f5fd6;
+  --alpha: .86; --glass: rgb(255 255 255 / var(--alpha)); --hair: rgb(15 20 30 / .07); --solid: #fff;
+  --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1.5' y='1.5' width='21' height='21' rx='3' fill='none' stroke='%231f5fd6' stroke-width='3'/%3E%3Crect x='1.5' y='1.5' width='21' height='6' fill='%231f5fd6'/%3E%3C/svg%3E");
+  width: 680px; height: 480px; border-radius: 16px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 24px 70px rgb(0 0 0 / .28); color: var(--fg); font-family: var(--sans); line-height: normal;
+}
+.tnp[data-theme="dark"] {
+  --fg: #eceef2; --muted: #a0a7b4; --faint: #6d7585; --hit: #9cbcff; --solid: #1b1f27; --glass: rgb(22 25 31 / var(--alpha)); --hair: rgb(255 255 255 / .08);
+  --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1.5' y='1.5' width='21' height='21' rx='3' fill='none' stroke='%239cbcff' stroke-width='3'/%3E%3Crect x='1.5' y='1.5' width='21' height='6' fill='%239cbcff'/%3E%3C/svg%3E");
+}
+.ov { height: 100%; display: flex; flex-direction: column; background: var(--glass); border-radius: 16px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--hair); }
+.ov input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; }
+.ov ul { list-style: none; margin: 0; padding: 6px; overflow-y: auto; flex: 1; }
+.ov li { cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; --rb: var(--solid); }
+.ov li.on { background: color-mix(in srgb, var(--hit) 12%, transparent); --rb: color-mix(in srgb, var(--hit) 12%, var(--solid)); }
+.ov li.on .t { color: var(--hit); }
+.go { flex: none; visibility: hidden; color: var(--hit); }
+li.on .go { visibility: visible; }
+.tnp mark { background: color-mix(in srgb, var(--hit) 28%, transparent); color: var(--fg); font-weight: 600; border-radius: 3px; }
+.tnp li.on mark { background: color-mix(in srgb, var(--hit) 38%, transparent); }
+.trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.empty { padding: 18px; color: var(--muted); cursor: default !important; }
+.q { position: relative; display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--hair); font-size: 20px; font-weight: 300; }
+.n { flex: none; font-size: 12px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+.q svg { flex: none; color: var(--muted); }
+.tb { flex: none; display: grid; place-items: center; width: 28px; height: 28px; margin: -4px -6px -4px 0; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--faint); cursor: pointer; }
+.tb:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); }
+.fav { flex: none; position: relative; width: 16px; height: 16px; border-radius: 4px; }
+.fav.away::after { content: ""; position: absolute; right: -6px; bottom: -5px; width: 13px; height: 11px; border-radius: 2.5px; background: var(--win) center / 100% 100% no-repeat var(--rb); box-shadow: 0 0 0 1.5px var(--rb); }
+.t { font-size: 14px; }
+.u { font-size: 12px; }
+.u .host { color: var(--fg); opacity: .78; }
+.u .path { color: var(--faint); }
+.txt { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.foot { display: flex; align-items: center; gap: 16px; padding: 9px 16px; border-top: 1px solid var(--hair); font-size: 11.5px; color: var(--muted); opacity: .9; white-space: nowrap; overflow: hidden; }
+.foot .k { display: inline-flex; align-items: center; gap: 4px; }
+.foot .k i { font-style: normal; margin-left: 2px; }
+.foot .end { margin-left: auto; }
+.tnp kbd { min-width: 20px; height: 20px; padding: 0 6px; border: 0; font: 500 11px/1 var(--sans); word-spacing: 2px; color: var(--fg); opacity: .75; background: color-mix(in srgb, var(--fg) 7%, transparent); border-radius: 6px; }
+
+/* ---------- Below the game ---------- */
+.sec { padding: 96px 40px 0; max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 300px 1fr; gap: 60px; }
+.sec > h2 { margin: 0; font-size: 15px; font-weight: 600; font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; padding-top: 8px; border-top: 2px solid var(--ink); align-self: start; }
+.sec > h2 span { color: var(--faint); margin-right: 10px; }
+.lead { font-size: 30px; line-height: 1.25; letter-spacing: -.02em; font-weight: 500; margin: 0 0 28px; max-width: 760px; }
+.sec p.lead { color: var(--ink); max-width: 760px; }
+.sec p { max-width: 680px; color: var(--mute); margin: 0 0 14px; }
+.sec p b { color: var(--ink); font-weight: 600; }
+.keys { display: grid; grid-template-columns: 220px 1fr; max-width: 760px; margin: 28px 0 0; border-top: 1px solid var(--line); }
+.keys dt, .keys dd { margin: 0; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.keys dt { display: flex; gap: 5px; align-items: center; }
+.keys dd { color: var(--mute); font-size: 15px; }
+.rows { margin: 0; padding: 0; list-style: none; max-width: 860px; border-top: 1px solid var(--line); }
+.rows li { display: grid; grid-template-columns: 250px 1fr; gap: 28px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.rows h3 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+.rows p { margin: 0; font-size: 15.5px; }
+code, .mono { font-family: var(--mono); font-size: .88em; background: #e7e4da; padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+.steps { margin: 0; padding: 0; list-style: none; max-width: 860px; counter-reset: s; border-top: 1px solid var(--line); }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 54px 1fr; padding: 18px 0; border-bottom: 1px solid var(--line); font-size: 17px; }
+.steps li::before { content: counter(s); font: 600 22px var(--mono); color: var(--blue); }
+.steps li span { color: var(--mute); font-size: 15px; display: block; }
+.cta-row { display: flex; gap: 14px; align-items: center; margin-top: 30px; }
+footer { margin: 110px 0 0; border-top: 1px solid var(--ink); }
+footer .in { max-width: 1440px; margin: 0 auto; padding: 28px 40px 44px; display: flex; align-items: center; gap: 28px; font-size: 14px; color: var(--mute); }
+footer .in .sp { flex: 1; }
+footer a { text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<section class="stage" id="game">
+  <header class="top">
+    <a class="brand" href="#game"><svg width="26" height="26" viewBox="0 0 128 128" aria-hidden="true"><rect x="6" y="6" width="116" height="116" rx="28" fill="#1F5FD6"/><path d="M20 58 V42 A14 14 0 0 1 34 28 H94 A14 14 0 0 1 108 42 V58 Z" fill="#fff"/><rect x="51" y="50" width="26" height="52" rx="6" fill="#fff"/></svg>TabNow</a>
+    <a class="l" href="#what">What it does</a>
+    <a class="l" href="#privacy">Privacy</a>
+    <a class="l" href="#install">Install</a>
+    <span class="sp"></span>
+    <div class="rounds" id="rounds"><span>Round</span><i class="cur"></i><i></i></div>
+    <a class="l" href="https://github.com/gran-software-solutions/tabnow">GitHub</a>
+  </header>
+
+  <div class="task">
+    <div>
+      <div class="eyebrow"><b id="rlabel">Round 1</b><span id="rmode">By hand</span></div>
+      <h1 id="ttitle"><span>Find:</span> Stripe – Invoice INV-0341</h1>
+      <p class="sub"><span id="tsub">120 tabs open. Hover a tab to read its title, click to switch.</span><button class="give" id="give" type="button">Give up</button></p>
+    </div>
+    <div class="watch" id="watch" aria-live="off">
+      <div class="lab"><span>Elapsed</span><span class="lamp"><i></i><em id="lamp" style="font-style:normal">Ready</em></span></div>
+      <div class="digits" id="digits"></div>
+      <div class="ledger"><span>By hand<b id="lh">--.-</b></span><span>With TabNow<b id="lt">--.-</b></span></div>
+    </div>
+  </div>
+
+  <div class="browser" id="browser">
+    <div class="strip" id="strip"></div>
+    <div class="bar"><span class="nav"><span>←</span><span>→</span><span>⟳</span></span><div class="addr" id="addr"></div></div>
+    <div class="page" id="page">
+      <div class="pv" id="pv"></div>
+      <div class="card" id="card"></div>
+      <div class="pwrap hidden" id="pwrap"></div>
+      <div class="result hidden" id="result"></div>
+    </div>
+  </div>
+</section>
+<div class="tip hidden" id="tip"></div>
+
+<section class="sec" id="what">
+  <h2><span>01</span>What it does</h2>
+  <div>
+    <p class="lead">TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.</p>
+    <p>It searches every tab in every window. The most recently used tab comes first, and the previous one is already selected, so <b>Ctrl+E, Enter</b> flips you back to where you were. Type <code>gh pr</code> and you land on the GitHub pull request. Words can come in any order, all of them have to match, and the domain counts for more than the title, the title for more than the rest of the URL. Matched letters are highlighted.</p>
+    <dl class="keys">
+      <dt><kbd>Ctrl</kbd><kbd>E</kbd></dt><dd>Open the panel (<kbd>Cmd</kbd> <kbd>E</kbd> on macOS)</dd>
+      <dt><kbd>↑</kbd><kbd>↓</kbd> or <kbd>Ctrl</kbd><kbd>J</kbd><kbd>K</kbd></dt><dd>Move through the results</dd>
+      <dt><kbd>Enter</kbd></dt><dd>Switch to the selected tab</dd>
+      <dt><kbd>Alt</kbd><kbd>Z</kbd></dt><dd>Jump to the previous tab without opening anything</dd>
+      <dt><kbd>Ctrl</kbd><kbd>Backspace</kbd></dt><dd>Close the selected tab from the list</dd>
+      <dt><kbd>Ctrl</kbd><kbd>U</kbd></dt><dd>Clear the search field</dd>
+      <dt><kbd>Esc</kbd></dt><dd>Dismiss</dd>
+    </dl>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span>02</span>More than tabs</h2>
+  <ul class="rows">
+    <li><h3>Bookmarks and history</h3><p>Type <code>/b</code> to search bookmarks, <code>/h</code> for history (the last 90 days), <code>/t</code> for tabs. Both are off until you turn them on in the options page, and the browser asks you for permission first.</p></li>
+    <li><h3>Every window</h3><p>Tabs from your other windows show up in the same list. A small window badge on the icon tells you which ones are elsewhere.</p></li>
+    <li><h3>Close tabs from the list</h3><p>Spot ten tabs you do not need while searching? <kbd>Ctrl</kbd> <kbd>Backspace</kbd> closes the selected one, and the list stays open.</p></li>
+    <li><h3>Light, dark, your size</h3><p>Switch themes with <kbd>Alt</kbd> <kbd>T</kbd>. The options page sets panel opacity (60 to 100 %), blur (0 to 40 px), size (70 to 150 %) and the keys.</p></li>
+    <li><h3>Works where you work</h3><p>Chrome 121 or newer, plus Edge, Brave, Opera, Vivaldi and Arc.</p></li>
+  </ul>
+</section>
+
+<section class="sec" id="privacy">
+  <h2><span>03</span>Privacy</h2>
+  <div>
+    <p class="lead">No network requests. Ever.</p>
+    <p>No account, no analytics, nothing leaves your browser. It is plain JavaScript with no dependencies, about 600 lines, MIT licensed and open source. You can read all of it in an afternoon, or in a coffee break.</p>
+    <dl class="keys" style="grid-template-columns: 220px 1fr">
+      <dt><code>tabs</code></dt><dd>Reads the titles and addresses of your open tabs so it can list them.</dd>
+      <dt><code>activeTab</code></dt><dd>Lets the panel open on the page you are looking at.</dd>
+      <dt><code>scripting</code></dt><dd>Draws the panel over the page.</dd>
+      <dt><code>favicon</code></dt><dd>Shows each site's small icon in the list.</dd>
+      <dt><code>storage</code></dt><dd>Remembers your settings.</dd>
+      <dt><code>history</code>, <code>bookmarks</code></dt><dd>Optional. Asked for only when you switch those scopes on.</dd>
+    </dl>
+  </div>
+</section>
+
+<section class="sec" id="install">
+  <h2><span>04</span>Install</h2>
+  <div>
+    <p class="lead">Four steps, about a minute.</p>
+    <ol class="steps">
+      <li><div>Clone the repository<span>github.com/gran-software-solutions/tabnow</span></div></li>
+      <li><div>Open <code>chrome://extensions</code></div></li>
+      <li><div>Turn on Developer mode</div></li>
+      <li><div>Click Load unpacked and pick the <code>extension/</code> folder<span>Then press Ctrl+E on any page.</span></div></li>
+    </ol>
+    <div class="cta-row">
+      <a class="btn blue" href="https://github.com/gran-software-solutions/tabnow">Get it on GitHub</a>
+      <span style="color:var(--mute);font-size:14px">Chrome Web Store listing: coming soon.</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="in">
+    <span>Made by <a href="https://www.gransoftware.de"><b>GRAN Software Solutions</b></a> · MIT licensed · Version 0.1.0</span>
+    <span class="sp"></span>
+    <a href="https://github.com/gran-software-solutions/tabnow">GitHub</a>
+    <a href="#">LinkedIn</a>
+    <a href="#">X</a>
+    <a href="#">Reddit</a>
+  </div>
+</footer>
+
+<script>
+/* ======== fuzzy.js, ported verbatim (match / search / hl) ======== */
+function match(q, text) {
+  const t = text.toLowerCase(), at = t.indexOf(q);
+  if (at >= 0) {
+    const start = at === 0 || /\W/.test(t[at - 1]);
+    return { score: 100 + q.length * 10 + (start ? 40 : 0) - at * 0.1, hits: [...Array(q.length)].map((_, k) => at + k) };
+  }
+  let score = 0, last = -2, k = 0; const hits = [];
+  for (let j = 0; j < t.length && k < q.length; j++) {
+    if (t[j] !== q[k]) continue;
+    score += j === last + 1 ? 5 : (j === 0 || /\W/.test(t[j - 1]) ? 3 : 1);
+    hits.push(j); last = j; k++;
+  }
+  return k === q.length && hits[k - 1] - hits[0] < q.length * 3 ? { score, hits } : null;
+}
+function search(items, q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return items.map(tab => ({ tab, th: [], uh: [] }));
+  const out = [];
+  for (const tab of items) {
+    let score = 0; const th = [], uh = [];
+    for (const w of words) {
+      const d = match(w, tab.disp.split("/")[0]), a = match(w, tab.title), b = match(w, tab.disp);
+      const best = Math.max((d?.score ?? -1) * 1.5, (a?.score ?? -1) * 1.2, b?.score ?? -1);
+      if (best < 0) { score = -1; break; }
+      score += best;
+      if (d && best === d.score * 1.5) uh.push(...d.hits);
+      else if (a && best === a.score * 1.2) th.push(...a.hits);
+      else uh.push(...b.hits);
+    }
+    if (score >= 0) out.push({ tab, score, th, uh });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+function hl(text, hits, from = 0) {
+  const set = new Set(hits), frag = document.createDocumentFragment();
+  let buf = "", on = false;
+  const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
+  [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
+  flush(); return frag;
+}
+
+/* ======== Tab data ======== */
+const SITES = {
+  gh: ["github.com", "#24292f"], jira: ["acme.atlassian.net", "#2f6fd0"], gm: ["mail.google.com", "#d44638"],
+  st: ["dashboard.stripe.com", "#6772e5"], doc: ["docs.google.com", "#4285f4"], sh: ["docs.google.com", "#1e8e3e"],
+  yt: ["www.youtube.com", "#e62117"], no: ["www.notion.so", "#2b2b2b"], li: ["linear.app", "#3b4252"],
+  fg: ["www.figma.com", "#f24e1e"], sl: ["app.slack.com", "#2eb67d"], so: ["stackoverflow.com", "#f48024"],
+  mdn: ["developer.mozilla.org", "#1b1b1b"], aws: ["console.aws.amazon.com", "#ec7211"], lh: ["localhost:3000", "#6b7280"],
+  rd: ["www.reddit.com", "#ff4500"], x: ["x.com", "#000000"], in: ["www.linkedin.com", "#0a66c2"],
+  cal: ["calendar.google.com", "#1a73e8"], dd: ["app.datadoghq.eu", "#5b6b7a"], vc: ["vercel.com", "#111111"]
+};
+const POOL = `
+gh|/acme/api/pull/1482|Fix retry backoff in webhook worker by mkraus · Pull Request #1482
+gh|/acme/api/pull/1490|Bump pg to 8.13 by dependabot · Pull Request #1490
+gh|/acme/web/pull/933|Checkout: keep cart on 3DS redirect · Pull Request #933
+gh|/acme/web/pull/941|Replace moment with date-fns · Pull Request #941
+gh|/acme/api/issues/1471|Invoice PDF renders wrong VAT line · Issue #1471
+gh|/acme/infra/pull/204|Terraform: add read replica for reporting · Pull Request #204
+gh|/acme/api/actions/runs/9921|CI · Fix retry backoff in webhook worker · acme/api
+gh|/acme/web|acme/web: customer portal
+gh|/acme/api/pull/1475|Add idempotency keys to refunds · Pull Request #1475
+gh|/acme/design-system/pull/88|Tokens: spacing scale 4/8 · Pull Request #88
+gh|/notifications|Notifications · GitHub
+gh|/acme/api/compare/main...tl/ledger|Comparing main...tl/ledger · acme/api
+jira|/browse/PAY-2204|Jira – PAY-2204 Statement export times out
+jira|/browse/PAY-2187|Jira – PAY-2187 Dunning email sent twice
+jira|/browse/CX-512|Jira – CX-512 Customer cannot change billing address
+jira|/browse/PAY-2230|Jira – PAY-2230 Add SEPA mandate PDF
+jira|/jira/software/projects/PAY/boards/12|Jira – PAY board
+jira|/browse/PLAT-77|Jira – PLAT-77 Rotate API keys quarterly
+jira|/browse/CX-498|Jira – CX-498 Chargeback report missing column
+jira|/browse/PAY-2141|Jira – PAY-2141 Upgrade ledger service to Node 22
+jira|/jira/dashboards/10021|Jira – Sprint 48 dashboard
+jira|/browse/PAY-2255|Jira – PAY-2255 Tax rounding on EUR invoices
+gm|/mail/u/0/#inbox|Inbox (14) – dusan@acme.io – Gmail
+gm|/mail/u/0/#inbox/FMfcgz|Re: Q3 vendor contract – Gmail
+gm|/mail/u/0/#sent|Sent Mail – Gmail
+gm|/mail/u/0/#inbox/KtbxL|Your receipt from Hetzner – Gmail
+gm|/mail/u/0/#drafts|Drafts (3) – Gmail
+gm|/mail/u/0/#inbox/WhctK|Invitation: Planning @ Tue 10:00 – Gmail
+st|/payments|Stripe – Payments
+st|/customers|Stripe – Customers
+st|/subscriptions|Stripe – Subscriptions
+st|/developers/webhooks|Stripe – Webhooks
+st|/balance/overview|Stripe – Balance
+st|/disputes|Stripe – Disputes
+doc|/document/d/1a2b/edit|Q4 planning – Google Docs
+doc|/document/d/9x8y/edit|Onboarding checklist – Google Docs
+doc|/document/d/4k7m/edit|Incident review 2026-09-30 – Google Docs
+doc|/document/d/3c5d/edit|API style guide – Google Docs
+doc|/document/d/7q1w/edit|Meeting notes – Vendor call – Google Docs
+doc|/presentation/d/2z6t/edit|Board update – Google Slides
+sh|/spreadsheets/d/1f2g/edit|Revenue forecast 2027 – Google Sheets
+sh|/spreadsheets/d/5h6j/edit|Hiring tracker – Google Sheets
+sh|/spreadsheets/d/8l9k/edit|Churn by cohort – Google Sheets
+sh|/spreadsheets/d/0p1o/edit|Invoice reconciliation – Google Sheets
+yt|/watch?v=dQw4|Postgres indexes explained in 18 minutes – YouTube
+yt|/watch?v=Zk3c|Why your Kubernetes pods keep restarting – YouTube
+yt|/watch?v=aB9x|lofi hip hop radio – beats to code to – YouTube
+yt|/watch?v=Mn4p|Designing data-intensive apps: ch. 5 – YouTube
+yt|/watch?v=R7sq|Vim in 100 seconds – YouTube
+yt|/watch?v=Tt0e|Conference talk: Boring technology – YouTube
+yt|/results?search_query=keyboard+launchers|keyboard launchers – YouTube
+no|/Roadmap-2027-a1b2c3|Roadmap 2027 – Notion
+no|/Runbook-On-call-d4e5f6|Runbook: On-call – Notion
+no|/Reading-list-g7h8i9|Reading list – Notion
+no|/Customer-interviews-j0k1l2|Customer interviews – Notion
+no|/Team-wiki-m3n4o5|Team wiki – Notion
+no|/Retro-template-p6q7r8|Retro template – Notion
+li|/acme/issue/ENG-418/webhook-dedupe|ENG-418 Webhook dedupe window – Linear
+li|/acme/team/ENG/active|Active issues · ENG – Linear
+li|/acme/issue/ENG-402/export-csv|ENG-402 CSV export for invoices – Linear
+li|/acme/project/billing-v2|Billing v2 – Linear
+fg|/design/Ab12Cd/Checkout-flow-v7|Checkout flow v7 – Figma
+fg|/design/Ef34Gh/Design-system|Design system – Figma
+fg|/design/Ij56Kl/Invoice-PDF|Invoice PDF – Figma
+fg|/board/Mn78Op/Onboarding-map|Onboarding map – FigJam
+sl|/client/T0123/C0456|#payments-eng – Acme – Slack
+sl|/client/T0123/C0789|#incidents – Acme – Slack
+sl|/client/T0123/D0AAA|Mara Kraus (DM) – Acme – Slack
+so|/questions/11227809|Why is processing a sorted array faster? – Stack Overflow
+so|/questions/4932181|Postgres: advisory locks vs SELECT FOR UPDATE – Stack Overflow
+so|/questions/2403122|How do I undo git add before commit? – Stack Overflow
+so|/questions/9183374|Idempotent POST endpoints, what is best practice? – Stack Overflow
+so|/questions/7762011|CSS grid: auto-fill vs auto-fit – Stack Overflow
+mdn|/en-US/docs/Web/API/Intl/Segmenter|Intl.Segmenter – JavaScript | MDN
+mdn|/en-US/docs/Web/CSS/color-mix|color-mix() – CSS | MDN
+mdn|/en-US/docs/Web/API/IntersectionObserver|Intersection Observer API – Web APIs | MDN
+mdn|/en-US/docs/Web/HTTP/Headers/Retry-After|Retry-After – HTTP | MDN
+mdn|/en-US/docs/Web/API/chrome.tabs|tabs – Browser extensions | MDN
+aws|/ec2/home?region=eu-central-1|EC2 Management Console – eu-central-1
+aws|/rds/home?region=eu-central-1|RDS Management Console – eu-central-1
+aws|/cloudwatch/home?region=eu-central-1|CloudWatch – eu-central-1
+aws|/iam/home|IAM Management Console
+aws|/s3/buckets/acme-invoices|acme-invoices – S3 bucket
+lh|/|Acme Admin (localhost)
+lh|/billing/invoices|Invoices – Acme Admin (localhost)
+lh|/api/health|localhost:3000/api/health
+lh|/storybook|Storybook – Button
+rd|/r/programming|programming: Reddit
+rd|/r/ExperiencedDevs/comments/1ab2cd|How do you manage 100+ open tabs? : ExperiencedDevs
+rd|/r/chrome/comments/3ef4gh|Chrome tab search is too slow : chrome
+rd|/r/webdev|webdev: Reddit
+x|/home|Home / X
+x|/dhh|DHH (@dhh) / X
+x|/notifications|Notifications / X
+in|/feed|Feed | LinkedIn
+in|/messaging|Messaging | LinkedIn
+in|/in/mara-kraus|Mara Kraus | LinkedIn
+cal|/calendar/u/0/r/week|Calendar – Week of 19 Oct 2026
+cal|/calendar/u/0/r/day|Calendar – Tuesday, 20 October
+dd|/dashboard/abc-123|Datadog – Payments service overview
+dd|/logs?query=service%3Aledger|Datadog – Logs · service:ledger
+vc|/acme/web/deployments|Deployments – acme/web – Vercel
+vc|/acme/web/settings/environment-variables|Environment Variables – Vercel
+gh|/acme/api/pull/1455|Rate limit per API key by tl · Pull Request #1455
+gh|/acme/web/pull/925|Dark mode for the customer portal · Pull Request #925
+jira|/browse/CX-530|Jira – CX-530 Locale fallback for invoice emails
+so|/questions/1608239|What does "use strict" do in JavaScript? – Stack Overflow
+yt|/watch?v=Qw2e|Refactoring a 4,000 line function – YouTube
+no|/Q4-OKRs-s9t0u1|Q4 OKRs – Notion
+doc|/document/d/6u7i/edit|Pricing page copy v3 – Google Docs
+gm|/mail/u/0/#inbox/LpqRs|Weekly digest – Gmail
+rd|/r/selfhosted|selfhosted: Reddit
+`.trim().split("\n").map(l => { const [s, p, ...t] = l.split("|"); return { s, p, title: t.join("|") }; });
+
+const HAND_TARGET = { s: "st", p: "/invoices/in_1QxT0341", title: "Stripe – Invoice INV-0341", key: "hand" };
+const TN_TARGET = { s: "jira", p: "/browse/PAY-2291", title: "Jira – PAY-2291 Webhook retries", key: "tn" };
+const KEEP = [
+  [12, { s: "jira", p: "/browse/PAY-2219", title: "Jira – PAY-2219 Refund rounding on JPY" }],
+  [24, { s: "st", p: "/invoices/in_1QxT0314", title: "Stripe – Invoice INV-0314" }],
+  [38, TN_TARGET],
+  [53, { s: "st", p: "/invoices/in_1QxT0431", title: "Stripe – Invoice INV-0431" }],
+  [66, { s: "jira", p: "/browse/PAY-1229", title: "Jira – PAY-1229 Webhook retries" }],
+  [71, HAND_TARGET],
+  [84, { s: "st", p: "/credit_notes/cn_1QxT0341", title: "Stripe – Credit note CN-0341" }],
+  [96, { s: "st", p: "/invoices/in_1QxT0143", title: "Stripe – Invoice INV-0143" }],
+  [105, { s: "jira", p: "/browse/PAY-2192", title: "Jira – PAY-2192 Webhook signature check" }]
+];
+const N = 120;
+function rng(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rand = rng(341);
+const pool = POOL.slice();
+for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+const rest = pool.slice(0, N - KEEP.length);
+const TABS = [];
+for (let i = 0; i < N; i++) { const k = KEEP.find(x => x[0] === i); TABS.push(k ? k[1] : rest.shift()); }
+TABS.forEach((t, i) => { const [host, color] = SITES[t.s]; Object.assign(t, { id: i, host, color, disp: host + t.p, win: rand() < .14 ? 2 : 1, closed: false }); });
+const ACTIVE0 = TABS.findIndex(t => t.title.startsWith("Inbox"));
+let activeId = ACTIVE0;
+let mru = TABS.map(t => t.id).filter(i => i !== ACTIVE0).sort(() => rand() - .5);
+mru.unshift(ACTIVE0);
+// previous tab (preselected in the panel) must not be a target
+const bad = i => TABS[i].key; if (bad(mru[1])) { const k = mru.findIndex((i, n) => n > 1 && !bad(i)); [mru[1], mru[k]] = [mru[k], mru[1]]; }
+
+/* ======== DOM ======== */
+const $ = id => document.getElementById(id);
+const strip = $("strip"), tip = $("tip"), pv = $("pv"), card = $("card"), pwrap = $("pwrap"), resultEl = $("result"), watch = $("watch");
+TABS.forEach(t => {
+  const d = document.createElement("div"); d.className = "tab"; d.dataset.i = t.id;
+  d.innerHTML = `<span class="fv" style="background:${t.color}"></span>`; strip.append(d); t.el = d;
+});
+
+/* Stopwatch */
+const digits = $("digits");
+const cells = [];
+function mk(c) { const d = document.createElement("div"); d.className = c; digits.append(d); return d; }
+for (let i = 0; i < 6; i++) {
+  if (i === 2) { const s = mk("sep"); s.innerHTML = "<i></i><i></i>"; }
+  if (i === 4) { const s = mk("sep dot"); s.innerHTML = "<i></i>"; }
+  cells.push(mk("cell"));
+}
+function show(ms) {
+  ms = Math.min(ms, 5999990);
+  const m = Math.floor(ms / 60000), s = Math.floor(ms / 1000) % 60, cs = Math.floor(ms / 10) % 100;
+  const str = String(m).padStart(2, "0") + String(s).padStart(2, "0") + String(cs).padStart(2, "0");
+  cells.forEach((c, i) => { if (c.textContent !== str[i]) c.textContent = str[i]; });
+}
+show(0);
+
+/* State */
+const S = { phase: "intro1", round: 1, t0: 0, raf: 0, t: [null, null], gave: [false, false], target: HAND_TARGET, panel: false, flashTimer: 0 };
+const fmt = ms => (ms / 1000).toFixed(1);
+function setLamp(cls, txt) { watch.className = "watch " + cls; $("lamp").textContent = txt; }
+function tick() { show(performance.now() - S.t0); if (S.phase === "run1" || S.phase === "run2") { S.raf = requestAnimationFrame(tick); const el = performance.now() - S.t0; if (el > 20000) $("give").classList.add("show"); } }
+function startClock() {
+  if (S.phase !== "intro" + S.round) return;
+  S.phase = "run" + S.round; S.t0 = performance.now(); setLamp("run", "Running");
+  card.classList.add("hidden"); cancelAnimationFrame(S.raf); tick();
+}
+function stopClock(gave) {
+  const ms = performance.now() - S.t0; cancelAnimationFrame(S.raf); show(ms);
+  S.t[S.round - 1] = ms; S.gave[S.round - 1] = !!gave; setLamp("stop", gave ? "Gave up" : "Stopped");
+  $(S.round === 1 ? "lh" : "lt").textContent = (gave ? "> " : "") + fmt(ms) + " s";
+  $("give").classList.remove("show");
+}
+
+/* Faux page */
+function pageHTML(t, tag) {
+  const w = [92, 78, 85, 60, 88, 40, 70, 55];
+  return `<div class="ph"><span class="fv" style="background:${t.color}"></span><span>${t.host}</span></div>${tag || ""}<h2>${t.title}</h2><div class="bars">${w.map(x => `<i style="width:${x}%"></i>`).join("")}</div>`;
+}
+function setActive(id) {
+  clearTimeout(S.flashTimer); activeId = id; TABS.forEach(t => t.el.classList.toggle("act", t.id === id));
+  const t = TABS[id]; $("addr").innerHTML = `<b>${t.host}</b>${t.p}`; pv.innerHTML = pageHTML(t);
+}
+function peek(id, tag, ms) {
+  const prev = activeId; setActive(id); pv.querySelector(".ph").insertAdjacentHTML("afterend", tag);
+  clearTimeout(S.flashTimer); if (ms) S.flashTimer = setTimeout(() => setActive(prev), ms);
+}
+setActive(ACTIVE0);
+
+/* Cards */
+function intro(round) {
+  const c = card; c.classList.remove("hidden");
+  if (round === 1) c.innerHTML = `<h3>Round 1: by hand</h3><p>This is a normal browser with 120 tabs open. Find the tab named above. The clock starts when your mouse enters the tab strip.</p><div class="row"><span style="font-size:14px;color:var(--mute)">Hover to read a title. Click to switch.</span></div>`;
+  else c.innerHTML = `<h3>Round 2: with TabNow</h3><p>Same tabs, new target. TabNow is installed now. Press <kbd>Ctrl</kbd> <kbd>E</kbd>, type a few letters, hit <kbd>Enter</kbd>. The clock starts when you do.</p><div class="row"><button class="btn blue" id="openBtn" type="button">Open TabNow</button><span style="font-size:14px;color:var(--mute)">No Ctrl+E on your keyboard? Use the button.</span></div>`;
+  const b = $("openBtn"); if (b) b.onclick = () => openPanel();
+}
+function between() {
+  const gave = S.gave[0];
+  card.classList.remove("hidden");
+  card.innerHTML = `<h3>${gave ? "Gave up after " + fmt(S.t[0]) + " s." : "Found it in " + fmt(S.t[0]) + " s."}</h3><p>${gave ? "The tab was the blue one. It happens with 120 tabs." : "That is by hand, with titles you can only read one at a time."} Round 2: same strip, different tab, this time with TabNow.</p><div class="row"><button class="btn blue" id="r2" type="button">Start round 2</button></div>`;
+  $("r2").onclick = startRound2;
+}
+function startRound2() {
+  S.round = 2; S.phase = "intro2"; S.target = TN_TARGET; show(0); setLamp("", "Ready");
+  $("rlabel").textContent = "Round 2"; $("rmode").textContent = "With TabNow";
+  $("ttitle").innerHTML = `<span>Find:</span> ${TN_TARGET.title}`;
+  $("tsub").innerHTML = `Press <kbd>Ctrl</kbd> <kbd>E</kbd>. Type a few letters. <kbd>Enter</kbd>.`;
+  $("rounds").innerHTML = `<span>Round</span><i class="on"></i><i class="cur"></i>`;
+  TABS.forEach(t => t.el.classList.remove("hint"));
+  clearTimeout(S.flashTimer); setActive(activeId);
+  intro(2);
+}
+
+/* Strip interaction */
+strip.addEventListener("mouseover", e => {
+  const el = e.target.closest(".tab"); if (!el) return;
+  if (S.phase === "intro1" || S.phase === "intro2") startClock();
+  const t = TABS[+el.dataset.i], r = el.getBoundingClientRect();
+  tip.innerHTML = `<b>${t.title}</b><span>${t.host}</span>`; tip.classList.remove("hidden");
+  const w = tip.offsetWidth; tip.style.left = Math.max(8, Math.min(r.left - 4, innerWidth - w - 8)) + "px"; tip.style.top = r.bottom + 14 + "px";
+});
+strip.addEventListener("mouseleave", () => tip.classList.add("hidden"));
+strip.addEventListener("click", e => {
+  const el = e.target.closest(".tab"); if (!el || S.phase.startsWith("intro") && S.phase !== "intro1") return;
+  if (S.phase === "intro1") startClock();
+  if (S.phase !== "run1" && S.phase !== "run2") return;
+  const t = TABS[+el.dataset.i];
+  if (t === S.target) { setActive(t.id); pv.querySelector(".ph").insertAdjacentHTML("afterend", `<span class="found">Found</span>`); finishRound(false); }
+  else peek(t.id, `<span class="wrong">Not this one</span>`, 1100);
+});
+$("give").onclick = () => {
+  const t = S.target; t.el.classList.add("hint"); setActive(t.id);
+  pv.querySelector(".ph").insertAdjacentHTML("afterend", `<span class="found">It was this one</span>`); finishRound(true);
+};
+function finishRound(gave) {
+  stopClock(gave); closePanel(true); tip.classList.add("hidden");
+  if (S.round === 1) { S.phase = "between"; setTimeout(between, 700); }
+  else { S.phase = "done"; setTimeout(showResult, 900); }
+}
+
+/* TabNow panel */
+const SVG_SEARCH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>`;
+pwrap.innerHTML = `<div class="tnp" id="tn"><div class="ov"><label class="q">${SVG_SEARCH}<input id="qin" autocomplete="off" spellcheck="false" aria-label="Search tabs"><span id="cnt" class="n"></span><button id="themeBtn" class="tb" type="button" tabindex="-1" aria-label="Toggle theme"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button></label><ul id="ul"></ul><div class="foot"><span class="k"><kbd>↑ ↓</kbd><kbd>ctrl j k</kbd><i>navigate</i></span><span class="k"><kbd>↵</kbd><i>switch</i></span><span class="k"><kbd>ctrl ⌫</kbd><i>close tab</i></span><span class="k end"><kbd>esc</kbd><i>dismiss</i></span></div></div></div>`;
+const qin = $("qin"), ul = $("ul"), tn = $("tn");
+let results = [], sel = 0;
+const GO = `<svg class="go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
+function items() { return mru.map(i => TABS[i]).filter(t => !t.closed); }
+function render(keep) {
+  results = search(items(), qin.value); if (sel >= results.length) sel = Math.max(0, results.length - 1);
+  $("cnt").textContent = results.length;
+  ul.textContent = "";
+  if (!results.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No matching tabs"; ul.append(li); return; }
+  results.forEach((r, n) => {
+    const t = r.tab, li = document.createElement("li"); if (n === sel) li.className = "on";
+    const host = t.disp.split("/")[0], path = t.disp.slice(host.length);
+    li.innerHTML = `<span class="fav${t.win === 2 ? " away" : ""}" style="background:${t.color}"></span><div class="txt"><div class="t trunc"></div><div class="u trunc"><span class="host"></span><span class="path"></span></div></div>${GO}`;
+    li.querySelector(".t").append(hl(t.title, r.th));
+    li.querySelector(".host").append(hl(host, r.uh));
+    li.querySelector(".path").append(hl(path, r.uh, host.length));
+    li.onmousemove = () => { if (sel !== n) { sel = n; mark(); } };
+    li.onclick = () => choose(n);
+    ul.append(li);
+  });
+  if (!keep) ul.scrollTop = 0;
+}
+function mark() { [...ul.children].forEach((li, n) => li.classList.toggle("on", n === sel)); const on = ul.children[sel]; if (on) on.scrollIntoView({ block: "nearest" }); }
+function openPanel() {
+  if (S.panel || S.phase === "between" || S.phase === "done") return;
+  if (S.round === 1) { hintNoTabNow(); return; }
+  if (S.phase === "intro2") startClock();
+  S.panel = true; pwrap.classList.remove("hidden"); qin.value = ""; sel = items().length > 1 ? 1 : 0; render(); qin.focus(); mark();
+}
+function closePanel(silent) { if (!S.panel) return; S.panel = false; pwrap.classList.add("hidden"); qin.blur(); }
+function choose(n) {
+  const r = results[n]; if (!r) return; const t = r.tab;
+  mru = [t.id, ...mru.filter(i => i !== t.id)];
+  closePanel();
+  if (t === S.target) { setActive(t.id); pv.querySelector(".ph").insertAdjacentHTML("afterend", `<span class="found">Found</span>`); finishRound(false); }
+  else peek(t.id, `<span class="wrong">Not this one</span>`, 0);
+}
+function hintNoTabNow() {
+  const old = $("tsub").innerHTML; $("tsub").innerHTML = `TabNow is not installed in round 1. Use the strip.`;
+  clearTimeout(hintNoTabNow.t); hintNoTabNow.t = setTimeout(() => { $("tsub").innerHTML = "120 tabs open. Hover a tab to read its title, click to switch."; }, 2200);
+}
+qin.addEventListener("input", () => { sel = 0; render(); });
+qin.addEventListener("keydown", e => {
+  const k = e.key, c = e.ctrlKey || e.metaKey;
+  if (k === "ArrowDown" || (c && k.toLowerCase() === "j")) { e.preventDefault(); sel = Math.min(results.length - 1, sel + 1); mark(); }
+  else if (k === "ArrowUp" || (c && k.toLowerCase() === "k")) { e.preventDefault(); sel = Math.max(0, sel - 1); mark(); }
+  else if (k === "Enter") { e.preventDefault(); choose(sel); }
+  else if (k === "Escape") { e.preventDefault(); closePanel(); }
+  else if (c && k.toLowerCase() === "u") { e.preventDefault(); qin.value = ""; sel = 0; render(); }
+  else if (c && k === "Backspace") {
+    e.preventDefault(); const r = results[sel]; if (!r) return;
+    if (r.tab === S.target || r.tab.id === activeId) return;
+    r.tab.closed = true; r.tab.el.classList.add("gone"); render(true); mark();
+  } else if (e.altKey && k.toLowerCase() === "t") { e.preventDefault(); tn.dataset.theme = tn.dataset.theme === "dark" ? "" : "dark"; }
+});
+$("themeBtn").onclick = () => { tn.dataset.theme = tn.dataset.theme === "dark" ? "" : "dark"; qin.focus(); };
+pwrap.addEventListener("mousedown", e => { if (e.target === pwrap) closePanel(); });
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e" && !e.altKey) { e.preventDefault(); if (S.panel) closePanel(); else openPanel(); }
+}, true);
+
+/* Result */
+function showResult() {
+  const [a, b] = S.t, ga = S.gave[0], gb = S.gave[1];
+  const max = Math.max(a, b);
+  let verdict;
+  if (ga && !gb) verdict = `You gave up after ${fmt(a)} s. TabNow did not have to.`;
+  else if (gb) verdict = "You gave up with TabNow too. That one is on us. Try again.";
+  else if (a / b >= 1.5) verdict = `${(a / b).toFixed(a / b >= 10 ? 0 : 1)} times faster. Same 120 tabs, same you.`;
+  else verdict = "Close. Your tabs were easy this time. Try it with your real ones.";
+  const text = `I needed ${ga ? "more than " : ""}${fmt(a)} s to find one tab among 120 by hand. With TabNow (Ctrl+E): ${fmt(b)} s.`;
+  const url = "https://github.com/gran-software-solutions/tabnow", eu = encodeURIComponent;
+  resultEl.innerHTML = `<div class="l"><div class="ey">Result · same 120 tabs, two different targets</div>
+    <div class="times"><div class="t"><b>${fmt(a)}<small>s</small></b><span>By hand${ga ? " (gave up)" : ""}</span></div><div class="t tn"><b>${fmt(b)}<small>s</small></b><span>With TabNow</span></div></div>
+    <div class="race"><div><i style="width:${a / max * 100}%"></i></div><div class="tn"><i style="width:${Math.max(1.5, b / max * 100)}%"></i></div></div>
+    <p class="verdict">${verdict}</p></div>
+    <div class="r"><a class="btn blue" href="#">Add to Chrome</a><p class="note">The Web Store listing is not live yet. Until then, load it from GitHub in four steps.</p><a class="btn alt" href="#install">How to install</a>
+    <div class="share"><span>Share your times</span><a target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${eu(url)}">LinkedIn</a><a target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${eu(text)}&url=${eu(url)}">X</a><a target="_blank" rel="noopener" href="https://www.reddit.com/submit?url=${eu(url)}&title=${eu(text)}">Reddit</a></div>
+    <button class="again" id="again" type="button">Play again</button></div>`;
+  resultEl.classList.remove("hidden"); $("again").onclick = () => location.reload();
+}
+
+intro(1);
+</script>
+</body>
+</html>
