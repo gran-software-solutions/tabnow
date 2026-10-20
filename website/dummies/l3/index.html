@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TabNow: find any open tab in a keystroke</title>
+<meta name="description" content="TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.">
+<style>
+:root {
+  --desk: #ff5b14; --ink: #0b0b0b; --white: #fff; --yellow: #ffd23f; --cream: #fff1e4; --ink2: #2a2a2a; --ink3: #555;
+  --sans: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+body { margin: 0; background: var(--white); color: var(--ink); font: 17px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; padding: 0 8px; font: 700 12px/1 var(--sans); color: var(--ink);
+  background: var(--white); border: 2px solid var(--ink); border-radius: 6px; box-shadow: 0 2px 0 var(--ink); margin: 0 2px 3px; vertical-align: middle; }
+
+/* ---------- hero: the desk ---------- */
+#hero { position: relative; height: 100vh; min-height: 700px; overflow: hidden; background: var(--desk); isolation: isolate; user-select: none; }
+.top { position: absolute; z-index: 5200; left: 0; right: 0; top: 0; height: 56px; padding: 0 40px; display: flex; align-items: center; gap: 28px; font-size: 14px; background: var(--ink); color: #fff; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.02em; text-decoration: none; font-size: 17px; }
+.logo svg { width: 24px; height: 24px; }
+.top nav { margin-left: auto; display: flex; gap: 28px; font-weight: 600; }
+.top nav a { text-decoration: none; opacity: .8; }
+.top nav a:hover { opacity: 1; color: var(--desk); }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 10px; font: 800 15px var(--sans); letter-spacing: -.01em; text-decoration: none; color: var(--ink); background: var(--white);
+  border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); cursor: pointer; transition: transform .08s, box-shadow .08s; }
+.btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
+.btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+.btn.dark { background: var(--ink); color: #fff; }
+.btn.hot { background: var(--yellow); }
+.top .btn { height: 34px; padding: 0 14px; font-size: 13.5px; border-color: #fff; box-shadow: none; background: var(--desk); color: var(--ink); border: 0; }
+.top .btn:hover, .top .btn:active { transform: none; box-shadow: none; background: var(--yellow); }
+
+.intro { position: absolute; z-index: 5100; left: calc(50% - 360px); top: 84px; width: 720px; text-align: center; transition: opacity .3s; pointer-events: none; }
+.intro h1 { margin: 0; font: 900 72px/.95 var(--sans); letter-spacing: -.05em; }
+.intro h1 em { font-style: normal; display: inline-block; background: var(--ink); color: #fff; padding: 2px 14px 6px; margin-top: 8px; transform: rotate(-1.6deg); border-radius: 6px; }
+.intro p { margin: 18px auto 0; max-width: 640px; font-size: 17px; line-height: 1.4; font-weight: 500; }
+.intro .acts { margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 14px; font-weight: 600; pointer-events: auto; }
+.intro .acts .btn { height: 40px; }
+.intro .try { margin-top: 12px; font-size: 13px; font-weight: 600; pointer-events: auto; }
+.intro .try button { font: 700 12.5px var(--mono); color: var(--ink); background: transparent; border: 2px solid var(--ink); border-radius: 6px; padding: 1px 8px; margin-left: 6px; cursor: pointer; }
+.intro .try button:hover { background: var(--ink); color: #fff; }
+
+/* The panel: same structure as extension/search.css, drawn loud */
+.panel { --fg: #0b0b0b; --muted: #444; --hair: rgb(0 0 0 / .14);
+  position: absolute; z-index: 5000; left: calc(50% - 300px); top: 404px; width: 600px; border-radius: 16px; background: #fff; color: var(--fg); border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--ink); transition: opacity .3s; }
+.panel .q { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 2px solid var(--ink); font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.panel .q svg { flex: none; }
+.panel input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; user-select: text; }
+.panel input::placeholder { color: #8a8a8a; font-weight: 600; }
+.panel .n { flex: none; font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.panel ul { list-style: none; margin: 0; padding: 0 6px; height: 0; overflow: hidden; transition: height .22s cubic-bezier(.3,1.4,.5,1), padding .22s ease; }
+.panel ul.open { padding: 6px; }
+.panel .empty { padding: 14px 12px; font-size: 15px; font-weight: 600; }
+.foot { display: flex; align-items: center; gap: 16px; padding: 9px 16px; font-size: 11.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.panel ul.open + .foot { border-top: 2px solid var(--ink); }
+.foot .k { display: inline-flex; align-items: center; gap: 4px; }
+.foot .end { margin-left: auto; }
+.foot kbd { min-width: 20px; height: 20px; padding: 0 6px; margin: 0; font: 700 11px/1 var(--sans); word-spacing: 2px; border-width: 1.5px; box-shadow: none; border-radius: 5px; }
+#hero.opened .panel, #hero.opened .intro, #hero.opened #ring { opacity: 0; pointer-events: none; }
+
+mark { background: var(--yellow); color: var(--ink); font-weight: 800; border-radius: 3px; padding: 0 1px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* the cursor body */
+#ring { position: absolute; left: 0; top: 0; width: 100px; height: 100px; margin: -50px 0 0 -50px; border: 3px solid var(--ink); border-radius: 50%; pointer-events: none; z-index: 4990; opacity: 0; will-change: transform, opacity; }
+
+/* The cards */
+.card { --z: 0; position: absolute; left: 0; top: 0; width: 176px; height: 52px; border-radius: 9px; background: #fff; border: 2px solid var(--ink); padding: 0 10px; display: flex; align-items: center;
+  box-shadow: calc(var(--z) * .05px) calc(3px + var(--z) * .14px) 0 var(--ink);
+  cursor: grab; touch-action: none; will-change: transform; --ts: 12px; --us: 10.5px; color: var(--ink); opacity: 0; }
+.card.in { opacity: 1; }
+.card::after { content: ""; position: absolute; inset: 0; border-radius: 7px; background: var(--desk); opacity: 0; transition: opacity .35s; pointer-events: none; }
+.card.dim::after { opacity: .62; }
+.card .row { display: flex; align-items: center; gap: 9px; min-width: 0; width: 100%; }
+.fav { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; font: 800 13px/1 var(--sans); font-style: normal; letter-spacing: 0; }
+.txt { display: grid; gap: 1px; min-width: 0; flex: 1; }
+.t { font-size: var(--ts); line-height: 1.25; font-weight: 700; letter-spacing: -.01em; }
+.u { font-size: var(--us); line-height: 1.25; color: #666; }
+.u .host { color: #222; }
+.u .path { color: #8c8c8c; }
+.go { display: none; }
+.card.held { cursor: grabbing; box-shadow: 6px 11px 0 var(--ink); }
+.card.lift { --ts: 15px; --us: 12px; background: #fff; border-radius: 10px; cursor: pointer; padding: 0 12px; box-shadow: 3px 3px 0 var(--ink); }
+.card.lift .row { gap: 12px; }
+.card.lift .fav { width: 26px; height: 26px; }
+.card.lift .go { display: inline; visibility: hidden; color: var(--desk); font-size: 18px; font-weight: 800; }
+.card.lift .u { color: #555; }
+.card.lift.on { background: var(--ink); color: #fff; box-shadow: 3px 3px 0 var(--desk); }
+.card.lift.on .u, .card.lift.on .u .host { color: #cfcfcf; }
+.card.lift.on .u .path { color: #999; }
+.card.lift.on .go { visibility: visible; }
+.card.lift::after { display: none; }
+.big { display: none; }
+.card.open { border: 0; border-radius: 0; cursor: default; padding: 0; box-shadow: none; }
+.card.open .row { display: none; }
+.card.open .big { display: flex; flex-direction: column; justify-content: center; width: 100%; height: 100%; padding: 0 96px; gap: 18px; }
+.big .fav { width: 56px; height: 56px; border-radius: 14px; font-size: 30px; background: #fff; }
+.big h2 { margin: 0; font: 900 clamp(36px, 5.4vw, 80px)/.98 var(--sans); letter-spacing: -.045em; max-width: 1200px; }
+.big p { margin: 0; font: 600 20px var(--mono); opacity: .85; }
+.big small { font-size: 15px; font-weight: 600; opacity: .8; }
+
+/* ---------- below the desk ---------- */
+main { position: relative; z-index: 1; background: var(--white); }
+.band section { max-width: 1160px; margin: 0 auto; padding: 110px 48px 100px; }
+.label { display: inline-block; font: 800 13px var(--sans); letter-spacing: .06em; text-transform: uppercase; background: var(--ink); color: #fff; padding: 4px 10px; border-radius: 5px; margin: 0 0 20px; }
+h2.s { font: 900 58px/.98 var(--sans); letter-spacing: -.045em; margin: 0 0 56px; max-width: 860px; }
+.b-keys { background: #fff; }
+.b-feat { background: var(--cream); border-top: 3px solid var(--ink); border-bottom: 3px solid var(--ink); }
+.b-priv { background: var(--ink); color: #fff; }
+.b-priv .label { background: var(--desk); color: var(--ink); }
+.b-inst { background: var(--desk); }
+.keys { margin: 0; padding: 0; list-style: none; border-top: 3px solid var(--ink); }
+.keys li { display: grid; grid-template-columns: 400px 1fr; align-items: center; gap: 24px; padding: 14px 0; border-bottom: 2px solid var(--ink); }
+.keys li span.or { color: var(--ink3); font-size: 13px; font-weight: 700; margin: 0 6px; }
+.keys p { margin: 0; font-weight: 500; }
+.keys .first { background: var(--desk); padding: 18px 16px; margin: 0 -16px; grid-template-columns: 400px 1fr; }
+.keys .first kbd { height: 34px; min-width: 40px; font-size: 15px; }
+.feat { border-top: 3px solid var(--ink); }
+.feat > div { display: grid; grid-template-columns: 400px 1fr; gap: 24px; padding: 30px 0; border-bottom: 2px solid var(--ink); }
+.feat h3 { margin: 0; font: 900 25px/1.1 var(--sans); letter-spacing: -.03em; }
+.feat p { margin: 0 0 10px; color: var(--ink2); max-width: 640px; font-weight: 500; }
+.feat p:last-child { margin-bottom: 0; }
+.feat code, .steps code { font: 700 13px var(--mono); background: #fff; border: 1.5px solid var(--ink); padding: 0 6px; border-radius: 5px; color: var(--ink); }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 6px; border-radius: 8px; font: 700 13px var(--sans); background: #fff; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+.chip b { font: 800 13px var(--mono); background: var(--ink); color: #fff; padding: 2px 7px; border-radius: 5px; }
+.themes { display: flex; gap: 16px; margin-top: 16px; }
+.mini { width: 200px; border-radius: 12px; padding: 8px; font-size: 12px; font-weight: 600; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.mini.l { background: #fff; color: #0b0b0b; }
+.mini.d { background: #1b1f27; color: #eceef2; }
+.mini div { padding: 5px 7px; border-radius: 5px; }
+.mini .f { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.mini.l .s { background: var(--yellow); } .mini.d .s { background: rgba(255,210,63,.2); }
+.mini.d div:not(.s):not(.f) { color: #a0a7b4; } .mini.l div:not(.s):not(.f) { color: #555; }
+.big-claim { font: 900 clamp(48px, 8vw, 104px)/.92 var(--sans); letter-spacing: -.055em; margin: 0 0 28px; }
+.big-claim span { color: var(--desk); }
+.lead { font-size: 21px; font-weight: 500; color: #e6e6e6; max-width: 700px; margin: 0 0 56px; }
+.perm { border-top: 2px solid #fff; }
+.perm > div { display: grid; grid-template-columns: 200px 1fr 120px; gap: 24px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,.28); align-items: baseline; }
+.perm code { font: 800 14px var(--mono); background: var(--desk); color: var(--ink); padding: 2px 8px; border-radius: 5px; justify-self: start; }
+.perm p { margin: 0; color: #e6e6e6; font-weight: 500; }
+.perm .opt { font-size: 13px; font-weight: 800; color: var(--yellow); text-align: right; text-transform: uppercase; letter-spacing: .05em; }
+.steps { list-style: none; counter-reset: s; margin: 0 0 40px; padding: 0; border-top: 3px solid var(--ink); }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 76px 1fr; gap: 12px; padding: 20px 0; border-bottom: 2px solid var(--ink); align-items: baseline; }
+.steps li::before { content: counter(s); font: 900 44px/1 var(--sans); letter-spacing: -.05em; }
+.steps p { margin: 0; font-weight: 500; }
+.steps strong { font-weight: 800; }
+.cta { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 52px; }
+.cta .btn { height: 52px; padding: 0 24px; font-size: 16px; }
+.cta small { font-size: 14px; font-weight: 700; }
+footer { background: var(--ink); color: #fff; }
+footer > div { max-width: 1160px; margin: 0 auto; padding: 40px 48px; display: flex; gap: 32px; align-items: center; font-size: 14px; font-weight: 500; }
+footer nav { margin-left: auto; display: flex; gap: 26px; font-weight: 700; }
+footer a { text-decoration: none; border-bottom: 2px solid rgba(255,255,255,.35); }
+footer a:hover { color: var(--desk); border-color: var(--desk); }
+</style>
+</head>
+<body>
+
+<section id="hero">
+  <div class="top">
+    <a class="logo" href="#">
+      <svg viewBox="0 0 128 128" aria-hidden="true"><rect x="6" y="6" width="116" height="116" rx="28" fill="#1F5FD6"/><path d="M20 58 V42 A14 14 0 0 1 34 28 H94 A14 14 0 0 1 108 42 V58 Z" fill="#fff"/><rect x="51" y="50" width="26" height="52" rx="6" fill="#fff"/></svg>
+      TabNow
+    </a>
+    <nav><a href="#keys">Keys</a><a href="#features">Features</a><a href="#privacy">Privacy</a><a href="#install">Install</a></nav>
+    <a class="btn" href="https://github.com/gran-software-solutions/tabnow">Install</a>
+  </div>
+
+  <div class="intro">
+    <h1>Go on, make a mess.<br><em>Then type.</em></h1>
+    <p>You have <b id="count">70</b> tabs open. One of them matters. TabNow is a fuzzy finder for your open tabs: press <kbd>Ctrl</kbd><kbd>E</kbd>, type a few letters, hit <kbd>Enter</kbd>.</p>
+    <div class="acts"><button class="btn" id="shake" type="button">Shake it</button><span>or press <kbd>S</kbd>. Shove them with the mouse. Grab one, throw it.</span></div>
+    <div class="try">Or try<span id="tries"></span></div>
+  </div>
+
+  <div class="panel" id="panel">
+    <label class="q"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="Ctrl+E, then type"><span id="n" class="n"></span></label>
+    <ul id="rows"></ul>
+    <div class="foot">
+      <span class="k"><kbd>↑ ↓</kbd><kbd>ctrl j k</kbd>navigate</span>
+      <span class="k"><kbd>↵</kbd>switch</span>
+      <span class="k"><kbd>ctrl ⌫</kbd>close tab</span>
+      <span class="k end"><kbd>esc</kbd>dismiss</span>
+    </div>
+  </div>
+  <div id="ring"></div>
+</section>
+
+<main>
+  <div class="band b-keys"><section id="keys">
+    <p class="label">Keys</p>
+    <h2 class="s">One chord opens it. Your mouse can go back to shoving.</h2>
+    <ul class="keys">
+      <li class="first"><span><kbd>Ctrl</kbd><kbd>E</kbd></span><p>Open TabNow on the current page. <kbd style="min-width:0">Cmd</kbd><kbd>E</kbd> on macOS.</p></li>
+      <li><span><kbd>Alt</kbd><kbd>Z</kbd></span><p>Jump to the previous tab. Nothing opens.</p></li>
+      <li><span><kbd>↑</kbd><kbd>↓</kbd><span class="or">or</span><kbd>Ctrl</kbd><kbd>J</kbd><kbd>Ctrl</kbd><kbd>K</kbd></span><p>Move through the list. The mouse works too.</p></li>
+      <li><span><kbd>Enter</kbd></span><p>Switch to the tab.</p></li>
+      <li><span><kbd>Ctrl</kbd><kbd>Backspace</kbd></span><p>Close the selected tab from the list.</p></li>
+      <li><span><kbd>Ctrl</kbd><kbd>U</kbd></span><p>Clear the field.</p></li>
+      <li><span><kbd>Alt</kbd><kbd>T</kbd></span><p>Switch between light and dark.</p></li>
+      <li><span><kbd>Esc</kbd></span><p>Dismiss.</p></li>
+    </ul>
+  </section></div>
+
+  <div class="band b-feat"><section id="features">
+    <p class="label">What it does</p>
+    <h2 class="s">A fuzzy finder for the tabs you already have. All of them.</h2>
+    <div class="feat">
+      <div><h3>Find any tab in a keystroke.</h3><div>
+        <p><kbd>Ctrl</kbd><kbd>E</kbd>, a few letters, <kbd>Enter</kbd>. Tabs come most recently used first and the previous tab is preselected, so <kbd>Ctrl</kbd><kbd>E</kbd> then <kbd>Enter</kbd> flips you back.</p></div></div>
+      <div><h3>Fast and fuzzy. Not psychic.</h3><div>
+        <p>Type <code>gh pr</code> and you get the GitHub pull request. Every word you type has to match. The domain ranks above the title, the title above the rest of the URL, and the matched letters are highlighted.</p></div></div>
+      <div><h3>Every window, plus bookmarks and history if you ask.</h3><div>
+        <p>It searches all open tabs in all windows. A tab from another window gets a small window badge on its icon.</p>
+        <p>Prefix with a slash to pick where to look. Bookmarks and history are off until you turn them on in the options, and the browser asks you for permission first.</p>
+        <div class="chips"><span class="chip"><b>/t</b>Tabs</span><span class="chip"><b>/b</b>Bookmarks</span><span class="chip"><b>/h</b>History, last 90 days</span></div></div></div>
+      <div><h3>Close tabs from the list.</h3><div>
+        <p><kbd>Ctrl</kbd><kbd>Backspace</kbd> closes the selected tab without leaving the field. Try it on the pile above. It flicks the card right off the desk.</p></div></div>
+      <div><h3>Fits your browser.</h3><div>
+        <p>Light and dark, switched with <kbd>Alt</kbd><kbd>T</kbd>. A frosted panel with adjustable opacity (60 to 100 %), blur (0 to 40 px) and size (70 to 150 %). Keys are yours to change.</p>
+        <div class="themes">
+          <div class="mini l"><div class="f">gh pr</div><div class="s"><b>gh</b> Pull Request #38</div><div>Linear: tabnow</div></div>
+          <div class="mini d"><div class="f">gh pr</div><div class="s"><b>gh</b> Pull Request #38</div><div>Linear: tabnow</div></div>
+        </div></div></div>
+    </div>
+  </section></div>
+
+  <div class="band b-priv"><section id="privacy">
+    <p class="label">Privacy</p>
+    <h2 class="big-claim">No network requests. <span>Ever.</span></h2>
+    <p class="lead">No account, no analytics, nothing leaves the browser. It has no way to tell on your 70 tabs. Plain JavaScript, no dependencies, about 600 lines, MIT licensed. Read all of it in an afternoon.</p>
+    <div class="perm">
+      <div><code>tabs</code><p>Read the titles and addresses of your open tabs so it can search them, and switch to or close one when you ask.</p><span class="opt"></span></div>
+      <div><code>activeTab</code><p>Show the panel on the page you are looking at.</p><span class="opt"></span></div>
+      <div><code>scripting</code><p>Put that panel onto the page.</p><span class="opt"></span></div>
+      <div><code>favicon</code><p>Show each tab's small icon in the list.</p><span class="opt"></span></div>
+      <div><code>storage</code><p>Remember your options on this browser.</p><span class="opt"></span></div>
+      <div><code>bookmarks</code><p>Search your bookmarks with <code>/b</code>. Asked for only when you turn it on.</p><span class="opt">optional</span></div>
+      <div><code>history</code><p>Search the last 90 days with <code>/h</code>. Asked for only when you turn it on.</p><span class="opt">optional</span></div>
+    </div>
+  </section></div>
+
+  <div class="band b-inst"><section id="install">
+    <p class="label">Install</p>
+    <h2 class="s">Four steps. Then stop poking and press Ctrl+E.</h2>
+    <div class="cta">
+      <a class="btn dark" href="#">Add to Chrome from the Web Store</a>
+      <a class="btn" href="https://github.com/gran-software-solutions/tabnow">View on GitHub</a>
+      <small>Not in the Web Store yet. The steps below work today.</small>
+    </div>
+    <ol class="steps">
+      <li><p><strong>Clone the repo.</strong> <code>git clone https://github.com/gran-software-solutions/tabnow.git</code></p></li>
+      <li><p><strong>Open <code>chrome://extensions</code></strong> and turn on Developer mode.</p></li>
+      <li><p><strong>Click Load unpacked</strong> and pick the <code>extension/</code> folder.</p></li>
+      <li><p><strong>Press <kbd>Ctrl</kbd><kbd>E</kbd> on any page.</strong> Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc.</p></li>
+    </ol>
+  </section></div>
+
+  <footer><div>
+    <span>TabNow 0.1.0 · MIT · Made by <a href="https://www.gransoftware.de">GRAN Software Solutions</a></span>
+    <nav><a href="https://github.com/gran-software-solutions/tabnow">Source</a><a href="#">LinkedIn</a><a href="#">X</a><a href="#">Reddit</a></nav>
+  </div></footer>
+</main>
+
+<script>
+(() => {
+"use strict";
+/* ===== fuzzy.js, ported verbatim (match, search, hl) ===== */
+function match(q, text) {
+  const t = text.toLowerCase(), at = t.indexOf(q);
+  if (at >= 0) {
+    const start = at === 0 || /\W/.test(t[at - 1]);
+    return { score: 100 + q.length * 10 + (start ? 40 : 0) - at * 0.1, hits: [...Array(q.length)].map((_, k) => at + k) };
+  }
+  let score = 0, last = -2, k = 0; const hits = [];
+  for (let j = 0; j < t.length && k < q.length; j++) {
+    if (t[j] !== q[k]) continue;
+    score += j === last + 1 ? 5 : (j === 0 || /\W/.test(t[j - 1]) ? 3 : 1);
+    hits.push(j); last = j; k++;
+  }
+  return k === q.length && hits[k - 1] - hits[0] < q.length * 3 ? { score, hits } : null;
+}
+function search(items, q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return items.map(tab => ({ tab, th: [], uh: [] }));
+  const out = [];
+  for (const tab of items) {
+    let score = 0; const th = [], uh = [];
+    for (const w of words) {
+      const d = match(w, tab.disp.split("/")[0]), a = match(w, tab.title), b = match(w, tab.disp);
+      const best = Math.max((d?.score ?? -1) * 1.5, (a?.score ?? -1) * 1.2, b?.score ?? -1);
+      if (best < 0) { score = -1; break; }
+      score += best;
+      if (d && best === d.score * 1.5) uh.push(...d.hits);
+      else if (a && best === a.score * 1.2) th.push(...a.hits);
+      else uh.push(...b.hits);
+    }
+    if (score >= 0) out.push({ tab, score, th, uh });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+function hl(text, hits, from = 0) {
+  const set = new Set(hits), frag = document.createDocumentFragment();
+  let buf = "", on = false;
+  const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
+  [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
+  flush(); return frag;
+}
+
+/* ===== tabs ===== */
+const FAV = {
+  gh: ["#24292f", "#fff", "G"], li: ["#2b2f36", "#fff", "L"], fg: ["#f24e1e", "#fff", "F"], gm: ["#d93025", "#fff", "M"], gd: ["#1a73e8", "#fff", "D"],
+  gs: ["#188038", "#fff", "S"], gp: ["#e8a000", "#fff", "P"], so: ["#f48024", "#fff", "S"], md: ["#1b1b1b", "#fff", "M"], ch: ["#1f5fd6", "#fff", "C"],
+  yt: ["#e62117", "#fff", "Y"], no: ["#1b1b1b", "#fff", "N"], ji: ["#0052cc", "#fff", "J"], aw: ["#232f3e", "#ff9900", "A"], lo: ["#6b7280", "#fff", "L"],
+  rd: ["#ff4500", "#fff", "R"], xx: ["#000", "#fff", "X"], in: ["#0a66c2", "#fff", "in"], wk: ["#e8e6df", "#222", "W"], np: ["#cb3837", "#fff", "n"],
+  vc: ["#000", "#fff", "V"], sl: ["#3c3f44", "#fff", "S"], cl: ["#c4724a", "#fff", "C"], pg: ["#336791", "#fff", "P"], k8: ["#326ce5", "#fff", "K"],
+  gf: ["#e0752d", "#fff", "G"], se: ["#e1567c", "#fff", "S"], db: ["#e8e6df", "#222", "d"], dl: ["#0f2b46", "#fff", "D"], bn: ["#ec0016", "#fff", "B"],
+  hs: ["#d1332a", "#fff", "h"], ci: ["#3d6fa8", "#fff", "c"], am: ["#232f3e", "#fff", "a"], cu: ["#3b82a0", "#fff", "c"]
+};
+const TABS = [
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/38", "feat: scope prefixes for bookmarks and history · Pull Request #38 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/41", "fix: keep the previous tab preselected after closing a tab · Pull Request #41 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/consultingcockpit/pull/812", "Add month-close checklist to the timesheet view · Pull Request #812 · gran-software-solutions/consultingcockpit"],
+  ["gh", "github.com/gran-software-solutions/pigmo/pull/57", "Debounce the pin sync on slow connections · Pull Request #57 · gran-software-solutions/pigmo"],
+  ["gh", "github.com/gran-software-solutions/tabnow/actions/runs/9412", "lint and package #127 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/issues/29", "Window badge overlaps favicon in dark mode · Issue #29 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/pulls", "Pull requests · GitHub"],
+  ["gh", "github.com/notifications", "Notifications · GitHub"],
+  ["li", "linear.app/gran/issue/GRAN-82/release-checklist", "GRAN-82 Release checklist for the Web Store listing"],
+  ["li", "linear.app/gran/issue/GRAN-77/deepseek-runs-end-as-failed", "GRAN-77 OpenCode DeepSeek runs end as failed"],
+  ["li", "linear.app/gran/project/tabnow/overview", "TabNow · Overview · Linear"],
+  ["fg", "figma.com/design/Kq3x/Tabnow-landing", "TabNow landing – Figma"],
+  ["fg", "figma.com/design/Zr2p/Cockpit-onboarding", "Onboarding flow v3 – Figma"],
+  ["gm", "mail.google.com/mail/u/0/#inbox", "Inbox (14) - dusan@gransoftware.de - Gmail"],
+  ["gm", "mail.google.com/mail/u/0/#search/invoice", "invoice - Search results - Gmail"],
+  ["gd", "docs.google.com/document/d/1xK/edit", "Q3 planning notes - Google Docs"],
+  ["gs", "docs.google.com/spreadsheets/d/9aB/edit", "Invoice tracker 2026 - Google Sheets"],
+  ["gp", "docs.google.com/presentation/d/4cD/edit", "Client workshop deck - Google Slides"],
+  ["so", "stackoverflow.com/questions/5767325", "How can I remove a specific item from an array in JavaScript? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/1789945", "How to check whether a string contains a substring in JavaScript? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/40358", "Why does flex-basis ignore my width in a grid? - Stack Overflow"],
+  ["ch", "developer.chrome.com/docs/extensions/reference/api/tabs", "chrome.tabs | API | Chrome for Developers"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/CSS/color-mix", "color-mix() - CSS: Cascading Style Sheets | MDN"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/API/Intl/Collator", "Intl.Collator - JavaScript | MDN"],
+  ["yt", "youtube.com/watch?v=Kx3jQ9", "How Chrome extensions work, in 20 minutes - YouTube"],
+  ["yt", "youtube.com/watch?v=Zm81Pq", "Postgres indexes, explained - YouTube"],
+  ["no", "notion.so/gran/Roadmap-2026-7c1", "Roadmap 2026 | Notion"],
+  ["no", "notion.so/gran/Weekly-sync-notes", "Weekly sync: meeting notes | Notion"],
+  ["ji", "gran.atlassian.net/browse/CC-1042", "[CC-1042] Leave balance wrong after year switch - Jira"],
+  ["ji", "gran.atlassian.net/jira/software/projects/CC/boards/3", "Board - Consulting Cockpit - Jira"],
+  ["aw", "eu-central-1.console.aws.amazon.com/ec2/home", "EC2 Management Console"],
+  ["aw", "eu-central-1.console.aws.amazon.com/s3/buckets", "S3 buckets - S3 - eu-central-1"],
+  ["aw", "eu-central-1.console.aws.amazon.com/cloudwatch/home", "CloudWatch Management Console"],
+  ["lo", "localhost:3000/dashboard", "Dashboard – Consulting Cockpit (dev)"],
+  ["lo", "localhost:4321/", "TabNow – landing (dev)"],
+  ["lo", "localhost:5173/timesheet", "Timesheet · Vite + React"],
+  ["rd", "reddit.com/r/chrome_extensions/comments/1abc", "How do you manage 100+ tabs? : r/chrome_extensions"],
+  ["rd", "reddit.com/r/ExperiencedDevs/comments/1xyz", "Small team, one repo: is a monorepo worth it? : r/ExperiencedDevs"],
+  ["xx", "x.com/home", "Home / X"],
+  ["xx", "x.com/gransoftware", "GRAN Software (@gransoftware) / X"],
+  ["in", "linkedin.com/feed", "Feed | LinkedIn"],
+  ["in", "linkedin.com/company/gran-software-solutions", "GRAN Software Solutions | LinkedIn"],
+  ["in", "linkedin.com/messaging", "Messaging | LinkedIn"],
+  ["wk", "en.wikipedia.org/wiki/Approximate_string_matching", "Approximate string matching - Wikipedia"],
+  ["np", "npmjs.com/package/esbuild", "esbuild - npm"],
+  ["vc", "vercel.com/gran/tabnow-site", "tabnow-site – Overview – Vercel"],
+  ["sl", "app.slack.com/client/T01/C02", "gran-software (Channel) - Slack"],
+  ["cl", "claude.ai/chat/7f2e", "Tab search ranking ideas - Claude"],
+  ["pg", "postgresql.org/docs/16/indexes.html", "PostgreSQL: Documentation: 16: Chapter 11. Indexes"],
+  ["k8", "kubernetes.io/docs/reference/kubectl/quick-reference", "kubectl Quick Reference | Kubernetes"],
+  ["gf", "grafana.gran.dev/d/api/api-latency", "API latency – Dashboards – Grafana"],
+  ["se", "sentry.io/organizations/gran/issues", "Issues – gran – Sentry"],
+  ["db", "dbxdata.com/docs/connections", "Connections · DBX docs"],
+  ["dl", "deepl.com/translator", "DeepL Translate: The world's most accurate translator"],
+  ["bn", "bahn.de/buchung/fahrplan", "Fahrplanauskunft: Berlin Hbf – Hamburg Hbf | bahn.de"],
+  ["hs", "heise.de/", "heise online – IT-News, Nachrichten und Hintergründe"],
+  ["ci", "caniuse.com/css-has", ":has() CSS relational pseudo-class | Can I use"],
+  ["am", "amazon.de/dp/B0CT4QXN", "Logitech MX Keys S Wireless Keyboard : Amazon.de"],
+  ["cu", "cursor.com/docs", "Cursor Docs"],
+  ["gh", "github.com/gran-software-solutions/stepkeep/pull/9", "Reorder steps by drag and drop · Pull Request #9 · gran-software-solutions/stepkeep"],
+  ["gh", "github.com/gran-software-solutions/tabnow/blob/main/extension/fuzzy.js", "tabnow/extension/fuzzy.js at main · gran-software-solutions/tabnow"],
+  ["li", "linear.app/gran/view/this-week", "This week · Linear"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key", "KeyboardEvent: key property - Web APIs | MDN"],
+  ["so", "stackoverflow.com/questions/2020/git-rebase-onto", "git rebase --onto explained - Stack Overflow"],
+  ["gd", "docs.google.com/document/d/8pL/edit", "Consulting Cockpit: leave policy draft - Google Docs"],
+  ["no", "notion.so/gran/Pigmo-launch-plan", "Pigmo launch plan | Notion"],
+  ["aw", "eu-central-1.console.aws.amazon.com/iam/home", "IAM Management Console"],
+  ["lo", "localhost:8080/health", "localhost:8080/health"],
+  ["rd", "reddit.com/r/webdev/comments/1def", "What do you use instead of tabs for 'read later'? : r/webdev"],
+  ["yt", "youtube.com/watch?v=Ab12Cd", "Keyboard-first UI design - YouTube"]
+];
+
+/* ===== setup ===== */
+const $ = s => document.querySelector(s);
+const hero = $("#hero"), panel = $("#panel"), input = $("#q"), rowsEl = $("#rows"), nEl = $("#n"), countEl = $("#count"), ring = $("#ring");
+let W = hero.clientWidth, H = hero.clientHeight;
+const CW = 176, CH = 52, LW = 582, LH = 46, ROWS = 6, PITCH = 54, TOP = 56;
+const R = 18, OFF = [-56, -19, 19, 56], INV_I = 1 / ((CW * CW + 36 * 36) / 12);
+const SUB = 1 / 120, ITER = 8, MU = 0.45, REST = 0.5, GZ = 1900;
+const panelBase = panel.offsetHeight;      // closed height
+const obst = { x0: 0, y0: 0, x1: 0, y1: 0 };  // keep-out box: headline + panel
+
+let rnd = 1337; const rand = () => (rnd = (rnd * 1664525 + 1013904223) >>> 0) / 4294967296;
+const tabs = TABS.map(([k, disp, title], i) => ({
+  k, disp, title, i, alive: true, mode: "wait", spawnAt: 250 + i * 24,
+  x: 0, y: -200, a: 0, vx: 0, vy: 0, w: 0, hw: CW, hh: CH, sleep: false, still: 0, z: 1 + i,
+  z3: 0, zv: 0, air: false, kickAt: 0, zq: 0, sc: 1, scv: 0, lvx: 0, lvy: 0, lw: 0, hwv: 0, hhv: 0, wS: "", hS: "",
+  slot: -1, liftAt: 0, dim: false, lit: false, drag: false, last: ""
+}));
+countEl.textContent = tabs.length;
+
+const cardsFrag = document.createDocumentFragment();
+for (const t of tabs) {
+  const [bg, fg, ch] = FAV[t.k], el = document.createElement("div");
+  el.className = "card";
+  el.innerHTML = `<div class="row"><i class="fav" style="background:${bg};color:${fg}">${ch}</i><div class="txt"><div class="t trunc"></div><div class="u trunc"><span class="host"></span><span class="path"></span></div></div><span class="go">↵</span></div><div class="big"></div>`;
+  t.el = el; t.tEl = el.querySelector(".t"); t.hEl = el.querySelector(".host"); t.pEl = el.querySelector(".path"); t.bigEl = el.querySelector(".big");
+  t.host = t.disp.split("/")[0]; t.path = t.disp.slice(t.host.length);
+  t.tEl.textContent = t.title; t.hEl.textContent = t.host; t.pEl.textContent = t.path;
+  el.style.zIndex = t.z; el.style.transform = "translate3d(-400px,-400px,0)"; el.dataset.i = t.i;
+  cardsFrag.append(el);
+}
+hero.append(cardsFrag);
+let zTop = 1000;
+
+/* keep-out box: where the headline and the panel are */
+function setObst(rowsH) {
+  const cxm = W / 2;
+  obst.x0 = cxm - 380; obst.x1 = cxm + 380; obst.y0 = TOP; obst.y1 = panel.offsetTop + panelBase + rowsH + 16;
+}
+
+/* ===== physics: rigid cards as four overlapping circles, sequential impulses, sleeping ===== */
+const MAXC = 6000;
+const con = Array.from({ length: MAXC }, () => ({ a: null, b: null, nx: 0, ny: 0, pen: 0, rax: 0, ray: 0, rbx: 0, rby: 0, dn: 0, dt: 0, bias: 0, an: 0, at: 0, ia: 0, ib: 0, ma: 0, mb: 0 }));
+const S = 44; let cols, rowsN, head, nxt, cx, cy, cb;
+function sizeWorld() {
+  cols = Math.ceil(W / S) + 3; rowsN = Math.ceil((H + 400) / S) + 3;
+  head = new Int32Array(cols * rowsN); nxt = new Int32Array(tabs.length * 4 + 8);
+  cx = new Float32Array(tabs.length * 4); cy = new Float32Array(tabs.length * 4); cb = new Int32Array(tabs.length * 4);
+}
+sizeWorld();
+const wake = t => { t.sleep = false; t.still = 0; };
+const wakeAll = () => { for (const t of tabs) if (t.mode === "phys") wake(t); };
+const gcx = X => Math.min(cols - 1, Math.max(0, (X / S | 0) + 1)), gcy = Y => Math.min(rowsN - 1, Math.max(0, ((Y + 150) / S | 0) + 1));
+
+function physStep(act, dt) {
+  for (const t of act) {
+    if (t.sleep && !t.drag) continue;
+    if (t.drag) {
+      const c = Math.cos(t.a), s = Math.sin(t.a), rx = c * drag.lx - s * drag.ly, ry = s * drag.lx + c * drag.ly;
+      const ex = (drag.px - (t.x + rx)) * 22 - (t.vx - t.w * ry), ey = (drag.py - (t.y + ry)) * 22 - (t.vy + t.w * rx);
+      t.vx += ex * 0.25; t.vy += ey * 0.25; t.w += (rx * ey - ry * ex) * 0.06 * INV_I * 40; t.w *= 0.93;
+    }
+  }
+  let n = 0;
+  head.fill(-1);
+  for (let bi = 0; bi < act.length; bi++) {
+    const t = act[bi], c = Math.cos(t.a), s = Math.sin(t.a); t.c = c; t.s = s;
+    for (let k = 0; k < 4; k++) {
+      const X = t.x + c * OFF[k], Y = t.y + s * OFF[k];
+      cx[n] = X; cy[n] = Y; cb[n] = bi;
+      const g = gcy(Y) * cols + gcx(X); nxt[n] = head[g]; head[g] = n; n++;
+    }
+  }
+  let nc = 0; const D2 = 4 * R * R;
+  for (let i = 0; i < n; i++) {
+    const A = act[cb[i]], X = cx[i], Y = cy[i], gA = A.z3 < 6;
+    if (A.sleep && X > obst.x0 && X < obst.x1 && Y > obst.y0 && Y < obst.y1) wake(A);
+    if (!A.sleep || A.drag) {
+      let pen;
+      if ((pen = Y + R - H) > 0 && nc < MAXC) { const c = con[nc++]; c.a = A; c.b = null; c.nx = 0; c.ny = 1; c.pen = pen; c.rax = X - A.x; c.ray = H - A.y; }
+      if ((pen = TOP + R - Y) > 0 && nc < MAXC) { const c = con[nc++]; c.a = A; c.b = null; c.nx = 0; c.ny = -1; c.pen = pen; c.rax = X - A.x; c.ray = TOP - A.y; }
+      if ((pen = R - X) > 0 && nc < MAXC) { const c = con[nc++]; c.a = A; c.b = null; c.nx = -1; c.ny = 0; c.pen = pen; c.rax = 0 - A.x; c.ray = Y - A.y; }
+      if ((pen = X + R - W) > 0 && nc < MAXC) { const c = con[nc++]; c.a = A; c.b = null; c.nx = 1; c.ny = 0; c.pen = pen; c.rax = W - A.x; c.ray = Y - A.y; }
+      // the keep-out box
+      if (!A.drag && X > obst.x0 - R && X < obst.x1 + R && Y > obst.y0 - R && Y < obst.y1 + R && nc < MAXC) {
+        const qx = Math.min(obst.x1, Math.max(obst.x0, X)), qy = Math.min(obst.y1, Math.max(obst.y0, Y)), ddx = X - qx, ddy = Y - qy, dd = Math.hypot(ddx, ddy);
+        const c = con[nc];
+        if (dd > 0.001) {
+          if (dd < R) { nc++; c.a = A; c.b = null; c.nx = -ddx / dd; c.ny = -ddy / dd; c.pen = R - dd; c.rax = qx - A.x; c.ray = qy - A.y; }
+        } else {
+          const dl = X - obst.x0, dr = obst.x1 - X, dtp = Y - obst.y0, db = obst.y1 - Y, m = Math.min(dl, dr, dtp, db);
+          nc++; c.a = A; c.b = null;
+          if (m === dl) { c.nx = 1; c.ny = 0; c.pen = dl + R; c.rax = obst.x0 - A.x; c.ray = Y - A.y; }
+          else if (m === dr) { c.nx = -1; c.ny = 0; c.pen = dr + R; c.rax = obst.x1 - A.x; c.ray = Y - A.y; }
+          else if (m === db) { c.nx = 0; c.ny = -1; c.pen = db + R; c.rax = X - A.x; c.ray = obst.y1 - A.y; }
+          else { c.nx = 0; c.ny = 1; c.pen = dtp + R; c.rax = X - A.x; c.ray = obst.y0 - A.y; }
+        }
+      }
+    }
+    if (!gA) continue;
+    const gx = gcx(X), gy = gcy(Y);
+    for (let yy = gy - 1; yy <= gy + 1; yy++) {
+      if (yy < 0 || yy >= rowsN) continue;
+      for (let xx = gx - 1; xx <= gx + 1; xx++) {
+        if (xx < 0 || xx >= cols) continue;
+        for (let j = head[yy * cols + xx]; j >= 0; j = nxt[j]) {
+          if (j <= i || cb[j] === cb[i]) continue;
+          const dx = cx[j] - X, dy = cy[j] - Y, d2 = dx * dx + dy * dy;
+          if (d2 >= D2 || nc >= MAXC) continue;
+          const B = act[cb[j]];
+          if (B.z3 >= 6 || (A.sleep && B.sleep)) continue;
+          if (A.sleep && B.vx * B.vx + B.vy * B.vy > 1500) wake(A);
+          else if (B.sleep && A.vx * A.vx + A.vy * A.vy > 1500) wake(B);
+          const d = Math.sqrt(d2) || 0.001, nx = dx / d, ny = dy / d, pen = 2 * R - d;
+          const px = X + nx * (R - pen / 2), py = Y + ny * (R - pen / 2);
+          const c = con[nc++]; c.a = A; c.b = B; c.nx = nx; c.ny = ny; c.pen = pen;
+          c.rax = px - A.x; c.ray = py - A.y; c.rbx = px - B.x; c.rby = py - B.y;
+        }
+      }
+    }
+  }
+  for (let k = 0; k < nc; k++) {
+    const c = con[k], A = c.a, B = c.b, nx = c.nx, ny = c.ny, tx = -ny, ty = nx;
+    c.ma = A.sleep && !A.drag ? 0 : 1; c.ia = c.ma ? INV_I : 0;
+    if (B) { c.mb = B.sleep && !B.drag ? 0 : 1; c.ib = c.mb ? INV_I : 0; } else { c.mb = 0; c.ib = 0; }
+    const ran = c.rax * ny - c.ray * nx, rbn = B ? c.rbx * ny - c.rby * nx : 0, rat = c.rax * ty - c.ray * tx, rbt = B ? c.rbx * ty - c.rby * tx : 0;
+    c.dn = 1 / (c.ma + c.mb + ran * ran * c.ia + rbn * rbn * c.ib || 1);
+    c.dt = 1 / (c.ma + c.mb + rat * rat * c.ia + rbt * rbt * c.ib || 1);
+    c.bias = Math.min(0.2 * Math.max(c.pen - 0.6, 0) / dt, 260); c.an = 0; c.at = 0;
+    // springy: hard hits bounce back
+    const vx = (B ? B.vx - B.w * c.rby : 0) - (A.vx - A.w * c.ray), vy = (B ? B.vy + B.w * c.rbx : 0) - (A.vy + A.w * c.rax), vn = vx * nx + vy * ny;
+    if (vn < -140) c.bias = Math.max(c.bias, -vn * REST);
+  }
+  for (let it = 0; it < ITER; it++) {
+    for (let k = 0; k < nc; k++) {
+      const c = con[k], A = c.a, B = c.b, nx = c.nx, ny = c.ny;
+      let vx = (B ? B.vx - B.w * c.rby : 0) - (A.vx - A.w * c.ray), vy = (B ? B.vy + B.w * c.rbx : 0) - (A.vy + A.w * c.rax);
+      let jn = (c.bias - (vx * nx + vy * ny)) * c.dn, acc = Math.max(0, c.an + jn); jn = acc - c.an; c.an = acc;
+      let px = jn * nx, py = jn * ny;
+      A.vx -= px * c.ma; A.vy -= py * c.ma; A.w -= (c.rax * py - c.ray * px) * c.ia;
+      if (B) { B.vx += px * c.mb; B.vy += py * c.mb; B.w += (c.rbx * py - c.rby * px) * c.ib; }
+      vx = (B ? B.vx - B.w * c.rby : 0) - (A.vx - A.w * c.ray); vy = (B ? B.vy + B.w * c.rbx : 0) - (A.vy + A.w * c.rax);
+      const tx = -ny, ty = nx; let jt = -(vx * tx + vy * ty) * c.dt, lim = MU * c.an, at = Math.max(-lim, Math.min(lim, c.at + jt));
+      jt = at - c.at; c.at = at; px = jt * tx; py = jt * ty;
+      A.vx -= px * c.ma; A.vy -= py * c.ma; A.w -= (c.rax * py - c.ray * px) * c.ia;
+      if (B) { B.vx += px * c.mb; B.vy += py * c.mb; B.w += (c.rbx * py - c.rby * px) * c.ib; }
+    }
+  }
+  for (const t of act) {
+    if (t.sleep && !t.drag) continue;
+    // a flat desk: cards slide and slow down; in the air they keep going
+    const kl = t.air ? 0.6 : 1.9; t.vx *= 1 - kl * dt; t.vy *= 1 - kl * dt; if (!t.drag) t.w *= 1 - 2.4 * dt;
+    const sp = Math.hypot(t.vx, t.vy); if (sp > 2600) { t.vx *= 2600 / sp; t.vy *= 2600 / sp; }
+    if (t.w > 16) t.w = 16; else if (t.w < -16) t.w = -16;
+    t.x += t.vx * dt; t.y += t.vy * dt; t.a += t.w * dt;
+    if (t.y > H + 200 || t.y < -200 || t.x < -200 || t.x > W + 200) { t.x = W / 2; t.y = H - 80; t.vx = t.vy = 0; }
+    if (!t.drag && !t.air) {
+      if (t.vx * t.vx + t.vy * t.vy < 120 && Math.abs(t.w) < 0.25) { if (++t.still > 70) { t.sleep = true; t.vx = t.vy = t.w = 0; } } else t.still = 0;
+    }
+  }
+}
+
+/* ===== the mouse is a body ===== */
+const mouse = { x: -999, y: -999, px: -999, py: -999, vx: 0, vy: 0, on: false, over: false, pressed: false, sp: 0, mr: 30 };
+window.addEventListener("pointermove", e => {
+  const r = hero.getBoundingClientRect();
+  mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+  mouse.on = mouse.y >= TOP && mouse.y < H && mouse.y > -1;
+  mouse.over = !!(e.target.closest && e.target.closest(".panel, .top"));
+}, { passive: true });
+document.documentElement.addEventListener("pointerleave", () => { mouse.on = false; });
+window.addEventListener("pointerdown", () => { mouse.pressed = true; });
+window.addEventListener("pointerup", () => { mouse.pressed = false; });
+function mouseStep(dt) {
+  if (mouse.px === -999) { mouse.px = mouse.x; mouse.py = mouse.y; }
+  const k = 1 - Math.exp(-22 * dt);
+  mouse.vx += ((mouse.x - mouse.px) / dt - mouse.vx) * k; mouse.vy += ((mouse.y - mouse.py) / dt - mouse.vy) * k;
+  mouse.px = mouse.x; mouse.py = mouse.y;
+  const sp = Math.hypot(mouse.vx, mouse.vy); mouse.sp = sp;
+  mouse.mr = 26 + Math.min(sp * 0.035, 56);
+  const live = mouse.on && !mouse.over && !mouse.pressed && !drag && !opened && sp > 70;
+  if (!live) return;
+  const mr = mouse.mr, reach = mr + R, vn0 = sp;
+  for (const t of tabs) {
+    if (t.mode !== "phys" || t.drag) continue;
+    if (Math.abs(t.x - mouse.x) > CW || Math.abs(t.y - mouse.y) > CW) continue;
+    const c = Math.cos(t.a), s = Math.sin(t.a);
+    for (let k2 = 0; k2 < 4; k2++) {
+      const ox = c * OFF[k2], oy = s * OFF[k2], X = t.x + ox, Y = t.y + oy, dx = X - mouse.x, dy = Y - mouse.y, d2 = dx * dx + dy * dy;
+      if (d2 >= reach * reach) continue;
+      const d = Math.sqrt(d2) || 0.001, nx = dx / d, ny = dy / d;
+      const want = (reach - d) * 9 + Math.max(0, mouse.vx * nx + mouse.vy * ny) * 1.05;
+      const j = Math.max(0, want - (t.vx * nx + t.vy * ny)) * 0.5;
+      if (j <= 0) continue;
+      t.vx += j * nx; t.vy += j * ny; t.w += (ox * ny - oy * nx) * j * INV_I * 0.7;
+      if (t.sleep) wake(t);
+    }
+  }
+}
+
+/* ===== grabbing and throwing ===== */
+let drag = null;
+hero.addEventListener("pointerdown", e => {
+  const el = e.target.closest(".card"); if (!el) return;
+  const t = tabs[+el.dataset.i];
+  if (t.mode === "lift") { sel = winStart + t.slot; open(); return; }
+  if (t.mode !== "phys") return;
+  const r = hero.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top, dx = px - t.x, dy = py - t.y, c = Math.cos(t.a), s = Math.sin(t.a);
+  drag = { t, px, py, lx: c * dx + s * dy, ly: -s * dx + c * dy };
+  t.drag = true; t.air = false; t.z3 = 0; t.zv = 0; wake(t); t.z = ++zTop; t.el.style.zIndex = 5500; t.el.classList.add("held");
+  hero.setPointerCapture(e.pointerId); e.preventDefault();
+});
+hero.addEventListener("pointermove", e => { if (!drag) return; const r = hero.getBoundingClientRect(); drag.px = e.clientX - r.left; drag.py = e.clientY - r.top; });
+const endDrag = () => {
+  if (!drag) return; const t = drag.t; t.drag = false; t.el.classList.remove("held"); t.el.style.zIndex = Math.min(t.z, 4900); drag = null; wake(t);
+};
+hero.addEventListener("pointerup", endDrag); hero.addEventListener("pointercancel", endDrag);
+
+/* ===== throwing everything up ===== */
+function shake() {
+  if (opened) return;
+  const now = performance.now();
+  for (const t of tabs) if (t.mode === "phys" && !t.drag) t.kickAt = now + rand() * 260;
+  shakeBtn.animate([{ transform: "translate(0,0) rotate(0)" }, { transform: "translate(-3px,2px) rotate(-3deg)" }, { transform: "translate(3px,-2px) rotate(3deg)" }, { transform: "translate(0,0)" }], { duration: 260 });
+}
+function kick(t) {
+  t.kickAt = 0; t.air = true; t.zv = 900 + rand() * 800; wake(t);
+  t.vx += (rand() - .5) * 1100; t.vy += (rand() - .5) * 1100; t.w += (rand() - .5) * 16;
+}
+function dropIn(t, x, y, z, a) {
+  t.mode = "phys"; t.x = x; t.y = y; t.a = a; t.vx = (rand() - .5) * 60; t.vy = (rand() - .5) * 60; t.w = (rand() - .5) * 6;
+  t.z3 = z; t.zv = 0; t.air = true; t.sleep = false; t.still = 0; t.el.classList.add("in");
+}
+
+/* ===== search state ===== */
+let results = [], sel = 0, winStart = 0, opened = null, scrolledAway = false, lastQ = "";
+const alive = () => tabs.filter(t => t.alive);
+function slotPos(i) { return { x: panel.offsetLeft + 3 + 6 + LW / 2, y: panel.offsetTop + 3 + $(".q").offsetHeight + 6 + i * PITCH + LH / 2 }; }
+function release(t) {
+  t.mode = "phys"; t.vx = (rand() - .5) * 400; t.vy = (rand() - .5) * 400; t.w = (rand() - .5) * 6; t.sc = 1; wake(t);
+  t.el.classList.remove("lift", "on"); t.z = ++zTop; t.el.style.zIndex = Math.min(t.z, 4900); t.slot = -1;
+}
+function clearHL(t) { if (!t.lit) return; t.tEl.textContent = t.title; t.hEl.textContent = t.host; t.pEl.textContent = t.path; t.lit = false; }
+function update() {
+  if (opened) return;
+  const q = input.value.trim(), list = alive();
+  results = q ? search(list, q) : [];
+  sel = Math.max(0, Math.min(sel, results.length - 1));
+  if (sel < winStart) winStart = sel; if (sel >= winStart + ROWS) winStart = sel - ROWS + 1;
+  winStart = Math.max(0, Math.min(winStart, Math.max(0, results.length - ROWS)));
+  const vis = results.slice(winStart, winStart + ROWS), visSet = new Map(vis.map((r, i) => [r.tab, i]));
+  const resSet = new Set(results.map(r => r.tab));
+  let changed = false;
+  for (const t of list) {
+    if (visSet.has(t)) {
+      const i = visSet.get(t), r = vis[i];
+      if (t.mode !== "lift") {
+        t.mode = "lift"; t.liftAt = performance.now() + i * 40; t.el.classList.add("lift"); t.el.style.zIndex = 6000 + i; changed = true; t.sleep = false;
+        t.air = false; t.z3 = 0; t.zv = 0; t.zq = 0; t.el.style.setProperty("--z", 0); t.lvx = t.lvy = t.lw = t.hwv = t.hhv = t.scv = 0; t.sc = 1; t.popped = false;
+      }
+      t.slot = i; t.el.classList.toggle("on", winStart + i === sel);
+      t.tEl.replaceChildren(hl(t.title, r.th)); t.hEl.replaceChildren(hl(t.host, r.uh)); t.pEl.replaceChildren(hl(t.path, r.uh, t.host.length)); t.lit = true;
+    } else {
+      if (t.mode === "lift") { release(t); changed = true; }
+      clearHL(t);
+      if (q && resSet.has(t)) {
+        const r = results.find(x => x.tab === t); t.tEl.replaceChildren(hl(t.title, r.th)); t.hEl.replaceChildren(hl(t.host, r.uh)); t.pEl.replaceChildren(hl(t.path, r.uh, t.host.length)); t.lit = true;
+      }
+    }
+    const d = !!q && !resSet.has(t);
+    if (d !== t.dim) { t.dim = d; t.el.classList.toggle("dim", d); }
+  }
+  // non-matches get shoved away from the panel
+  if (q && q !== lastQ) {
+    const pcx = W / 2, pcy = panel.offsetTop + 80;
+    for (const t of list) if (t.dim && t.mode === "phys" && !t.drag) {
+      const dx = t.x - pcx, dy = t.y - pcy, d = Math.hypot(dx, dy) || 1, m = 160 + 520 * Math.max(0, 1 - d / 900);
+      t.vx += dx / d * m; t.vy += dy / d * m; t.w += (rand() - .5) * 5; wake(t);
+    }
+  }
+  lastQ = q;
+  const empty = q && !results.length;
+  const nrows = empty ? 1 : vis.length;
+  if (empty) rowsEl.innerHTML = '<li class="empty">Nothing. Try fewer letters.</li>'; else rowsEl.innerHTML = "";
+  const rh = nrows ? (empty ? 56 : nrows * PITCH + 4) : 0;
+  rowsEl.style.height = rh + "px";
+  rowsEl.classList.toggle("open", !!nrows);
+  const y1 = obst.y1; setObst(rh); if (obst.y1 !== y1) changed = true;
+  if (changed) wakeAll();
+  nEl.textContent = q ? (results.length > ROWS ? `${sel + 1} of ${results.length}` : `${results.length} of ${list.length}`) : "";
+}
+input.addEventListener("input", () => { sel = 0; winStart = 0; update(); });
+function reset() {
+  if (opened) closeOpen();
+  input.value = ""; sel = 0; winStart = 0; lastQ = ""; update(); input.blur();
+}
+function move(d) { if (!results.length) return; sel = (sel + d + results.length) % results.length; update(); }
+function open() {
+  if (!results.length || opened) return;
+  const t = results[sel].tab; opened = t;
+  for (const o of tabs) if (o.mode === "lift" && o !== t) release(o);
+  t.mode = "fly"; t.el.classList.remove("lift", "on", "dim"); t.el.classList.add("open"); t.el.style.zIndex = 7000; t.liftAt = 0;
+  t.lvx = t.lvy = t.lw = t.hwv = t.hhv = t.scv = 0;
+  const [bg, fg, ch] = FAV[t.k];
+  t.el.style.background = bg; t.el.style.color = fg;
+  t.bigEl.innerHTML = `<i class="fav" style="color:${bg}">${ch}</i><h2></h2><p></p><small>You are on this tab. The rest of the page is below.</small>`;
+  t.bigEl.querySelector("h2").textContent = t.title; t.bigEl.querySelector("p").textContent = t.disp;
+  hero.classList.add("opened"); rowsEl.style.height = "0px"; rowsEl.classList.remove("open"); nEl.textContent = "";
+  wakeAll(); scrolledAway = false;
+  setTimeout(() => { if (opened === t) $("#keys").scrollIntoView({ behavior: "smooth" }); }, 1500);
+}
+function closeOpen() {
+  const t = opened; opened = null; if (!t) return;
+  t.el.classList.remove("open"); t.el.style.background = ""; t.el.style.color = ""; hero.classList.remove("opened");
+  t.hw = CW; t.hh = CH; t.sc = 1; t.wS = t.hS = ""; t.el.style.width = ""; t.el.style.height = "";
+  dropIn(t, W * (rand() < .5 ? .12 : .88), 140 + rand() * 600, 420, (rand() - .5) * 2); t.z = ++zTop; t.el.style.zIndex = Math.min(t.z, 4900);
+  wakeAll();
+}
+function closeSel() {
+  if (!results.length) return false;
+  const t = results[sel].tab; t.alive = false; t.mode = "toss"; t.vx = (rand() < .5 ? -1 : 1) * (1700 + rand() * 500); t.vy = -500 - rand() * 300; t.w = (rand() - .5) * 20;
+  t.el.classList.remove("lift", "on"); t.el.style.zIndex = 6500; t.dim = false; t.el.classList.remove("dim"); t.sc = 1;
+  countEl.textContent = alive().length; wakeAll(); update(); return true;
+}
+function focusSearch() {
+  if (window.scrollY > 4) { window.scrollTo({ top: 0, behavior: "smooth" }); }
+  input.focus(); input.select();
+}
+const shakeBtn = $("#shake");
+shakeBtn.addEventListener("click", () => { shake(); shakeBtn.blur(); });
+window.addEventListener("keydown", e => {
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "e") { e.preventDefault(); focusSearch(); return; }
+  if (e.key === "Escape") { reset(); return; }
+  if (document.activeElement !== input) {
+    if (!ctrl && !e.altKey && e.key.toLowerCase() === "s" && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && window.scrollY < H * 0.6) { e.preventDefault(); shake(); }
+    return;
+  }
+  if (e.key === "ArrowDown" || (ctrl && e.key.toLowerCase() === "j")) { e.preventDefault(); move(1); }
+  else if (e.key === "ArrowUp" || (ctrl && e.key.toLowerCase() === "k")) { e.preventDefault(); move(-1); }
+  else if (e.key === "Enter") { e.preventDefault(); open(); }
+  else if (ctrl && e.key === "Backspace") { if (closeSel()) e.preventDefault(); }
+  else if (ctrl && e.key.toLowerCase() === "u") { e.preventDefault(); input.value = ""; sel = 0; winStart = 0; update(); }
+});
+const tries = $("#tries");
+for (const s of ["gh pr", "figma", "inv", "localhost", "cal"]) {
+  const b = document.createElement("button"); b.textContent = s; b.type = "button";
+  b.onclick = () => { input.value = s; input.focus(); sel = 0; winStart = 0; update(); }; tries.append(b);
+}
+window.addEventListener("scroll", () => {
+  if (window.scrollY > H * 0.6) scrolledAway = true;
+  if (opened && scrolledAway && window.scrollY < 4) { closeOpen(); input.value = ""; update(); input.focus({ preventScroll: true }); }
+}, { passive: true });
+window.addEventListener("resize", () => { W = hero.clientWidth; H = hero.clientHeight; sizeWorld(); setObst(obst.y1 - panel.offsetTop - panelBase - 16); });
+setObst(0);
+
+/* ===== the first drop: cards rain onto free spots around the panel ===== */
+const spots = [];
+{
+  const gx = 12, gy = 9, cw = W / gx, ch = (H - TOP) / gy, mx = CW * 0.42, my = CH * 0.6;
+  for (let r = 0; r < gy; r++) for (let c = 0; c < gx; c++) {
+    const x = (c + .2 + rand() * .6) * cw, y = TOP + (r + .2 + rand() * .6) * ch;
+    if (x > obst.x0 - mx && x < obst.x1 + mx && y < obst.y1 + my) continue;
+    if (x < CW / 2 + 6 || x > W - CW / 2 - 6 || y < TOP + CH / 2 + 8 || y > H - CH / 2 - 6) continue;
+    spots.push([x, y]);
+  }
+  for (let i = spots.length - 1; i > 0; i--) { const j = rand() * (i + 1) | 0; [spots[i], spots[j]] = [spots[j], spots[i]]; }
+  while (spots.length < tabs.length) spots.push([CW / 2 + rand() * (W - CW), obst.y1 + CH + rand() * Math.max(10, H - obst.y1 - CH * 1.5)]);
+}
+
+/* ===== frame loop ===== */
+let last = performance.now(), acc = 0, t0 = last;
+const sm = (dt, k) => 1 - Math.exp(-k * dt);
+function spring(t, key, vkey, target, K, C, dt) {
+  const v = t[vkey] + (K * (target - t[key]) - C * t[vkey]) * dt; t[vkey] = v; t[key] += v * dt;
+}
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const visible = window.scrollY < H;
+  for (const t of tabs) {
+    if (t.mode === "wait" && now - t0 >= t.spawnAt) { const s = spots[t.i]; dropIn(t, s[0], s[1], 900 + rand() * 300, (rand() - .5) * 2.4); }
+    else if (t.kickAt && now >= t.kickAt && t.mode === "phys") kick(t);
+  }
+  if (visible) {
+    mouseStep(dt);
+    const act = tabs.filter(t => t.mode === "phys");
+    for (const t of act) if (t.air && !t.drag) {
+      t.zv -= GZ * dt; t.z3 += t.zv * dt;
+      if (t.z3 <= 0) { t.z3 = 0; if (t.zv < -320) t.zv = -t.zv * 0.36; else { t.zv = 0; t.air = false; wake(t); } }
+    }
+    acc += dt; let n = 0;
+    while (acc >= SUB && n < 3) { physStep(act, SUB); acc -= SUB; n++; }
+    if (acc > SUB * 3) acc = 0;
+    // the cursor ring
+    const on = mouse.on && !mouse.over && !mouse.pressed && !opened && mouse.sp > 70;
+    ring.style.opacity = on ? Math.min(0.9, mouse.sp / 500) : 0;
+    if (on) ring.style.transform = `translate3d(${mouse.x.toFixed(1)}px,${mouse.y.toFixed(1)}px,0) scale(${(mouse.mr / 50).toFixed(3)})`;
+  }
+  for (const t of tabs) {
+    if (t.mode === "wait") continue;
+    let tw = CW, th = CH, moving = false, scale = 1;
+    if (t.mode === "lift") {
+      if (now >= t.liftAt) {
+        if (!t.popped) { t.popped = true; t.sc = 1.28; t.scv = 0; t.lvx = t.vx * 0.2; t.lvy = t.vy * 0.2; }
+        const p = slotPos(t.slot); tw = LW; th = LH;
+        spring(t, "x", "lvx", p.x, 360, 19, dt); spring(t, "y", "lvy", p.y, 360, 19, dt); spring(t, "a", "lw", 0, 300, 17, dt);
+        spring(t, "hw", "hwv", tw, 360, 21, dt); spring(t, "hh", "hhv", th, 360, 21, dt); spring(t, "sc", "scv", 1, 320, 15, dt);
+        moving = true; scale = t.sc;
+      }
+    } else if (t.mode === "fly") {
+      tw = W + 4; th = H + 4;
+      spring(t, "x", "lvx", W / 2, 210, 24, dt); spring(t, "y", "lvy", H / 2, 210, 24, dt); spring(t, "a", "lw", 0, 210, 24, dt);
+      spring(t, "hw", "hwv", tw, 210, 24, dt); spring(t, "hh", "hhv", th, 210, 24, dt);
+      moving = true;
+    } else if (t.mode === "toss") {
+      t.vy += 900 * dt; t.x += t.vx * dt; t.y += t.vy * dt; t.a += t.w * dt;
+      if (t.x < -300 || t.x > W + 300 || t.y > H + 400 || t.y < -500) { t.mode = "gone"; t.el.style.display = "none"; continue; }
+    } else if (t.mode === "phys") {
+      scale = 1 + t.z3 * 0.0007 + (t.drag ? 0.05 : 0);
+      const zq = Math.round(t.z3 / 12) * 12; if (zq !== t.zq) { t.zq = zq; t.el.style.setProperty("--z", zq); }
+    }
+    if (t.mode === "gone") continue;
+    const phys = t.mode === "phys";
+    if (phys && t.sleep && !t.air && Math.abs(t.hw - CW) < 0.5 && Math.abs(t.hh - CH) < 0.5 && t.sc === 1) continue;
+    if (phys || t.mode === "toss") {
+      const kk = sm(dt, 14);
+      if (t.hw !== tw) t.hw = Math.abs(t.hw - tw) < 0.5 ? tw : t.hw + (tw - t.hw) * kk;
+      if (t.hh !== th) t.hh = Math.abs(t.hh - th) < 0.5 ? th : t.hh + (th - t.hh) * kk;
+    }
+    const ws = t.hw.toFixed(1) + "px", hs = t.hh.toFixed(1) + "px";
+    if (ws !== t.wS) { t.el.style.width = ws; t.wS = ws; }
+    if (hs !== t.hS) { t.el.style.height = hs; t.hS = hs; }
+    const tr = `translate3d(${t.x.toFixed(2)}px,${t.y.toFixed(2)}px,0) rotate(${t.a.toFixed(4)}rad) scale(${scale.toFixed(3)}) translate(-50%,-50%)`;
+    if (tr !== t.last) { t.el.style.transform = tr; t.last = tr; }
+  }
+}
+requestAnimationFrame(frame);
+// debugging hook for the click dummy
+window.__pile = { tabs, shake, fps: () => new Promise(r => { let c = 0; const s = performance.now(); (function f() { c++; performance.now() - s < 1000 ? requestAnimationFrame(f) : r(c); })(); }) };
+})();
+</script>
+</body>
+</html>

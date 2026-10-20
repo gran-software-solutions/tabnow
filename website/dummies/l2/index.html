@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TabNow: find any open tab in a keystroke</title>
+<meta name="description" content="TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.">
+<style>
+:root {
+  --night: #100e0b; --desk: #17140f; --text: #ece7da; --text2: #b3ac9c; --text3: #8d8777; --sheet: #f0ebdf;
+  --line: rgba(236,231,218,.15); --hit: #9cbcff; --rust: #de563a;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "DejaVu Serif", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; background: var(--night); }
+body { margin: 0; background: var(--night); color: var(--text); font: 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; padding: 0 8px; font: 500 12px/1 var(--sans); color: var(--text);
+  background: #2b2823; border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 2px 0 #060504, 0 3px 4px rgba(0,0,0,.6); margin: 0 2px 3px; vertical-align: middle; }
+
+/* ---------- hero: the night desk ---------- */
+#hero { position: relative; height: 100vh; min-height: 640px; overflow: hidden; background-color: var(--desk); isolation: isolate; user-select: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .9 0 0 0 0 .85 0 0 0 0 .7 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E"); }
+#hero.shake { animation: shake .5s cubic-bezier(.2,.8,.3,1); }
+@keyframes shake { 0% { transform: translate(0,0); } 12% { transform: translate(-14px,9px); } 26% { transform: translate(11px,-8px); } 40% { transform: translate(-8px,-5px); } 56% { transform: translate(5px,5px); } 78% { transform: translate(-2px,1px); } 100% { transform: translate(0,0); } }
+.top { position: absolute; z-index: 5200; left: 0; right: 0; top: 0; height: 64px; padding: 0 48px; display: flex; align-items: center; gap: 28px; font-size: 14px; pointer-events: none; }
+.top > * { pointer-events: auto; }
+.logo { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -.01em; text-decoration: none; font-size: 15px; }
+.logo svg { width: 22px; height: 22px; }
+.top nav { margin-left: auto; display: flex; gap: 26px; color: var(--text2); }
+.top nav a { text-decoration: none; }
+.top nav a:hover { color: var(--text); }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 8px; font: 600 14px var(--sans); text-decoration: none; color: #15120e; background: var(--sheet); border: 0; cursor: pointer;
+  box-shadow: 0 1px 0 #fff inset, 0 2px 0 #8d8777, 0 6px 12px rgba(0,0,0,.6); transition: transform .08s, box-shadow .08s; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #fff inset, 0 0 0 #8d8777, 0 2px 4px rgba(0,0,0,.6); }
+.btn.ghost { background: #26231e; color: var(--text); box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 2px 0 #060504, 0 6px 12px rgba(0,0,0,.5); }
+.btn.ghost:active { box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 0 0 #060504, 0 2px 4px rgba(0,0,0,.5); }
+.top .btn { height: 34px; padding: 0 14px; font-size: 13.5px; }
+
+.intro { position: absolute; z-index: 5100; left: 48px; top: 78px; width: 1200px; transition: opacity .3s; pointer-events: none; text-shadow: 0 2px 3px rgba(0,0,0,.9), 0 4px 26px rgba(0,0,0,.95); }
+.intro h1 { margin: 0; font: 800 96px/1 var(--serif); letter-spacing: -.035em; color: var(--text); white-space: nowrap; }
+.intro h1 #count { font-variant-numeric: tabular-nums; }
+.intro .stage, .intro p.sub, .intro .try { background: rgba(16,14,11,.97); border-radius: 8px; padding-left: 12px; padding-right: 12px; position: relative; left: -12px; width: fit-content; text-shadow: none; }
+.intro .stage { margin: 14px 0 0; height: 36px; font: italic 400 27px/36px var(--serif); color: var(--text2); transition: opacity .25s; }
+.intro .stage.out { opacity: 0; }
+.intro p.sub { margin: 6px 0 0; padding-top: 3px; padding-bottom: 3px; font-size: 15.5px; color: var(--text2); max-width: 760px; }
+.intro .try { margin-top: 8px; padding-top: 5px; padding-bottom: 5px; font-size: 13px; color: var(--text3); pointer-events: auto; }
+.intro .try button { font: 500 12.5px var(--mono); color: var(--text); background: #2b2823; border: 0; border-radius: 5px; padding: 3px 9px; margin-left: 6px; cursor: pointer; box-shadow: 0 2px 0 #060504; }
+.intro .try button:hover { background: #3a362f; }
+
+/* The panel: same look as extension/search.css, dark theme */
+.panel { --fg: #eceef2; --muted: #a0a7b4; --faint: #7a8190; --hair: rgb(255 255 255 / .09);
+  position: absolute; z-index: 5000; left: 48px; top: 372px; width: 600px; border-radius: 16px; background: rgb(27 31 39); color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--hair), 0 30px 60px -8px rgba(0,0,0,.85), 0 4px 10px rgba(0,0,0,.6); transition: opacity .3s; }
+.panel .q { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--hair); font-size: 20px; font-weight: 300; }
+.panel .q svg { flex: none; color: var(--muted); }
+.panel input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; user-select: text; }
+.panel input::placeholder { color: #7a8190; }
+.panel .n { flex: none; font-size: 12px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+.panel ul { list-style: none; margin: 0; padding: 0 6px; height: 0; overflow: hidden; transition: height .22s ease, padding .22s ease; }
+.panel ul.open { padding: 6px; }
+.panel .empty { padding: 14px 12px; font-size: 14px; color: var(--muted); }
+.foot { display: flex; align-items: center; gap: 16px; padding: 9px 16px; border-top: 1px solid var(--hair); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.foot .k { display: inline-flex; align-items: center; gap: 4px; }
+.foot .end { margin-left: auto; }
+.foot kbd { min-width: 20px; height: 20px; padding: 0 6px; margin: 0; font: 500 11px/1 var(--sans); word-spacing: 2px; opacity: .85; background: rgb(255 255 255 / .08); box-shadow: none; border-radius: 6px; color: var(--muted); }
+#hero.opened .panel, #hero.opened .intro { opacity: 0; pointer-events: none; }
+
+mark { background: color-mix(in srgb, var(--hit) 34%, transparent); color: inherit; font-weight: 600; border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.card:not(.lift) mark { background: rgba(31,95,214,.28); }
+.trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* The cards: paper in low light. Light comes from the upper left, so shadows fall down and right. */
+.card { position: absolute; left: 0; top: 0; width: 184px; height: 58px; border-radius: 4px; background: var(--p, #f4efe3); border: 1px solid rgba(60,45,20,.25); padding: 0 12px; display: flex; align-items: center;
+  box-shadow: 2px 3px 0 rgba(0,0,0,.5), 5px 7px 5px rgba(0,0,0,.35);
+  cursor: grab; touch-action: none; will-change: transform; --ts: 12.5px; --us: 10.5px; color: #26231e; }
+.card::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; background: #060504; opacity: var(--sh, 0); transition: opacity .5s; pointer-events: none; }
+.card.hit::after { opacity: 0; transition: opacity .25s; }
+.card.dim::after { opacity: .92; transition: opacity .35s; }
+.card .row { display: flex; align-items: center; gap: 10px; min-width: 0; width: 100%; }
+.fav { flex: none; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; font: 700 10.5px/1 var(--sans); font-style: normal; letter-spacing: 0; }
+.txt { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.t { font-size: var(--ts); line-height: 1.25; font-weight: 500; transition: font-size .25s; }
+.u { font-size: var(--us); line-height: 1.25; color: #7a7468; transition: font-size .25s; }
+.u .host { color: var(--fg, #26231e); opacity: .78; }
+.u .path { color: #8f897d; }
+.go { display: none; }
+.card.held { cursor: grabbing; box-shadow: 1px 1px 0 rgba(0,0,0,.5), 6px 10px 10px rgba(0,0,0,.5), 18px 34px 40px -4px rgba(0,0,0,.6); }
+.card.lift { --ts: 14px; --us: 12px; --fg: #eceef2; background: #232831; color: #eceef2; border: 0; border-radius: 8px; cursor: pointer; padding: 0 12px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / .07), 0 1px 2px rgba(0,0,0,.4); transition: background .15s; }
+.card.lift .u { color: #a0a7b4; } .card.lift .u .path { color: #7d8594; }
+.card.lift .row { gap: 12px; }
+.card.lift .fav { width: 16px; height: 16px; font-size: 9.5px; }
+.card.lift .go { display: inline; visibility: hidden; color: var(--hit); font-size: 14px; }
+.card.lift.on { background: color-mix(in srgb, var(--hit) 18%, #232831); }
+.card.lift.on .t { color: var(--hit); }
+.card.lift.on mark { background: color-mix(in srgb, var(--hit) 40%, transparent); }
+.card.lift.on .go { visibility: visible; }
+.card.lift::after { display: none; }
+.big { display: none; }
+.card.open { border-radius: 0; background: var(--sheet); cursor: default; padding: 0; box-shadow: 0 30px 80px rgba(0,0,0,.7); }
+.card.open::after { display: none; }
+.card.open .row { display: none; }
+.card.open .big { display: flex; flex-direction: column; justify-content: center; width: 100%; height: 100%; padding: 0 96px; gap: 20px; }
+.big .fav { width: 44px; height: 44px; border-radius: 10px; font-size: 24px; }
+.big h2 { margin: 0; font: 800 clamp(32px, 4.4vw, 62px)/1.08 var(--serif); letter-spacing: -.02em; max-width: 1100px; color: #15120e; }
+.big p { margin: 0; font: 18px var(--mono); color: #5d584e; }
+.big small { font-size: 14px; color: #6f6a5e; }
+
+/* ---------- below the desk ---------- */
+main { position: relative; z-index: 1; background: var(--night); box-shadow: 0 -1px 0 rgba(236,231,218,.2); }
+section { max-width: 1120px; margin: 0 auto; padding: 120px 48px 40px; }
+.label { font: 600 12px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin: 0 0 14px; }
+h2.s { font: 800 54px/1.05 var(--serif); letter-spacing: -.03em; margin: 0 0 48px; max-width: 860px; }
+.keys { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.keys li { display: grid; grid-template-columns: 380px 1fr; align-items: center; gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.keys li span.or { color: var(--text3); font-size: 13px; margin: 0 4px; }
+.keys p { margin: 0; color: var(--text2); }
+.keys .first kbd { height: 32px; min-width: 36px; font-size: 14px; }
+.feat { border-top: 1px solid var(--line); }
+.feat > div { display: grid; grid-template-columns: 380px 1fr; gap: 24px; padding: 28px 0; border-bottom: 1px solid var(--line); }
+.feat h3 { margin: 0; font: 700 23px/1.25 var(--serif); letter-spacing: -.01em; }
+.feat p { margin: 0 0 10px; color: var(--text2); max-width: 620px; }
+.feat p:last-child { margin-bottom: 0; }
+.feat code, .perm code, .steps code { font: 500 13px var(--mono); background: rgba(236,231,218,.1); padding: 1px 6px; border-radius: 4px; color: var(--text); }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 7px; font: 500 13px var(--sans); background: #26231e; box-shadow: 0 1px 0 rgba(255,255,255,.07) inset, 0 2px 0 #060504, 0 3px 6px rgba(0,0,0,.5); }
+.chip b { font: 600 13px var(--mono); color: var(--hit); }
+.themes { display: flex; gap: 14px; margin-top: 14px; }
+.mini { width: 190px; border-radius: 10px; padding: 8px; font-size: 11.5px; box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 6px 14px rgba(0,0,0,.6); }
+.mini.l { background: #fff; color: #14171d; }
+.mini.d { background: #1b1f27; color: #eceef2; }
+.mini div { padding: 5px 7px; border-radius: 5px; }
+.mini .f { font-size: 12.5px; font-weight: 300; margin-bottom: 3px; }
+.mini.l .s { background: rgba(31,95,214,.12); } .mini.d .s { background: rgba(156,188,255,.14); }
+.mini.l .s b { color: #1f5fd6; } .mini.d .s b { color: #9cbcff; }
+.mini.d div:not(.s):not(.f) { color: #a0a7b4; } .mini.l div:not(.s):not(.f) { color: #5f6672; }
+.big-claim { font: 800 clamp(48px, 7.4vw, 104px)/.98 var(--serif); letter-spacing: -.04em; margin: 0 0 28px; }
+.lead { font-size: 19px; color: var(--text2); max-width: 660px; margin: 0 0 48px; }
+.perm { border-top: 1px solid var(--line); }
+.perm > div { display: grid; grid-template-columns: 200px 1fr 120px; gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.perm p { margin: 0; color: var(--text2); }
+.perm .opt { font-size: 12.5px; color: var(--text3); text-align: right; }
+.steps { list-style: none; counter-reset: s; margin: 0 0 40px; padding: 0; border-top: 1px solid var(--line); }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 56px 1fr; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.steps li::before { content: counter(s); font: 800 30px/1 var(--serif); color: var(--rust); }
+.steps p { margin: 0; color: var(--text2); }
+.steps strong { color: var(--text); font-weight: 600; }
+.cta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 48px; }
+.cta .btn { height: 46px; padding: 0 22px; font-size: 15px; }
+.cta small { color: var(--text3); font-size: 14px; }
+.coda { font: italic 400 26px/1.3 var(--serif); color: var(--text2); margin: 0 0 8px; }
+footer { max-width: 1120px; margin: 0 auto; padding: 56px 48px 56px; display: flex; gap: 32px; align-items: center; color: var(--text2); font-size: 14px; border-top: 1px solid var(--line); margin-top: 100px; }
+footer nav { margin-left: auto; display: flex; gap: 24px; }
+footer a { text-decoration: none; border-bottom: 1px solid var(--line); }
+footer a:hover { color: var(--text); border-color: var(--text); }
+</style>
+</head>
+<body>
+
+<section id="hero" style="padding:0;max-width:none;margin:0">
+  <div class="top">
+    <a class="logo" href="#">
+      <svg viewBox="0 0 128 128" aria-hidden="true"><rect x="6" y="6" width="116" height="116" rx="28" fill="#1F5FD6"/><path d="M20 58 V42 A14 14 0 0 1 34 28 H94 A14 14 0 0 1 108 42 V58 Z" fill="#fff"/><rect x="51" y="50" width="26" height="52" rx="6" fill="#fff"/></svg>
+      TabNow
+    </a>
+    <nav><a href="#keys">Keys</a><a href="#features">Features</a><a href="#privacy">Privacy</a><a href="#install">Install</a></nav>
+    <a class="btn" href="https://github.com/gran-software-solutions/tabnow">Install</a>
+  </div>
+
+  <div class="intro">
+    <h1>You have <span id="count">0</span> <span id="tabw">tabs</span> open.</h1>
+    <p class="stage" id="stage">It started with one tab.</p>
+    <p class="sub">TabNow is a fuzzy finder for your open tabs. Press <kbd>Ctrl</kbd><kbd>E</kbd>, type a few letters, hit <kbd>Enter</kbd>.</p>
+    <div class="try">Try<span id="tries"></span></div>
+  </div>
+
+  <div class="panel" id="panel">
+    <label class="q"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="Search tabs"><span id="n" class="n"></span></label>
+    <ul id="rows"></ul>
+    <div class="foot">
+      <span class="k"><kbd>↑ ↓</kbd><kbd>ctrl j k</kbd>navigate</span>
+      <span class="k"><kbd>↵</kbd>switch</span>
+      <span class="k"><kbd>ctrl ⌫</kbd>close tab</span>
+      <span class="k end"><kbd>esc</kbd>dismiss</span>
+    </div>
+  </div>
+</section>
+
+<main>
+  <section id="keys">
+    <p class="label">Keys</p>
+    <h2 class="s">One chord gets you out. The rest stays under your fingers.</h2>
+    <ul class="keys">
+      <li class="first"><span><kbd>Ctrl</kbd><kbd>E</kbd></span><p>Open TabNow on the current page. <kbd style="min-width:0">Cmd</kbd><kbd>E</kbd> on macOS.</p></li>
+      <li><span><kbd>Alt</kbd><kbd>Z</kbd></span><p>Back to the previous tab. Nothing opens. Nobody asks questions.</p></li>
+      <li><span><kbd>↑</kbd><kbd>↓</kbd><span class="or">or</span><kbd>Ctrl</kbd><kbd>J</kbd><kbd>Ctrl</kbd><kbd>K</kbd></span><p>Move through the list. The mouse works too, if you must.</p></li>
+      <li><span><kbd>Enter</kbd></span><p>Go to the tab.</p></li>
+      <li><span><kbd>Ctrl</kbd><kbd>Backspace</kbd></span><p>Close the selected tab from the list. You are allowed. It feels good.</p></li>
+      <li><span><kbd>Ctrl</kbd><kbd>U</kbd></span><p>Clear the field.</p></li>
+      <li><span><kbd>Alt</kbd><kbd>T</kbd></span><p>Light or dark. You are already in the dark.</p></li>
+      <li><span><kbd>Esc</kbd></span><p>Dismiss. The tabs will still be there.</p></li>
+    </ul>
+  </section>
+
+  <section id="features">
+    <p class="label">What it does</p>
+    <h2 class="s">A fuzzy finder for the tabs you already have. No judgement.</h2>
+    <div class="feat">
+      <div><h3>Find any tab in a keystroke.</h3><div>
+        <p><kbd>Ctrl</kbd><kbd>E</kbd>, a few letters, <kbd>Enter</kbd>. Tabs come most recently used first and the previous tab is preselected, so <kbd>Ctrl</kbd><kbd>E</kbd> then <kbd>Enter</kbd> flips you back. You will do this a lot.</p></div></div>
+      <div><h3>Fast and fuzzy.</h3><div>
+        <p>Type <code>gh pr</code> and you get the GitHub pull request. Every word you type has to match. The domain ranks above the title, the title above the rest of the URL, and the matched letters are highlighted.</p></div></div>
+      <div><h3>Every window. Bookmarks and history if you insist.</h3><div>
+        <p>It searches all open tabs in all windows. A tab from another window gets a small window badge on its icon.</p>
+        <p>Prefix with a slash to pick where to look. Bookmarks and history are off until you turn them on in the options, and the browser asks you for permission first.</p>
+        <div class="chips"><span class="chip"><b>/t</b>Tabs</span><span class="chip"><b>/b</b>Bookmarks</span><span class="chip"><b>/h</b>History, last 90 days</span></div></div></div>
+      <div><h3>Close tabs from the list.</h3><div>
+        <p><kbd>Ctrl</kbd><kbd>Backspace</kbd> closes the selected tab without leaving the field. Try it on the pile above. It is a start.</p></div></div>
+      <div><h3>Fits your browser.</h3><div>
+        <p>Light and dark, switched with <kbd>Alt</kbd><kbd>T</kbd>. A frosted panel with adjustable opacity (60 to 100 %), blur (0 to 40 px) and size (70 to 150 %). Keys are yours to change.</p>
+        <div class="themes">
+          <div class="mini l"><div class="f">gh pr</div><div class="s"><b>gh</b> Pull Request #38</div><div>Linear: tabnow</div></div>
+          <div class="mini d"><div class="f">gh pr</div><div class="s"><b>gh</b> Pull Request #38</div><div>Linear: tabnow</div></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <p class="label">Privacy</p>
+    <h2 class="big-claim">No network requests. Ever.</h2>
+    <p class="lead">No account, no analytics, nothing leaves the browser. Plain JavaScript, no dependencies, about 600 lines, MIT licensed. Read all of it in an afternoon. It is shorter than your tab bar.</p>
+    <div class="perm">
+      <div><code>tabs</code><p>Read the titles and addresses of your open tabs so it can search them, and switch to or close one when you ask.</p><span class="opt"></span></div>
+      <div><code>activeTab</code><p>Show the panel on the page you are looking at.</p><span class="opt"></span></div>
+      <div><code>scripting</code><p>Put that panel onto the page.</p><span class="opt"></span></div>
+      <div><code>favicon</code><p>Show each tab's small icon in the list.</p><span class="opt"></span></div>
+      <div><code>storage</code><p>Remember your options on this browser.</p><span class="opt"></span></div>
+      <div><code>bookmarks</code><p>Search your bookmarks with <code>/b</code>. Asked for only when you turn it on.</p><span class="opt">optional</span></div>
+      <div><code>history</code><p>Search the last 90 days with <code>/h</code>. Asked for only when you turn it on.</p><span class="opt">optional</span></div>
+    </div>
+  </section>
+
+  <section id="install">
+    <p class="label">Install</p>
+    <h2 class="s">Four steps, then Ctrl+E.</h2>
+    <div class="cta">
+      <a class="btn" href="#">Add to Chrome from the Web Store</a>
+      <a class="btn ghost" href="https://github.com/gran-software-solutions/tabnow">View on GitHub</a>
+      <small>Not in the Web Store yet. The steps below work today.</small>
+    </div>
+    <ol class="steps">
+      <li><p><strong>Clone the repo.</strong> <code>git clone https://github.com/gran-software-solutions/tabnow.git</code></p></li>
+      <li><p><strong>Open <code>chrome://extensions</code></strong> and turn on Developer mode.</p></li>
+      <li><p><strong>Click Load unpacked</strong> and pick the <code>extension/</code> folder.</p></li>
+      <li><p><strong>Press <kbd>Ctrl</kbd><kbd>E</kbd> on any page.</strong> Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc.</p></li>
+    </ol>
+    <p class="coda">Your tabs will wait. They always do.</p>
+  </section>
+
+  <footer>
+    <span>TabNow 0.1.0 · MIT · Made by <a href="https://www.gransoftware.de">GRAN Software Solutions</a></span>
+    <nav><a href="https://github.com/gran-software-solutions/tabnow">Source</a><a href="#">LinkedIn</a><a href="#">X</a><a href="#">Reddit</a></nav>
+  </footer>
+</main>
+
+<script>
+(() => {
+"use strict";
+/* ===== fuzzy.js, ported verbatim (match, search, hl) ===== */
+function match(q, text) {
+  const t = text.toLowerCase(), at = t.indexOf(q);
+  if (at >= 0) {
+    const start = at === 0 || /\W/.test(t[at - 1]);
+    return { score: 100 + q.length * 10 + (start ? 40 : 0) - at * 0.1, hits: [...Array(q.length)].map((_, k) => at + k) };
+  }
+  let score = 0, last = -2, k = 0; const hits = [];
+  for (let j = 0; j < t.length && k < q.length; j++) {
+    if (t[j] !== q[k]) continue;
+    score += j === last + 1 ? 5 : (j === 0 || /\W/.test(t[j - 1]) ? 3 : 1);
+    hits.push(j); last = j; k++;
+  }
+  return k === q.length && hits[k - 1] - hits[0] < q.length * 3 ? { score, hits } : null;
+}
+function search(items, q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return items.map(tab => ({ tab, th: [], uh: [] }));
+  const out = [];
+  for (const tab of items) {
+    let score = 0; const th = [], uh = [];
+    for (const w of words) {
+      const d = match(w, tab.disp.split("/")[0]), a = match(w, tab.title), b = match(w, tab.disp);
+      const best = Math.max((d?.score ?? -1) * 1.5, (a?.score ?? -1) * 1.2, b?.score ?? -1);
+      if (best < 0) { score = -1; break; }
+      score += best;
+      if (d && best === d.score * 1.5) uh.push(...d.hits);
+      else if (a && best === a.score * 1.2) th.push(...a.hits);
+      else uh.push(...b.hits);
+    }
+    if (score >= 0) out.push({ tab, score, th, uh });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+function hl(text, hits, from = 0) {
+  const set = new Set(hits), frag = document.createDocumentFragment();
+  let buf = "", on = false;
+  const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
+  [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
+  flush(); return frag;
+}
+
+/* ===== tabs ===== */
+const FAV = {
+  gh: ["#24292f", "#fff", "G"], li: ["#2b2f36", "#fff", "L"], fg: ["#f24e1e", "#fff", "F"], gm: ["#d93025", "#fff", "M"], gd: ["#1a73e8", "#fff", "D"],
+  gs: ["#188038", "#fff", "S"], gp: ["#e8a000", "#fff", "P"], so: ["#f48024", "#fff", "S"], md: ["#1b1b1b", "#fff", "M"], ch: ["#1f5fd6", "#fff", "C"],
+  yt: ["#e62117", "#fff", "Y"], no: ["#1b1b1b", "#fff", "N"], ji: ["#0052cc", "#fff", "J"], aw: ["#232f3e", "#ff9900", "A"], lo: ["#6b7280", "#fff", "L"],
+  rd: ["#ff4500", "#fff", "R"], xx: ["#000", "#fff", "X"], in: ["#0a66c2", "#fff", "in"], wk: ["#e8e6df", "#222", "W"], np: ["#cb3837", "#fff", "n"],
+  vc: ["#000", "#fff", "V"], sl: ["#3c3f44", "#fff", "S"], cl: ["#c4724a", "#fff", "C"], pg: ["#336791", "#fff", "P"], k8: ["#326ce5", "#fff", "K"],
+  gf: ["#e0752d", "#fff", "G"], se: ["#362d59", "#fff", "S"], db: ["#e8e6df", "#222", "d"], dl: ["#0f2b46", "#fff", "D"], bn: ["#ec0016", "#fff", "B"],
+  hs: ["#d1332a", "#fff", "h"], ci: ["#3d6fa8", "#fff", "c"], am: ["#232f3e", "#fff", "a"], cu: ["#3b82a0", "#fff", "c"]
+};
+const PAPER = ["#fbf9f3", "#f6f2e8", "#fdfcf9", "#eef0f2", "#f3ead6", "#faf7ef"];
+const TABS = [
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/38", "feat: scope prefixes for bookmarks and history · Pull Request #38 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/41", "fix: keep the previous tab preselected after closing a tab · Pull Request #41 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/consultingcockpit/pull/812", "Add month-close checklist to the timesheet view · Pull Request #812 · gran-software-solutions/consultingcockpit"],
+  ["gh", "github.com/gran-software-solutions/pigmo/pull/57", "Debounce the pin sync on slow connections · Pull Request #57 · gran-software-solutions/pigmo"],
+  ["gh", "github.com/gran-software-solutions/tabnow/actions/runs/9412", "lint and package #127 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/issues/29", "Window badge overlaps favicon in dark mode · Issue #29 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/pulls", "Pull requests · GitHub"],
+  ["gh", "github.com/notifications", "Notifications · GitHub"],
+  ["li", "linear.app/gran/issue/GRAN-82/release-checklist", "GRAN-82 Release checklist for the Web Store listing"],
+  ["li", "linear.app/gran/issue/GRAN-77/deepseek-runs-end-as-failed", "GRAN-77 OpenCode DeepSeek runs end as failed"],
+  ["li", "linear.app/gran/project/tabnow/overview", "TabNow · Overview · Linear"],
+  ["fg", "figma.com/design/Kq3x/Tabnow-landing", "TabNow landing – Figma"],
+  ["fg", "figma.com/design/Zr2p/Cockpit-onboarding", "Onboarding flow v3 – Figma"],
+  ["gm", "mail.google.com/mail/u/0/#inbox", "Inbox (14) - dusan@gransoftware.de - Gmail"],
+  ["gm", "mail.google.com/mail/u/0/#search/invoice", "invoice - Search results - Gmail"],
+  ["gd", "docs.google.com/document/d/1xK/edit", "Q3 planning notes - Google Docs"],
+  ["gs", "docs.google.com/spreadsheets/d/9aB/edit", "Invoice tracker 2026 - Google Sheets"],
+  ["gp", "docs.google.com/presentation/d/4cD/edit", "Client workshop deck - Google Slides"],
+  ["so", "stackoverflow.com/questions/5767325", "How can I remove a specific item from an array in JavaScript? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/1789945", "How to check whether a string contains a substring in JavaScript? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/40358", "Why does flex-basis ignore my width in a grid? - Stack Overflow"],
+  ["ch", "developer.chrome.com/docs/extensions/reference/api/tabs", "chrome.tabs | API | Chrome for Developers"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/CSS/color-mix", "color-mix() - CSS: Cascading Style Sheets | MDN"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/API/Intl/Collator", "Intl.Collator - JavaScript | MDN"],
+  ["yt", "youtube.com/watch?v=Kx3jQ9", "How Chrome extensions work, in 20 minutes - YouTube"],
+  ["yt", "youtube.com/watch?v=Zm81Pq", "Postgres indexes, explained - YouTube"],
+  ["no", "notion.so/gran/Roadmap-2026-7c1", "Roadmap 2026 | Notion"],
+  ["no", "notion.so/gran/Weekly-sync-notes", "Weekly sync: meeting notes | Notion"],
+  ["ji", "gran.atlassian.net/browse/CC-1042", "[CC-1042] Leave balance wrong after year switch - Jira"],
+  ["ji", "gran.atlassian.net/jira/software/projects/CC/boards/3", "Board - Consulting Cockpit - Jira"],
+  ["aw", "eu-central-1.console.aws.amazon.com/ec2/home", "EC2 Management Console"],
+  ["aw", "eu-central-1.console.aws.amazon.com/s3/buckets", "S3 buckets - S3 - eu-central-1"],
+  ["aw", "eu-central-1.console.aws.amazon.com/cloudwatch/home", "CloudWatch Management Console"],
+  ["lo", "localhost:3000/dashboard", "Dashboard – Consulting Cockpit (dev)"],
+  ["lo", "localhost:4321/", "TabNow – landing (dev)"],
+  ["lo", "localhost:5173/timesheet", "Timesheet · Vite + React"],
+  ["rd", "reddit.com/r/chrome_extensions/comments/1abc", "How do you manage 100+ tabs? : r/chrome_extensions"],
+  ["rd", "reddit.com/r/ExperiencedDevs/comments/1xyz", "Small team, one repo: is a monorepo worth it? : r/ExperiencedDevs"],
+  ["xx", "x.com/home", "Home / X"],
+  ["xx", "x.com/gransoftware", "GRAN Software (@gransoftware) / X"],
+  ["in", "linkedin.com/feed", "Feed | LinkedIn"],
+  ["in", "linkedin.com/company/gran-software-solutions", "GRAN Software Solutions | LinkedIn"],
+  ["in", "linkedin.com/messaging", "Messaging | LinkedIn"],
+  ["wk", "en.wikipedia.org/wiki/Approximate_string_matching", "Approximate string matching - Wikipedia"],
+  ["np", "npmjs.com/package/esbuild", "esbuild - npm"],
+  ["vc", "vercel.com/gran/tabnow-site", "tabnow-site – Overview – Vercel"],
+  ["sl", "app.slack.com/client/T01/C02", "gran-software (Channel) - Slack"],
+  ["cl", "claude.ai/chat/7f2e", "Tab search ranking ideas - Claude"],
+  ["pg", "postgresql.org/docs/16/indexes.html", "PostgreSQL: Documentation: 16: Chapter 11. Indexes"],
+  ["k8", "kubernetes.io/docs/reference/kubectl/quick-reference", "kubectl Quick Reference | Kubernetes"],
+  ["gf", "grafana.gran.dev/d/api/api-latency", "API latency – Dashboards – Grafana"],
+  ["se", "sentry.io/organizations/gran/issues", "Issues – gran – Sentry"],
+  ["db", "dbxdata.com/docs/connections", "Connections · DBX docs"],
+  ["dl", "deepl.com/translator", "DeepL Translate: The world's most accurate translator"],
+  ["bn", "bahn.de/buchung/fahrplan", "Fahrplanauskunft: Berlin Hbf – Hamburg Hbf | bahn.de"],
+  ["hs", "heise.de/", "heise online – IT-News, Nachrichten und Hintergründe"],
+  ["ci", "caniuse.com/css-has", ":has() CSS relational pseudo-class | Can I use"],
+  ["am", "amazon.de/dp/B0CT4QXN", "Logitech MX Keys S Wireless Keyboard : Amazon.de"],
+  ["cu", "cursor.com/docs", "Cursor Docs"],
+  ["gh", "github.com/gran-software-solutions/stepkeep/pull/9", "Reorder steps by drag and drop · Pull Request #9 · gran-software-solutions/stepkeep"],
+  ["gh", "github.com/gran-software-solutions/tabnow/blob/main/extension/fuzzy.js", "tabnow/extension/fuzzy.js at main · gran-software-solutions/tabnow"],
+  ["li", "linear.app/gran/view/this-week", "This week · Linear"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key", "KeyboardEvent: key property - Web APIs | MDN"],
+  ["so", "stackoverflow.com/questions/2020/git-rebase-onto", "git rebase --onto explained - Stack Overflow"],
+  ["gd", "docs.google.com/document/d/8pL/edit", "Consulting Cockpit: leave policy draft - Google Docs"],
+  ["no", "notion.so/gran/Pigmo-launch-plan", "Pigmo launch plan | Notion"],
+  ["aw", "eu-central-1.console.aws.amazon.com/iam/home", "IAM Management Console"],
+  ["lo", "localhost:8080/health", "localhost:8080/health"],
+  ["rd", "reddit.com/r/webdev/comments/1def", "What do you use instead of tabs for 'read later'? : r/webdev"],
+  ["yt", "youtube.com/watch?v=Ab12Cd", "Keyboard-first UI design - YouTube"]
+];
+const EXTRA = [
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/44", "refactor: split search.js into match and render · Pull Request #44 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/46", "docs: explain the permission list in the readme · Pull Request #46 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/47", "chore: bump the minimum Chrome version to 121 · Pull Request #47 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/pull/52", "feat: Alt+Z jumps to the previous tab · Pull Request #52 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/consultingcockpit/pull/790", "Fix leave balance after the year switch · Pull Request #790 · gran-software-solutions/consultingcockpit"],
+  ["gh", "github.com/gran-software-solutions/consultingcockpit/pull/803", "Show who is off on the team calendar · Pull Request #803 · gran-software-solutions/consultingcockpit"],
+  ["gh", "github.com/gran-software-solutions/consultingcockpit/pull/819", "Speed up the invoice export for large projects · Pull Request #819 · gran-software-solutions/consultingcockpit"],
+  ["gh", "github.com/gran-software-solutions/pigmo/pull/61", "Keep pins when the tab is restored · Pull Request #61 · gran-software-solutions/pigmo"],
+  ["gh", "github.com/gran-software-solutions/pigmo/pull/63", "Add a licence key field to the options page · Pull Request #63 · gran-software-solutions/pigmo"],
+  ["gh", "github.com/gran-software-solutions/stepkeep/pull/12", "Fix undo after deleting the last step · Pull Request #12 · gran-software-solutions/stepkeep"],
+  ["gh", "github.com/gran-software-solutions/stepkeep/issues/7", "Steps lose their order after a reload · Issue #7 · gran-software-solutions/stepkeep"],
+  ["gh", "github.com/gran-software-solutions/tabnow/issues/33", "Ctrl+E clashes with the Edge address bar shortcut · Issue #33 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/issues/35", "Favicons missing for chrome:// pages · Issue #35 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/actions/runs/9433", "package extension #131 · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/releases", "Releases · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/blob/main/README.md", "tabnow/README.md at main · gran-software-solutions/tabnow"],
+  ["gh", "github.com/gran-software-solutions/tabnow/blob/main/extension/search.css", "tabnow/extension/search.css at main · gran-software-solutions/tabnow"],
+  ["gh", "github.com/issues", "Issues · GitHub"],
+  ["gh", "github.com/gran-software-solutions", "GRAN Software Solutions · GitHub"],
+  ["gh", "github.com/orgs/gran-software-solutions/projects/4", "Product roadmap · gran-software-solutions"],
+  ["li", "linear.app/gran/issue/GRAN-91/store-screenshots", "GRAN-91 Store screenshots for TabNow"],
+  ["li", "linear.app/gran/issue/GRAN-88/pigmo-pricing-page", "GRAN-88 Pigmo pricing page copy"],
+  ["li", "linear.app/gran/issue/GRAN-95/reddit-launch-post", "GRAN-95 Draft the Reddit launch post"],
+  ["li", "linear.app/gran/team/GRAN/active", "Active issues · GRAN · Linear"],
+  ["li", "linear.app/gran/inbox", "Inbox · Linear"],
+  ["fg", "figma.com/design/Lm4s/Pigmo-store-assets", "Pigmo store assets – Figma"],
+  ["fg", "figma.com/design/Bn7c/Icon-sheet", "Icon sheet 128px – Figma"],
+  ["fg", "figma.com/design/Tt2d/Timesheet-redesign", "Timesheet redesign – Figma"],
+  ["fg", "figma.com/board/Wq8e/Launch-week", "Launch week board – FigJam"],
+  ["gm", "mail.google.com/mail/u/0/#sent", "Sent Mail - dusan@gransoftware.de - Gmail"],
+  ["gm", "mail.google.com/mail/u/0/#label/clients", "clients - dusan@gransoftware.de - Gmail"],
+  ["gm", "mail.google.com/mail/u/0/#drafts", "Drafts - dusan@gransoftware.de - Gmail"],
+  ["gm", "mail.google.com/mail/u/0/#starred", "Starred - dusan@gransoftware.de - Gmail"],
+  ["gd", "docs.google.com/document/d/2yH/edit", "Workshop agenda for the client kickoff - Google Docs"],
+  ["gd", "docs.google.com/document/d/3zJ/edit", "Privacy policy draft v2 - Google Docs"],
+  ["gd", "docs.google.com/document/d/5mQ/edit", "Notes from the call with the Berlin team - Google Docs"],
+  ["gd", "docs.google.com/document/d/6nR/edit", "Terms of service - Consulting Cockpit - Google Docs"],
+  ["gs", "docs.google.com/spreadsheets/d/2cE/edit", "Hours per project, September - Google Sheets"],
+  ["gs", "docs.google.com/spreadsheets/d/7fK/edit", "Extension ideas ranked - Google Sheets"],
+  ["gs", "docs.google.com/spreadsheets/d/8gL/edit", "Store listing keywords - Google Sheets"],
+  ["gp", "docs.google.com/presentation/d/6eF/edit", "Pigmo launch retro - Google Slides"],
+  ["gp", "docs.google.com/presentation/d/9hM/edit", "Investor update Q3 - Google Slides"],
+  ["so", "stackoverflow.com/questions/3115150", "How to add days to a Date in JavaScript? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/4467539", "Javascript modulo gives a negative result for negative numbers - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/14226803", "Wait 5 seconds before executing next line - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/9329446", "For-each over an array in JavaScript - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/1535631", "Static variables in JavaScript - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/52471", "What does git add -p actually do? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/11828270", "How do I exit the Vim editor? - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/22221999", "Chrome extension: content script cannot read chrome.tabs - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/60424", "Why is my CSS grid item overflowing its track? - Stack Overflow"],
+  ["ch", "developer.chrome.com/docs/extensions/reference/api/commands", "chrome.commands | API | Chrome for Developers"],
+  ["ch", "developer.chrome.com/docs/extensions/reference/api/storage", "chrome.storage | API | Chrome for Developers"],
+  ["ch", "developer.chrome.com/docs/extensions/reference/permissions-list", "Permissions list | Chrome for Developers"],
+  ["ch", "developer.chrome.com/docs/webstore/publish", "Publish in the Chrome Web Store | Chrome for Developers"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/CSS/grid-template-columns", "grid-template-columns - CSS: Cascading Style Sheets | MDN"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver", "IntersectionObserver - Web APIs | MDN"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap", "Array.prototype.flatMap() - JavaScript | MDN"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter", "backdrop-filter - CSS | MDN"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog", "<dialog>: The Dialog element - HTML | MDN"],
+  ["yt", "youtube.com/watch?v=Pq4rTs", "Why your Postgres query is slow - YouTube"],
+  ["yt", "youtube.com/watch?v=Lm9uVw", "Designing a command palette from scratch - YouTube"],
+  ["yt", "youtube.com/watch?v=Ng3xYz", "Lo-fi beats to review pull requests to - YouTube"],
+  ["yt", "youtube.com/watch?v=Hd6aBc", "Kubernetes in 12 minutes - YouTube"],
+  ["yt", "youtube.com/watch?v=Se2dEf", "The state of CSS 2026 - YouTube"],
+  ["no", "notion.so/gran/Customer-interviews-3a8", "Customer interviews | Notion"],
+  ["no", "notion.so/gran/Onboarding-checklist-9d2", "New joiner checklist | Notion"],
+  ["no", "notion.so/gran/Reading-list-4b7", "Reading list | Notion"],
+  ["no", "notion.so/gran/Store-listing-copy-1e5", "Store listing copy | Notion"],
+  ["ji", "gran.atlassian.net/browse/CC-1077", "[CC-1077] Timesheet export drops the last row - Jira"],
+  ["ji", "gran.atlassian.net/browse/CC-1090", "[CC-1090] Add Swiss public holidays - Jira"],
+  ["ji", "gran.atlassian.net/browse/CC-1101", "[CC-1101] Month close blocks on open leave requests - Jira"],
+  ["ji", "gran.atlassian.net/jira/dashboards/10004", "Sprint health - Dashboards - Jira"],
+  ["aw", "eu-central-1.console.aws.amazon.com/rds/home", "RDS Management Console"],
+  ["aw", "eu-central-1.console.aws.amazon.com/lambda/home", "Lambda - Functions - eu-central-1"],
+  ["aw", "eu-central-1.console.aws.amazon.com/route53/v2/hostedzones", "Route 53 - Hosted zones"],
+  ["aw", "console.aws.amazon.com/billing/home", "Billing and Cost Management"],
+  ["lo", "localhost:3000/api/health", "localhost:3000/api/health"],
+  ["lo", "localhost:3000/leave", "Leave requests – Consulting Cockpit (dev)"],
+  ["lo", "localhost:4321/pricing", "Pricing – Pigmo (dev)"],
+  ["lo", "localhost:6006/", "Storybook"],
+  ["lo", "localhost:9090/graph", "Prometheus Time Series Collection and Processing Server"],
+  ["rd", "reddit.com/r/programming/comments/1ghi", "What's a tool you stopped using and don't miss? : r/programming"],
+  ["rd", "reddit.com/r/SideProject/comments/1jkl", "I built a tab switcher and nobody asked : r/SideProject"],
+  ["rd", "reddit.com/r/vim/comments/1mno", "Why do I keep reaching for Ctrl+P everywhere? : r/vim"],
+  ["rd", "reddit.com/r/browsers/comments/1pqr", "How many tabs is too many tabs? : r/browsers"],
+  ["rd", "reddit.com/r/selfhosted/comments/1stu", "Monthly self-hosted questions thread : r/selfhosted"],
+  ["xx", "x.com/notifications", "Notifications / X"],
+  ["xx", "x.com/search?q=tab%20overload", "tab overload - Search / X"],
+  ["xx", "x.com/i/bookmarks", "Bookmarks / X"],
+  ["in", "linkedin.com/in/dusan", "Dusan Odalovic | LinkedIn"],
+  ["in", "linkedin.com/jobs", "Jobs | LinkedIn"],
+  ["in", "linkedin.com/notifications", "Notifications | LinkedIn"],
+  ["wk", "en.wikipedia.org/wiki/Levenshtein_distance", "Levenshtein distance - Wikipedia"],
+  ["wk", "en.wikipedia.org/wiki/Command_palette", "Command palette - Wikipedia"],
+  ["wk", "en.wikipedia.org/wiki/Zeigarnik_effect", "Zeigarnik effect - Wikipedia"],
+  ["np", "npmjs.com/package/vite", "vite - npm"],
+  ["np", "npmjs.com/package/fuse.js", "fuse.js - npm"],
+  ["np", "npmjs.com/package/playwright", "playwright - npm"],
+  ["vc", "vercel.com/gran/pigmo-site/deployments", "Deployments – pigmo-site – Vercel"],
+  ["vc", "vercel.com/gran/cockpit-docs", "cockpit-docs – Overview – Vercel"],
+  ["sl", "app.slack.com/client/T01/C05", "design-review (Channel) - gran-software - Slack"],
+  ["sl", "app.slack.com/client/T01/D07", "Anna Weber (DM) - gran-software - Slack"],
+  ["cl", "claude.ai/chat/a91c", "Leave policy edge cases - Claude"],
+  ["cl", "claude.ai/chat/c40d", "Rewrite the store description - Claude"],
+  ["pg", "postgresql.org/docs/16/sql-createindex.html", "PostgreSQL: Documentation: 16: CREATE INDEX"],
+  ["pg", "postgresql.org/docs/16/runtime-config-query.html", "PostgreSQL: Documentation: 16: 19.7. Query Planning"],
+  ["k8", "kubernetes.io/docs/concepts/workloads/pods", "Pods | Kubernetes"],
+  ["k8", "kubernetes.io/docs/tasks/debug/debug-application/debug-pods", "Debug Pods | Kubernetes"],
+  ["gf", "grafana.gran.dev/d/db/postgres-overview", "Postgres overview – Dashboards – Grafana"],
+  ["gf", "grafana.gran.dev/alerting/list", "Alert rules – Alerting – Grafana"],
+  ["se", "sentry.io/organizations/gran/projects/cockpit", "cockpit – Projects – Sentry"],
+  ["se", "sentry.io/organizations/gran/releases", "Releases – gran – Sentry"],
+  ["db", "dbxdata.com/docs/queries", "Queries · DBX docs"],
+  ["dl", "deepl.com/write", "DeepL Write: AI-powered writing companion"],
+  ["bn", "bahn.de/buchung/start", "Reiseauskunft Berlin – München | bahn.de"],
+  ["hs", "heise.de/news/Browser-Speicherverbrauch-10203948.html", "Warum der Browser so viel Speicher frisst | heise online"],
+  ["ci", "caniuse.com/css-container-queries", "CSS Container Queries | Can I use"],
+  ["ci", "caniuse.com/mdn-api_tabs", "chrome.tabs | Can I use"],
+  ["am", "amazon.de/dp/B09JQMJHXY", "Anker USB-C Hub, 7-in-1 : Amazon.de"],
+  ["am", "amazon.de/dp/B08HLRPZ4K", "Keychron K3 Mechanical Keyboard : Amazon.de"],
+  ["cu", "cursor.com/pricing", "Pricing | Cursor"],
+  ["gh", "github.com/trending", "Trending repositories on GitHub today"],
+  ["gh", "github.com/microsoft/vscode/issues/184", "Quick open should rank recently used files first · Issue #184 · microsoft/vscode"],
+  ["gh", "github.com/vitejs/vite/releases", "Releases · vitejs/vite"],
+  ["gh", "github.com/gran-software-solutions/polishot/pull/5", "Crop to the selected region only · Pull Request #5 · gran-software-solutions/polishot"],
+  ["li", "linear.app/gran/roadmap", "Roadmap · Linear"],
+  ["so", "stackoverflow.com/questions/8511281", "Check if a value is an object in JavaScript - Stack Overflow"],
+  ["so", "stackoverflow.com/questions/4234517", "Difference between git merge and git rebase - Stack Overflow"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/API/Clipboard_API", "Clipboard API - Web APIs | MDN"],
+  ["md", "developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode", "mix-blend-mode - CSS | MDN"],
+  ["gd", "docs.google.com/document/d/7oS/edit", "Proposal: fixed price for the audit - Google Docs"],
+  ["no", "notion.so/gran/Decisions-log-6c9", "Decisions log | Notion"],
+  ["lo", "localhost:5173/projects", "Projects · Vite + React"],
+  ["yt", "youtube.com/watch?v=Tk7mNo", "Raycast vs Alfred in 2026 - YouTube"],
+  ["rd", "reddit.com/r/chrome/comments/1vwx", "Chrome keeps discarding my background tabs : r/chrome"],
+  ["xx", "x.com/gransoftware/status/1840", "GRAN Software on X: \"Tab 201 of 214 is the one you need.\" / X"],
+  ["wk", "en.wikipedia.org/wiki/Fuzzy_matching_(computer-assisted_translation)", "Fuzzy matching (computer-assisted translation) - Wikipedia"],
+  ["aw", "eu-central-1.console.aws.amazon.com/ecr/repositories", "Amazon ECR - Private repositories"],
+  ["gm", "mail.google.com/mail/u/0/#search/stripe", "stripe - Search results - Gmail"],
+  ["gs", "docs.google.com/spreadsheets/d/3hN/edit", "Leave balances 2026 - Google Sheets"],
+  ["ji", "gran.atlassian.net/browse/CC-1115", "[CC-1115] Dark mode flicker on the timesheet - Jira"],
+  ["np", "npmjs.com/package/zod", "zod - npm"],
+  ["fg", "figma.com/design/Ug5f/Cockpit-icons", "Cockpit icons – Figma"],
+  ["k8", "kubernetes.io/docs/concepts/services-networking/ingress", "Ingress | Kubernetes"],
+  ["pg", "postgresql.org/docs/16/sql-explain.html", "PostgreSQL: Documentation: 16: EXPLAIN"],
+  ["sl", "app.slack.com/client/T01/C09", "releases (Channel) - gran-software - Slack"],
+  ["db", "dbxdata.com/docs/getting-started", "Getting started · DBX docs"],
+  ["bn", "bahn.de/service/fahrplan/sparpreis", "Sparpreis Finder | bahn.de"],
+  ["hs", "heise.de/thema/Chrome", "Chrome | heise online"],
+  ["in", "linkedin.com/posts/gran-software-solutions", "GRAN Software Solutions on LinkedIn: tab overload | LinkedIn"],
+  ["cl", "claude.ai/chat/e12f", "Shorter privacy copy - Claude"],
+  ["dl", "deepl.com/en/pro", "DeepL Pro: plans and pricing"]
+];
+
+/* ===== the pool: 190 tabs; the first 70 are the real list, the rest are the same kinds of tabs with other numbers ===== */
+
+/* ===== setup ===== */
+const $ = s => document.querySelector(s);
+const hero = $("#hero"), panel = $("#panel"), input = $("#q"), rowsEl = $("#rows"), nEl = $("#n"), countEl = $("#count"), tabwEl = $("#tabw"), stageEl = $("#stage");
+let W = hero.clientWidth, H = hero.clientHeight;
+const CW = 184, CH = 58, LW = 588, LH = 52, ROWS = 7, PITCH = 54;
+const R = 21, OFF = [-60, -20, 20, 60], INV_I = 1 / ((CW * CW + 42 * 42) / 12);
+const G = 2600, SUB = 1 / 120, ITER = 8, MU = 0.55;
+const POOL = 214, CAP = POOL, PILE_TOP = 345;
+
+let rnd = 1337; const rand = () => (rnd = (rnd * 1664525 + 1013904223) >>> 0) / 4294967296;
+const pool = TABS.concat(EXTRA);
+for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+pool.length = POOL;
+const tabs = pool.map(([k, disp, title], i) => ({
+  k, disp, title, i, alive: true, mode: "wait",
+  x: 0, y: -200, a: 0, vx: 0, vy: 0, w: 0, hw: CW, hh: CH, sleep: false, still: 0, z: 1 + i,
+  born: 0, slot: -1, liftAt: 0, dim: false, hit: false, lit: false, drag: false, shaded: false, last: ""
+}));
+
+const cardsFrag = document.createDocumentFragment();
+for (const t of tabs) {
+  const [bg, fg, ch] = FAV[t.k], el = document.createElement("div");
+  el.className = "card"; el.style.setProperty("--p", PAPER[t.i * 7 % PAPER.length]);
+  el.innerHTML = `<div class="row"><i class="fav" style="background:${bg};color:${fg}">${ch}</i><div class="txt"><div class="t trunc"></div><div class="u trunc"><span class="host"></span><span class="path"></span></div></div><span class="go">↵</span></div><div class="big"></div>`;
+  t.el = el; t.tEl = el.querySelector(".t"); t.hEl = el.querySelector(".host"); t.pEl = el.querySelector(".path"); t.bigEl = el.querySelector(".big");
+  t.host = t.disp.split("/")[0]; t.path = t.disp.slice(t.host.length);
+  t.tEl.textContent = t.title; t.hEl.textContent = t.host; t.pEl.textContent = t.path;
+  el.style.zIndex = t.z; el.style.display = "none"; el.dataset.i = t.i;
+  cardsFrag.append(el);
+}
+hero.append(cardsFrag);
+let zTop = 1000;
+
+/* ===== physics: rigid cards as four overlapping circles, sequential impulses, sleeping ===== */
+const MAXC = 6000;
+const con = Array.from({ length: MAXC }, () => ({ a: null, b: null, nx: 0, ny: 0, pen: 0, rax: 0, ray: 0, rbx: 0, rby: 0, dn: 0, dt: 0, bias: 0, an: 0, at: 0, ia: 0, ib: 0, ma: 0, mb: 0 }));
+const S = 44; let cols, rowsN, head, nxt, cx, cy, cb, grid0 = 150;
+function sizeWorld() {
+  cols = Math.ceil(W / S) + 3; rowsN = Math.ceil((H + 400) / S) + 3;
+  head = new Int32Array(cols * rowsN); nxt = new Int32Array(tabs.length * 4 + 8);
+  cx = new Float32Array(tabs.length * 4); cy = new Float32Array(tabs.length * 4); cb = new Int32Array(tabs.length * 4);
+}
+sizeWorld();
+const wake = t => { t.sleep = false; t.still = 0; t.shaded = false; t.flat = false; };
+const wakeAll = () => { for (const t of tabs) if (t.mode === "phys") wake(t); };
+
+function physStep(act, dt) {
+  // forces + drag spring
+  for (const t of act) {
+    if (t.sleep && !t.drag) continue;
+    t.vy += G * dt;
+    if (t.drag) {
+      const c = Math.cos(t.a), s = Math.sin(t.a), rx = c * drag.lx - s * drag.ly, ry = s * drag.lx + c * drag.ly;
+      const ex = (drag.px - (t.x + rx)) * 22 - (t.vx - t.w * ry), ey = (drag.py - (t.y + ry)) * 22 - (t.vy + t.w * rx);
+      t.vx += ex * 0.25; t.vy += ey * 0.25; t.w += (rx * ey - ry * ex) * 0.06 * INV_I * 40; t.w *= 0.93;
+    }
+  }
+  // circles
+  let n = 0;
+  head.fill(-1);
+  for (let bi = 0; bi < act.length; bi++) {
+    const t = act[bi], c = Math.cos(t.a), s = Math.sin(t.a); t.c = c; t.s = s;
+    for (let k = 0; k < 4; k++) {
+      const X = t.x + c * OFF[k], Y = t.y + s * OFF[k];
+      cx[n] = X; cy[n] = Y; cb[n] = bi;
+      const gx = Math.min(cols - 1, Math.max(0, (X / S | 0) + 1)), gy = Math.min(rowsN - 1, Math.max(0, ((Y + grid0) / S | 0) + 1));
+      const g = gy * cols + gx; nxt[n] = head[g]; head[g] = n; n++;
+    }
+  }
+  let nc = 0; const D2 = 4 * R * R;
+  for (let i = 0; i < n; i++) {
+    const A = act[cb[i]], X = cx[i], Y = cy[i];
+    // walls
+    if (!A.sleep || A.drag) {
+      let pen;
+      if ((pen = Y + R - H) > 0 && nc < MAXC) { const c = con[nc++]; c.a = A; c.b = null; c.nx = 0; c.ny = 1; c.pen = pen; c.rax = X - A.x; c.ray = H - A.y; }
+      if ((pen = R - X) > 0 && nc < MAXC) { const c = con[nc++]; c.a = A; c.b = null; c.nx = -1; c.ny = 0; c.pen = pen; c.rax = 0 - A.x; c.ray = Y - A.y; }
+      if ((pen = X + R - W) > 0 && nc < MAXC) { const c = con[nc++]; c.a = A; c.b = null; c.nx = 1; c.ny = 0; c.pen = pen; c.rax = W - A.x; c.ray = Y - A.y; }
+    }
+    const gx = Math.min(cols - 1, Math.max(0, (X / S | 0) + 1)), gy = Math.min(rowsN - 1, Math.max(0, ((Y + grid0) / S | 0) + 1));
+    for (let yy = gy - 1; yy <= gy + 1; yy++) {
+      if (yy < 0 || yy >= rowsN) continue;
+      for (let xx = gx - 1; xx <= gx + 1; xx++) {
+        if (xx < 0 || xx >= cols) continue;
+        for (let j = head[yy * cols + xx]; j >= 0; j = nxt[j]) {
+          if (j <= i || cb[j] === cb[i]) continue;
+          const dx = cx[j] - X, dy = cy[j] - Y, d2 = dx * dx + dy * dy;
+          if (d2 >= D2 || nc >= MAXC) continue;
+          const B = act[cb[j]];
+          if (A.sleep && B.sleep) continue;
+          if (A.sleep && B.vx * B.vx + B.vy * B.vy > 1500) wake(A);
+          else if (B.sleep && A.vx * A.vx + A.vy * A.vy > 1500) wake(B);
+          const d = Math.sqrt(d2) || 0.001, nx = dx / d, ny = dy / d, pen = 2 * R - d;
+          const px = X + nx * (R - pen / 2), py = Y + ny * (R - pen / 2);
+          const c = con[nc++]; c.a = A; c.b = B; c.nx = nx; c.ny = ny; c.pen = pen;
+          c.rax = px - A.x; c.ray = py - A.y; c.rbx = px - B.x; c.rby = py - B.y;
+        }
+      }
+    }
+  }
+  // prepare
+  for (let k = 0; k < nc; k++) {
+    const c = con[k], A = c.a, B = c.b, nx = c.nx, ny = c.ny, tx = -ny, ty = nx;
+    c.ma = A.sleep && !A.drag ? 0 : 1; c.ia = c.ma ? INV_I : 0;
+    if (B) { c.mb = B.sleep && !B.drag ? 0 : 1; c.ib = c.mb ? INV_I : 0; } else { c.mb = 0; c.ib = 0; }
+    const ran = c.rax * ny - c.ray * nx, rbn = B ? c.rbx * ny - c.rby * nx : 0, rat = c.rax * ty - c.ray * tx, rbt = B ? c.rbx * ty - c.rby * tx : 0;
+    c.dn = 1 / (c.ma + c.mb + ran * ran * c.ia + rbn * rbn * c.ib || 1);
+    c.dt = 1 / (c.ma + c.mb + rat * rat * c.ia + rbt * rbt * c.ib || 1);
+    c.bias = Math.min(0.2 * Math.max(c.pen - 0.6, 0) / dt, 260); c.an = 0; c.at = 0;
+  }
+  for (let it = 0; it < ITER; it++) {
+    for (let k = 0; k < nc; k++) {
+      const c = con[k], A = c.a, B = c.b, nx = c.nx, ny = c.ny;
+      let vx = (B ? B.vx - B.w * c.rby : 0) - (A.vx - A.w * c.ray), vy = (B ? B.vy + B.w * c.rbx : 0) - (A.vy + A.w * c.rax);
+      let jn = (c.bias - (vx * nx + vy * ny)) * c.dn, acc = Math.max(0, c.an + jn); jn = acc - c.an; c.an = acc;
+      let px = jn * nx, py = jn * ny;
+      A.vx -= px * c.ma; A.vy -= py * c.ma; A.w -= (c.rax * py - c.ray * px) * c.ia;
+      if (B) { B.vx += px * c.mb; B.vy += py * c.mb; B.w += (c.rbx * py - c.rby * px) * c.ib; }
+      // friction
+      vx = (B ? B.vx - B.w * c.rby : 0) - (A.vx - A.w * c.ray); vy = (B ? B.vy + B.w * c.rbx : 0) - (A.vy + A.w * c.rax);
+      const tx = -ny, ty = nx; let jt = -(vx * tx + vy * ty) * c.dt, lim = MU * c.an, at = Math.max(-lim, Math.min(lim, c.at + jt));
+      jt = at - c.at; c.at = at; px = jt * tx; py = jt * ty;
+      A.vx -= px * c.ma; A.vy -= py * c.ma; A.w -= (c.rax * py - c.ray * px) * c.ia;
+      if (B) { B.vx += px * c.mb; B.vy += py * c.mb; B.w += (c.rbx * py - c.rby * px) * c.ib; }
+    }
+  }
+  // integrate
+  for (const t of act) {
+    if (t.sleep && !t.drag) continue;
+    t.vx *= 0.9996; t.vy *= 0.9996; t.w *= t.drag ? 1 : 0.992;
+    const sp = Math.hypot(t.vx, t.vy); if (sp > 2400) { t.vx *= 2400 / sp; t.vy *= 2400 / sp; }
+    if (t.w > 14) t.w = 14; else if (t.w < -14) t.w = -14;
+    t.x += t.vx * dt; t.y += t.vy * dt; t.a += t.w * dt;
+    if (t.y > H + 200) { t.y = H - 60; t.vy = 0; }
+    if (!t.drag) {
+      if (t.vx * t.vx + t.vy * t.vy < 120 && Math.abs(t.w) < 0.25) { if (++t.still > 70) { t.sleep = true; t.vx = t.vy = t.w = 0; } } else t.still = 0;
+    }
+  }
+}
+
+
+/* ===== grabbing and throwing ===== */
+let drag = null;
+hero.addEventListener("pointerdown", e => {
+  const el = e.target.closest(".card"); if (!el) return;
+  const t = tabs[+el.dataset.i];
+  if (t.mode === "lift") { sel = winStart + t.slot; open(); return; }
+  if (t.mode !== "phys") return;
+  const r = hero.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top, dx = px - t.x, dy = py - t.y, c = Math.cos(t.a), s = Math.sin(t.a);
+  drag = { t, px, py, lx: c * dx + s * dy, ly: -s * dx + c * dy };
+  t.drag = true; wake(t); t.z = ++zTop; t.el.style.zIndex = Math.min(t.z, 4900) + 600 > 5000 ? 4900 : t.z; t.el.classList.add("held");
+  hero.setPointerCapture(e.pointerId); e.preventDefault();
+});
+hero.addEventListener("pointermove", e => { if (!drag) return; const r = hero.getBoundingClientRect(); drag.px = e.clientX - r.left; drag.py = e.clientY - r.top; });
+const endDrag = () => {
+  if (!drag) return; const t = drag.t; t.drag = false; t.el.classList.remove("held"); t.el.style.zIndex = Math.min(t.z, 4900); drag = null; wake(t);
+};
+hero.addEventListener("pointerup", endDrag); hero.addEventListener("pointercancel", endDrag);
+
+/* ===== the slow disaster: rain, counter, stage line ===== */
+let paused = false, rainT = 0, spawnAcc = 0, nextIdx = 0, liveN = 0, closedN = 0, stageKey = "";
+const STAGES = [[0, "It started with one tab."], [22, "Each one was only for a minute."], [50, "You were going to read that. Later."], [90, "This is fine. Everyone says that."], [150, "Somewhere in there is the one you need."], [CAP, "That is all of them. For today."]];
+function setStage(key, txt) {
+  if (key === stageKey) return; stageKey = key;
+  stageEl.classList.add("out");
+  setTimeout(() => { stageEl.textContent = txt; stageEl.classList.remove("out"); }, 220);
+}
+function paintCount() {
+  countEl.textContent = liveN; tabwEl.textContent = liveN === 1 ? "tab" : "tabs";
+  const k = Math.min(1, liveN / CAP), a = [236, 231, 218], b = [222, 86, 58];
+  countEl.style.color = `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * k * k)).join(",")})`;
+  if (!paused) { let s = STAGES[0]; for (const x of STAGES) if (liveN >= x[0]) s = x; setStage("s" + s[0], s[1]); }
+}
+function spawnOne() {
+  if (nextIdx >= tabs.length) return false;
+  const t = tabs[nextIdx++];
+  t.mode = "phys"; t.el.style.display = ""; t.born = nextIdx; t.z = ++zTop; t.el.style.zIndex = Math.min(t.z, 4900);
+  t.x = rand() < 0.6 ? Math.max(120, Math.min(W - 120, 380 + (rand() + rand() + rand() - 1.5) * 560)) : W / 2 + (rand() + rand() - 1) * (W / 2 - 120);
+  t.y = -60; t.a = (rand() - .5) * 1.1; t.vy = 260; t.vx = (rand() - .5) * 80; t.w = (rand() - .5) * 5;
+  liveN++; paintCount(); return true;
+}
+function recycle() {
+  // the pile may not climb past the panel: the oldest cards at the bottom are folded into the dark and the rest sinks
+  const slow = [];
+  for (const t of tabs) if (t.mode === "phys" && !t.drag && (t.sleep || t.vx * t.vx + t.vy * t.vy < 40000)) slow.push(t);
+  if (slow.length < 40) return;
+  const ys = slow.map(t => t.y).sort((a, b) => a - b), excess = PILE_TOP - ys[3];
+  if (excess <= 0) return;
+  slow.sort((a, b) => a.born - b.born);
+  for (let k = 0, n = Math.min(6, 1 + Math.floor(excess / 40)); k < n; k++) {
+    const old = slow[k];
+    old.mode = "ghost"; old.ghost = true; old.el.style.transition = "opacity .35s"; old.el.style.opacity = 0;
+    setTimeout(() => { if (old.mode === "ghost") old.el.style.display = "none"; }, 400);
+    for (const t of tabs) if (t.mode === "phys" && t.y < old.y && Math.abs(t.x - old.x) < 260) wake(t);
+  }
+}
+function shade(t) {
+  // one lamp, upper left. The farther from it, the darker the paper.
+  const d = Math.hypot(t.x - W * 0.1, t.y + H * 0.15) / Math.hypot(W, H);
+  t.el.style.setProperty("--sh", Math.max(0, Math.min(0.66, 0.03 + d * 0.62 + ((t.i * 37 % 100) / 100 - .5) * 0.1)).toFixed(2)); t.shaded = true;
+}
+
+/* ===== search state ===== */
+let results = [], sel = 0, winStart = 0, opened = null, scrolledAway = false;
+const alive = () => tabs.filter(t => t.alive && t.mode !== "wait" && t.mode !== "gone" && t.mode !== "toss");
+function slotPos(i) { return { x: panel.offsetLeft + 6 + LW / 2, y: panel.offsetTop + $(".q").offsetHeight + 6 + i * PITCH + LH / 2 }; }
+function release(t) {
+  if (t.ghost) { t.mode = "ghost"; t.el.classList.remove("lift", "on", "hit", "dim"); t.dim = false; t.hit = false; t.slot = -1; t.el.style.display = "none"; t.el.style.opacity = 0; return; }
+  t.mode = "phys"; t.vx = (rand() - .5) * 120; t.vy = 40; t.w = (rand() - .5) * 3; wake(t);
+  t.el.classList.remove("lift", "on"); t.z = ++zTop; t.el.style.zIndex = Math.min(t.z, 4900); t.slot = -1;
+}
+function clearHL(t) { if (!t.lit) return; t.tEl.textContent = t.title; t.hEl.textContent = t.host; t.pEl.textContent = t.path; t.lit = false; }
+function update() {
+  if (opened) return;
+  const q = input.value.trim(), list = alive();
+  results = q ? search(list, q) : [];
+  sel = Math.max(0, Math.min(sel, results.length - 1));
+  if (sel < winStart) winStart = sel; if (sel >= winStart + ROWS) winStart = sel - ROWS + 1;
+  winStart = Math.max(0, Math.min(winStart, Math.max(0, results.length - ROWS)));
+  const vis = results.slice(winStart, winStart + ROWS), visSet = new Map(vis.map((r, i) => [r.tab, i]));
+  const resMap = new Map(results.map(r => [r.tab, r]));
+  let changed = false;
+  for (const t of list) {
+    if (visSet.has(t)) {
+      const i = visSet.get(t), r = vis[i];
+      if (t.mode !== "lift") {
+        if (t.mode === "ghost") { const p = slotPos(i); t.el.style.transition = "none"; t.el.style.opacity = 1; t.el.style.display = ""; t.x = p.x; t.y = H + 90; t.a = (rand() - .5) * .4; t.hw = CW; t.hh = CH; t.el.style.width = CW + "px"; t.el.style.height = CH + "px"; t.last = ""; t.flat = false; t.shaded = false; t.el.style.setProperty("--sh", 0); }
+        t.mode = "lift"; t.liftAt = performance.now() + i * 30; t.el.classList.add("lift"); t.el.style.zIndex = 6000 + i; changed = true; t.sleep = false;
+      }
+      t.slot = i; t.el.classList.toggle("on", winStart + i === sel);
+      t.tEl.replaceChildren(hl(t.title, r.th)); t.hEl.replaceChildren(hl(t.host, r.uh)); t.pEl.replaceChildren(hl(t.path, r.uh, t.host.length)); t.lit = true;
+    } else {
+      if (t.mode === "lift") { release(t); changed = true; }
+      clearHL(t);
+      const r = q && resMap.get(t);
+      if (r) { t.tEl.replaceChildren(hl(t.title, r.th)); t.hEl.replaceChildren(hl(t.host, r.uh)); t.pEl.replaceChildren(hl(t.path, r.uh, t.host.length)); t.lit = true; }
+    }
+    const d = !!q && !resMap.has(t), h = !!q && !d;
+    if (d !== t.dim) { t.dim = d; t.el.classList.toggle("dim", d); }
+    if (h !== t.hit) { t.hit = h; t.el.classList.toggle("hit", h); }
+  }
+  if (changed) wakeAll();
+  // panel
+  const empty = q && !results.length;
+  const nrows = empty ? 1 : vis.length;
+  if (empty) rowsEl.innerHTML = '<li class="empty">No tabs match. Are you sure you opened it?</li>'; else rowsEl.innerHTML = "";
+  rowsEl.style.height = nrows ? nrows * PITCH - 2 + 12 + (empty ? -16 : 0) + "px" : "0px";
+  rowsEl.classList.toggle("open", !!nrows);
+  nEl.textContent = q ? (results.length > ROWS ? `${sel + 1} of ${results.length}` : `${results.length} of ${list.length}`) : "";
+  if (paused) {
+    if (!q) setStage("p0", "The rain has stopped. For now.");
+    else if (!results.length) setStage("p1", "Nothing. It was never here.");
+    else setStage("p" + results.length + "/" + list.length, `${results.length} ${results.length === 1 ? "match" : "matches"}. The other ${liveN - results.length} can wait.`);
+  }
+}
+function pauseRain() { paused = true; }
+input.addEventListener("input", () => { pauseRain(); sel = 0; winStart = 0; update(); });
+function resumeRain() { paused = false; stageKey = ""; paintCount(); }
+function reset() {
+  if (opened) closeOpen();
+  input.value = ""; input.blur(); sel = 0; winStart = 0; update(); resumeRain();
+}
+function move(d) { if (!results.length) return; sel = (sel + d + results.length) % results.length; update(); }
+function open() {
+  if (!results.length || opened) return;
+  const t = results[sel].tab; opened = t;
+  for (const o of tabs) if (o.mode === "lift" && o !== t) release(o);
+  t.mode = "fly"; t.el.classList.remove("lift", "on", "hit"); t.el.classList.add("open"); t.el.style.zIndex = 7000; t.liftAt = 0;
+  const [bg, fg, ch] = FAV[t.k];
+  t.bigEl.innerHTML = `<i class="fav" style="background:${bg};color:${fg}">${ch}</i><h2></h2><p></p><small>You are on this tab. The rest of the page is below.</small>`;
+  t.bigEl.querySelector("h2").textContent = t.title; t.bigEl.querySelector("p").textContent = t.disp;
+  hero.classList.add("opened"); rowsEl.style.height = "0px"; rowsEl.classList.remove("open"); nEl.textContent = "";
+  wakeAll(); scrolledAway = false;
+  setTimeout(() => { hero.classList.remove("shake"); void hero.offsetWidth; hero.classList.add("shake"); }, 170);
+  setTimeout(() => hero.classList.remove("shake"), 800);
+  setTimeout(() => { if (opened === t) $("#keys").scrollIntoView({ behavior: "smooth" }); }, 1500);
+}
+function closeOpen() {
+  const t = opened; opened = null; if (!t) return;
+  t.el.classList.remove("open"); hero.classList.remove("opened");
+  t.ghost = false; t.mode = "phys"; t.vx = 0; t.vy = 0; t.w = (rand() - .5) * 4; t.x = W / 2; t.y = H * 0.3; wake(t); t.shaded = false; t.el.style.setProperty("--sh", 0); t.z = ++zTop; t.el.style.zIndex = Math.min(t.z, 4900);
+  wakeAll();
+}
+function closeSel() {
+  if (!results.length) return false;
+  const t = results[sel].tab; t.alive = false; t.mode = "toss"; t.vx = (rand() < .5 ? -1 : 1) * (1500 + rand() * 500); t.vy = -700; t.w = (rand() - .5) * 18;
+  t.el.classList.remove("lift", "on", "hit"); t.el.style.zIndex = 4900; t.dim = false; t.el.classList.remove("dim");
+  closedN++; liveN--; paintCount(); wakeAll(); update(); return true;
+}
+function focusSearch() {
+  if (window.scrollY > 4) { window.scrollTo({ top: 0, behavior: "smooth" }); }
+  pauseRain(); input.focus(); input.select(); update();
+}
+window.addEventListener("keydown", e => {
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "e") { e.preventDefault(); focusSearch(); return; }
+  if (e.key === "Escape") { reset(); return; }
+  if (document.activeElement !== input) {
+    // typing anywhere on the first screen goes to the field
+    if (!ctrl && !e.altKey && e.key.length === 1 && e.key !== " " && !opened && window.scrollY < H * 0.5) { pauseRain(); input.focus(); }
+    return;
+  }
+  if (e.key === "ArrowDown" || (ctrl && e.key.toLowerCase() === "j")) { e.preventDefault(); move(1); }
+  else if (e.key === "ArrowUp" || (ctrl && e.key.toLowerCase() === "k")) { e.preventDefault(); move(-1); }
+  else if (e.key === "Enter") { e.preventDefault(); open(); }
+  else if (ctrl && e.key === "Backspace") { if (closeSel()) e.preventDefault(); }
+  else if (ctrl && e.key.toLowerCase() === "u") { e.preventDefault(); input.value = ""; sel = 0; winStart = 0; update(); }
+});
+// suggestions
+const tries = $("#tries");
+for (const s of ["gh pr", "figma", "inv", "localhost", "cal"]) {
+  const b = document.createElement("button"); b.textContent = s; b.type = "button";
+  b.onclick = () => { input.value = s; pauseRain(); input.focus(); sel = 0; winStart = 0; update(); }; tries.append(b);
+}
+window.addEventListener("scroll", () => {
+  if (window.scrollY > H * 0.6) scrolledAway = true;
+  if (opened && scrolledAway && window.scrollY < 4) { closeOpen(); input.value = ""; update(); resumeRain(); input.focus({ preventScroll: true }); }
+}, { passive: true });
+window.addEventListener("resize", () => { W = hero.clientWidth; H = hero.clientHeight; sizeWorld(); });
+
+/* ===== frame loop ===== */
+const stats = { phys: 0, act: 0 };
+let last = performance.now(), acc = 0, t0 = last, lastRecycle = 0;
+const sm = (dt, k) => 1 - Math.exp(-k * dt);
+paintCount();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  const visible = window.scrollY < H;
+  // rain: a burst of twelve, then a little faster every second until the cap
+  if (visible && !paused && !opened && now - t0 > 300) {
+    rainT += dt;
+    const rate = rainT < 1.2 ? 10 : Math.min(9, 3 + (rainT - 1.2));
+    spawnAcc += rate * dt;
+    while (spawnAcc >= 1) { spawnAcc -= 1; if (nextIdx < POOL) spawnOne(); }
+    if (now - lastRecycle > 110) { lastRecycle = now; recycle(); }
+  }
+  if (visible) {
+    const act = tabs.filter(t => t.mode === "phys");
+    acc += dt; let n = 0;
+    const p0 = performance.now();
+    while (acc >= SUB && n < 9) { physStep(act, SUB); acc -= SUB; n++; }
+    stats.phys += (performance.now() - p0 - stats.phys) * 0.1; stats.act += (act.filter(t => !t.sleep).length - stats.act) * 0.1;
+    if (acc > SUB * 9) acc = 0;
+  }
+  for (const t of tabs) {
+    if (t.mode === "wait" || t.mode === "ghost") continue;
+    let tw = CW, th = CH, moving = false;
+    if (t.mode === "lift") {
+      if (now >= t.liftAt) {
+        const p = slotPos(t.slot), k = sm(dt, 15); tw = LW; th = LH;
+        t.x += (p.x - t.x) * k; t.y += (p.y - t.y) * k; t.a += (0 - t.a) * k; moving = true;
+      }
+    } else if (t.mode === "fly") {
+      const k = sm(dt, 16); tw = W + 4; th = H + 4;
+      t.x += (W / 2 - t.x) * k; t.y += (H / 2 - t.y) * k; t.a += (0 - t.a) * k; moving = true;
+    } else if (t.mode === "toss") {
+      t.vy += G * dt; t.x += t.vx * dt; t.y += t.vy * dt; t.a += t.w * dt;
+      if (t.x < -300 || t.x > W + 300 || t.y > H + 400) { t.mode = "gone"; t.el.style.display = "none"; }
+      continue;
+    }
+    if (t.mode === "gone") continue;
+    if (t.sleep && !t.shaded) shade(t);
+    if (t.sleep && !t.flat && !moving && t.mode === "phys") { t.flat = true; t.el.style.willChange = "auto"; t.el.style.transform = `translate(${t.x.toFixed(2)}px,${t.y.toFixed(2)}px) rotate(${t.a.toFixed(4)}rad) translate(-50%,-50%)`; t.last = ""; continue; }
+    if (!t.sleep && t.el.style.willChange !== "transform") t.el.style.willChange = "transform";
+    if (t.sleep && !moving && Math.abs(t.hw - tw) < 0.5 && Math.abs(t.hh - th) < 0.5) continue;
+    const kk = sm(dt, t.mode === "fly" ? 16 : 14);
+    if (t.hw !== tw) { t.hw = Math.abs(t.hw - tw) < 0.5 ? tw : t.hw + (tw - t.hw) * kk; t.el.style.width = t.hw + "px"; }
+    if (t.hh !== th) { t.hh = Math.abs(t.hh - th) < 0.5 ? th : t.hh + (th - t.hh) * kk; t.el.style.height = t.hh + "px"; }
+    const tr = `translate3d(${t.x.toFixed(2)}px,${t.y.toFixed(2)}px,0) rotate(${t.a.toFixed(4)}rad) translate(-50%,-50%)`;
+    if (tr !== t.last) { t.el.style.transform = tr; t.last = tr; }
+  }
+}
+requestAnimationFrame(frame);
+// debugging hook for the click dummy
+window.__pile = { tabs, stats, live: () => liveN, fps: () => new Promise(r => { let c = 0; const s = performance.now(); (function f() { c++; performance.now() - s < 1000 ? requestAnimationFrame(f) : r(c); })(); }) };
+})();
+</script>
+</body>
+</html>
