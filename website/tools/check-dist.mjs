@@ -94,7 +94,7 @@ for (const marker of ['data-install', 'id="panel"', 'data-theme-toggle', 'applic
   if (!home.includes(marker)) errors.push(`index.html: missing ${marker}`);
 }
 // Self-hosted fonts must ship.
-for (const font of ['geist-latin-wght-normal', 'instrument-serif-latin-400-normal', 'instrument-serif-latin-400-italic']) {
+for (const font of ['ibm-plex-sans-latin-wght-normal', 'ibm-plex-mono-latin-400-normal', 'ibm-plex-mono-latin-500-normal', 'instrument-serif-latin-400-normal', 'instrument-serif-latin-400-italic']) {
   if (!existsSync(join(dist, 'fonts', `${font}.woff2`))) errors.push(`missing font fonts/${font}.woff2`);
 }
 // The click dummies are design history and must not be published.

@@ -1,0 +1,15 @@
+---
+import { useT } from '../i18n/index.js';
+const { t } = useT(Astro.currentLocale);
+const { k, id, band = false } = Astro.props;
+---
+
+<section class:list={['moment', band && 'band']} id={id}>
+  <div class="wrap">
+    <h2 data-reveal>{t(`moments.${k}.titleA`)} <em>{t(`moments.${k}.titleB`)}</em></h2>
+    <p class="say" data-reveal set:html={t(`moments.${k}.text`)} />
+    <div class="stage" data-reveal>
+      <slot />
+    </div>
+  </div>
+</section>

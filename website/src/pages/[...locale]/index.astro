@@ -1,9 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Hero from '../../components/Hero.astro';
-import Features from '../../components/Features.astro';
+import Playground from '../../components/Playground.astro';
+import Moments from '../../components/Moments.astro';
 import Keys from '../../components/Keys.astro';
-import Themes from '../../components/Themes.astro';
 import Privacy from '../../components/Privacy.astro';
 import Install from '../../components/Install.astro';
 import { useT, localePath } from '../../i18n/index.js';
@@ -31,9 +31,9 @@ const jsonLd = {
 
 <Base title={t('meta.homeTitle')} description={t('meta.homeDescription')} path="/" jsonLd={jsonLd} home>
   <Hero />
-  <Features />
-  <Keys />
-  <Themes />
+  <Playground />
+  <Moments />
   <Privacy />
+  <Keys />
   <Install />
 </Base>

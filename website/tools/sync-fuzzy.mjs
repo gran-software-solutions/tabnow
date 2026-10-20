@@ -9,3 +9,5 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 mkdirSync(join(root, 'src', 'lib'), { recursive: true });
 copyFileSync(join(root, '..', 'extension', 'fuzzy.js'), join(root, 'src', 'lib', 'fuzzy.js'));
 console.log('sync-fuzzy: extension/fuzzy.js -> src/lib/fuzzy.js');
+
+await import('./sync-playground.mjs');

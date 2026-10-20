@@ -15,11 +15,11 @@ if (reduced) html.classList.add("rm");
 
 /* favicon + row builders shared by panel and theme previews */
 const favEl = (k, cls = "fav") => { const [bg, fg, ch] = FAV[k], i = document.createElement("i"); i.className = cls; i.style.cssText = `background:${bg};color:${fg}`; i.textContent = ch; return i; };
-function rowEl(r, on, done) {
+function rowEl(r, on, done, away) {
   const t = r.tab, li = document.createElement("li");
   if (on) li.className = "on";
   if (done) li.classList.add("done");
-  li.append(favEl(t.k));
+  const fv = favEl(t.k); if (away) fv.classList.add("away"); li.append(fv);
   const txt = document.createElement("div"); txt.className = "txt";
   const a = document.createElement("div"); a.className = "t trunc"; a.append(hl(t.title, r.th));
   const u = document.createElement("div"); u.className = "u trunc";
@@ -36,8 +36,9 @@ let seed = 11; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 
 let L = null; // { cx, inX, outX, cells }
 function buildCells() {
   seed = 11;
-  const W = hero.clientWidth, cx = W / 2, hr = hero.getBoundingClientRect(), pr = panel.getBoundingClientRect();
-  const pTop = pr.top - hr.top - 14, pBot = Math.max(pr.bottom - hr.top, 384 + 345) + 14;
+  const W = hero.clientWidth, cx = W / 2, hr = hero.getBoundingClientRect(), pr = rowsEl.getBoundingClientRect();
+  // keep clear only the stretch where the match cards sit (beside the four panel rows), so no other card can peek out from behind them
+  const pTop = pr.top - hr.top - 14, pBot = pr.bottom - hr.top + 14;
   const colsX = [cx - 300 - GAP - CW - 20 - CW, cx - 300 - GAP - CW, cx + 300 + GAP, cx + 300 + GAP + CW + 20];
   const cells = [], band = [];
   for (let r = 0; r < 9; r++) colsX.forEach((x, c) => {
@@ -48,9 +49,9 @@ function buildCells() {
   // deterministic shuffle so the desk looks scattered, not sorted
   for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
   // the four tabs that win "gh pr" start in the match column's free cells, so they glide a short way
-  const hot = new Set(search(TABS, TYPED).slice(0, ROWS).map(r => r.tab)), inner = band.slice(1, 1 + ROWS), rest = cells;
+  const hot = new Set(search(TABS, TYPED).slice(0, ROWS).map(r => r.tab)), inner = band.slice(0, ROWS), rest = cells;
   let hi = 0, ri = 0;
-  TABS.forEach(t => { t.cell = hot.has(t) ? inner[hi++] : rest[ri++]; t.jx = (rnd() - .5) * 10; t.jy = (rnd() - .5) * 14; t.jr = (rnd() - .5) * 4.4; });
+  TABS.forEach(t => { t.cell = (hot.has(t) ? inner[hi++] : rest[ri++]) || null; /* no free cell (very short window): card stays hidden, never piles onto another */ t.jx = (rnd() - .5) * 10; t.jy = (rnd() - .5) * 14; t.jr = (rnd() - .5) * 4.4; });
   L = { matchX: cx + 300 + GAP };
 }
 
@@ -107,8 +108,10 @@ function layout(q) {
       const h = b.height - 8; el.style.height = h + "px";
       el.style.setProperty("--x", L.matchX + "px"); el.style.setProperty("--y", b.top - hr.top + 4 + "px"); el.style.setProperty("--r", "0deg");
       el.querySelector(".rk").textContent = i + 1;
+    } else if (!t.cell) {
+      el.style.height = ""; el.style.visibility = "hidden";
     } else {
-      el.style.height = "";
+      el.style.height = ""; el.style.visibility = "";
       const calm = !!q;
       el.style.setProperty("--x", t.cell.x + (calm ? 0 : t.jx) + "px"); el.style.setProperty("--y", t.cell.y + (calm ? 0 : t.jy) + "px"); el.style.setProperty("--r", (calm ? 0 : t.jr) + "deg");
     }
@@ -168,7 +171,7 @@ hero.addEventListener("pointerdown", () => { autoTyping = false; });
 new IntersectionObserver(([e]) => { heroVisible = e.intersectionRatio > .45; if (!heroVisible && document.activeElement === input) input.blur(); }, { threshold: [0, .45, 1] }).observe(hero);
 addEventListener("keydown", e => {
   const k = e.key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && k === "e") { e.preventDefault(); autoTyping = false; scrollTo({ top: 0 }); input.focus({ preventScroll: true }); input.select(); return; }
+  if ((e.altKey && e.code === "KeyE") || ((e.ctrlKey || e.metaKey) && k === "e")) { e.preventDefault(); autoTyping = false; scrollTo({ top: 0 }); input.focus({ preventScroll: true }); input.select(); return; }
   const ae = document.activeElement;
   if (ae !== input && !(ae === document.body && heroVisible)) return;
   if (autoTyping && !["shift", "control", "alt", "meta", "tab"].includes(k)) autoTyping = false;
@@ -205,7 +208,7 @@ for (const b of document.querySelectorAll("[data-static]")) {
 applyOpts();
 
 /* boot: cards settle, then the typing starts */
-buildCells(); update();
+update(); // builds the cells once the panel rows exist
 const settle = [];
 cards.forEach((el, i) => {
   const d = reduced ? 0 : 250 + i * 37 + (i % 5) * 60;
@@ -215,3 +218,106 @@ cards.forEach((el, i) => {
 document.fonts.ready.then(() => { L = null; update(); });
 addEventListener("resize", () => { L = null; update(); });
 setTimeout(autoType, reduced ? 0 : Math.max(...settle) + 900);
+
+/* ---- moments: scroll-in rises, and the three panels that are not the hero ----
+   Everything is visible by default. Motion is only armed when scripts and IntersectionObserver
+   run, and anything already in view is left alone. Reduced motion gets no motion at all. */
+const canMove = !reduced && "IntersectionObserver" in window;
+const nearBottom = (el, f = .9) => el.getBoundingClientRect().top < innerHeight * f;
+if (canMove) {
+  const els = [...document.querySelectorAll("[data-reveal]")];
+  els.filter(el => nearBottom(el, .94)).forEach(el => el.classList.add("in"));
+  html.classList.add("rv");
+  const seen = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add("in"); seen.unobserve(e.target); }
+  }), { rootMargin: "0px 0px -6% 0px" });
+  els.filter(el => !el.classList.contains("in")).forEach(el => seen.observe(el));
+}
+/* play(): calls fn when el scrolls into the lower part of the screen; stop(): when it leaves */
+function whenInView(el, on, off) {
+  new IntersectionObserver(([e]) => (e.isIntersecting ? on() : off && off()), { rootMargin: "0px 0px -18% 0px" }).observe(el);
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* 1. Type less: the extension's own ranking, typed out once when scrolled into view */
+const mq = $("#mFuzzyQ"), mn = $("#mFuzzyN"), mr = $("#mFuzzyRows");
+function drawFuzzy(q) {
+  const res = q ? search(TABS, q) : [];
+  mq.textContent = q;
+  mr.replaceChildren(...res.slice(0, 4).map((r, i) => rowEl(r, i === 0)));
+  mn.textContent = q ? fill(S.count, { n: res.length, total: TABS.length }) : "";
+}
+drawFuzzy(TYPED);
+if (canMove) {
+  let played = false;
+  whenInView($("#mFuzzy"), () => {
+    if (played) return; played = true;
+    let n = 0; drawFuzzy("");
+    const step = () => { n++; drawFuzzy(TYPED.slice(0, n)); if (n < TYPED.length) setTimeout(step, 230 + (TYPED[n] === " " ? 120 : 0)); };
+    setTimeout(step, 450);
+  });
+}
+
+/* 2. Every window: rows appear one by one (other windows carry the small badge), then "/" opens the scope list */
+const WIN = [[0, 0], [1, 1], [2, 1], [3, 0], [4, 1]];
+const winRows = WIN.map(([i, away], k) => rowEl({ tab: TABS[i], th: [], uh: [] }, k === 0, false, away));
+$("#mWinRows").append(...winRows);
+const winQ = $("#mWinQ"), winMenu = $("#mWinMenu"), winScopes = [...winMenu.children];
+if (canMove) {
+  let played = false;
+  whenInView($("#mWin"), async () => {
+    if (played) return; played = true;
+    winRows.forEach(li => li.classList.add("pre")); winMenu.classList.add("pre");
+    winScopes.forEach((d, i) => d.classList.toggle("on", i === 0));
+    await wait(500);
+    for (const li of winRows) { li.classList.remove("pre"); await wait(520); }
+    await wait(500);
+    winQ.classList.remove("ph"); winQ.textContent = "/";
+    await wait(380);
+    winMenu.classList.remove("pre");
+    await wait(1100);
+    winScopes.forEach((d, i) => d.classList.toggle("on", i === 1));
+    await wait(1000);
+    winScopes.forEach((d, i) => d.classList.toggle("on", i === 2));
+  });
+}
+
+/* 3. Back and forth: Alt+Z flips between the last two tabs. The keys go down, the active tab flips,
+   the page cross-fades. Loops gently while the panel is in view. */
+const BACK = [0, 1], STRIP = [0, 1, 2, 3, 11], tabsEl = $("#mBackTabs"), pageEl = $("#mBackPage"), keysEl = $("#mBackKeys");
+const stripEls = STRIP.map(i => {
+  const t = TABS[i], d = document.createElement("div"); d.className = "tab"; d.append(favEl(t.k));
+  const s = document.createElement("span"); s.className = "trunc"; s.textContent = t.title; d.append(s); tabsEl.append(d); return d;
+});
+const pgs = BACK.map(i => {
+  const t = TABS[i], p = document.createElement("div"), u = document.createElement("div"), h = document.createElement("div"), sk = document.createElement("div");
+  p.className = "pg"; u.className = "url"; u.textContent = t.disp; h.className = "pt"; h.textContent = t.title; sk.className = "sk"; sk.innerHTML = "<i></i><i></i><i></i><i></i>";
+  p.append(u, h, sk); pageEl.append(p); return p;
+});
+const [kAlt, kZ] = keysEl.children;
+let cur = 0;
+function showBack(k) {
+  cur = k;
+  stripEls.forEach((el, j) => el.classList.toggle("on", STRIP[j] === BACK[k]));
+  pgs.forEach((p, j) => p.classList.toggle("on", j === k));
+}
+showBack(0);
+if (canMove) {
+  let inView = false, looping = false;
+  async function loop() {
+    if (looping) return; looping = true;
+    await wait(900);
+    while (inView) {
+      if (!document.hidden) {
+        kAlt.classList.add("dn"); await wait(220);
+        kZ.classList.add("dn"); await wait(160);
+        showBack(cur ^ 1); await wait(260);
+        kZ.classList.remove("dn"); await wait(160);
+        kAlt.classList.remove("dn");
+      }
+      await wait(2100);
+    }
+    kAlt.classList.remove("dn"); kZ.classList.remove("dn"); looping = false;
+  }
+  whenInView($("#mBack"), () => { inView = true; loop(); }, () => { inView = false; });
+}
