@@ -168,7 +168,7 @@ hero.addEventListener("pointerdown", () => { autoTyping = false; });
 new IntersectionObserver(([e]) => { heroVisible = e.intersectionRatio > .45; if (!heroVisible && document.activeElement === input) input.blur(); }, { threshold: [0, .45, 1] }).observe(hero);
 addEventListener("keydown", e => {
   const k = e.key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && k === "e") { e.preventDefault(); autoTyping = false; scrollTo({ top: 0 }); input.focus({ preventScroll: true }); input.select(); return; }
+  if ((e.altKey && e.code === "KeyE") || ((e.ctrlKey || e.metaKey) && k === "e")) { e.preventDefault(); autoTyping = false; scrollTo({ top: 0 }); input.focus({ preventScroll: true }); input.select(); return; }
   const ae = document.activeElement;
   if (ae !== input && !(ae === document.body && heroVisible)) return;
   if (autoTyping && !["shift", "control", "alt", "meta", "tab"].includes(k)) autoTyping = false;
@@ -216,11 +216,25 @@ document.fonts.ready.then(() => { L = null; update(); });
 addEventListener("resize", () => { L = null; update(); });
 setTimeout(autoType, reduced ? 0 : Math.max(...settle) + 900);
 
-/* ---- moments: scroll-in reveals, and the three panels that are not the hero ---- */
-html.classList.add("rv");
-const seen = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); seen.unobserve(e.target); } }), { threshold: .25 });
-document.querySelectorAll("[data-reveal]").forEach(el => seen.observe(el));
-const onceVisible = (el, fn, th = .6) => { const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); fn(); } }, { threshold: th }); io.observe(el); };
+/* ---- moments: scroll-in rises, and the three panels that are not the hero ----
+   Everything is visible by default. Motion is only armed when scripts and IntersectionObserver
+   run, and anything already in view is left alone. Reduced motion gets no motion at all. */
+const canMove = !reduced && "IntersectionObserver" in window;
+const nearBottom = (el, f = .9) => el.getBoundingClientRect().top < innerHeight * f;
+if (canMove) {
+  const els = [...document.querySelectorAll("[data-reveal]")];
+  els.filter(el => nearBottom(el, .94)).forEach(el => el.classList.add("in"));
+  html.classList.add("rv");
+  const seen = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add("in"); seen.unobserve(e.target); }
+  }), { rootMargin: "0px 0px -6% 0px" });
+  els.filter(el => !el.classList.contains("in")).forEach(el => seen.observe(el));
+}
+/* play(): calls fn when el scrolls into the lower part of the screen; stop(): when it leaves */
+function whenInView(el, on, off) {
+  new IntersectionObserver(([e]) => (e.isIntersecting ? on() : off && off()), { rootMargin: "0px 0px -18% 0px" }).observe(el);
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
 
 /* 1. Type less: the extension's own ranking, typed out once when scrolled into view */
 const mq = $("#mFuzzyQ"), mn = $("#mFuzzyN"), mr = $("#mFuzzyRows");
@@ -231,35 +245,76 @@ function drawFuzzy(q) {
   mn.textContent = q ? fill(S.count, { n: res.length, total: TABS.length }) : "";
 }
 drawFuzzy(TYPED);
-if (!reduced) onceVisible($("#mFuzzy"), () => {
-  let n = 0; drawFuzzy("");
-  const step = () => { n++; drawFuzzy(TYPED.slice(0, n)); if (n < TYPED.length) setTimeout(step, 230 + (TYPED[n] === " " ? 120 : 0)); };
-  setTimeout(step, 500);
-});
+if (canMove) {
+  let played = false;
+  whenInView($("#mFuzzy"), () => {
+    if (played) return; played = true;
+    let n = 0; drawFuzzy("");
+    const step = () => { n++; drawFuzzy(TYPED.slice(0, n)); if (n < TYPED.length) setTimeout(step, 230 + (TYPED[n] === " " ? 120 : 0)); };
+    setTimeout(step, 450);
+  });
+}
 
-/* 2. Every window: rows from other windows carry the small window badge */
+/* 2. Every window: rows appear one by one (other windows carry the small badge), then "/" opens the scope list */
 const WIN = [[0, 0], [1, 1], [2, 1], [3, 0], [4, 1]];
-$("#mWinRows").append(...WIN.map(([i, away], k) => { const li = rowEl({ tab: TABS[i], th: [], uh: [] }, k === 0, false, away); li.style.setProperty("--d", 250 + k * 110 + "ms"); return li; }));
+const winRows = WIN.map(([i, away], k) => rowEl({ tab: TABS[i], th: [], uh: [] }, k === 0, false, away));
+$("#mWinRows").append(...winRows);
+const winQ = $("#mWinQ"), winMenu = $("#mWinMenu"), winScopes = [...winMenu.children];
+if (canMove) {
+  let played = false;
+  whenInView($("#mWin"), async () => {
+    if (played) return; played = true;
+    winRows.forEach(li => li.classList.add("pre")); winMenu.classList.add("pre");
+    winScopes.forEach((d, i) => d.classList.toggle("on", i === 0));
+    await wait(500);
+    for (const li of winRows) { li.classList.remove("pre"); await wait(520); }
+    await wait(500);
+    winQ.classList.remove("ph"); winQ.textContent = "/";
+    await wait(380);
+    winMenu.classList.remove("pre");
+    await wait(1100);
+    winScopes.forEach((d, i) => d.classList.toggle("on", i === 1));
+    await wait(1000);
+    winScopes.forEach((d, i) => d.classList.toggle("on", i === 2));
+  });
+}
 
-/* 3. Back and forth: Alt+Z flips between the last two tabs */
+/* 3. Back and forth: Alt+Z flips between the last two tabs. The keys go down, the active tab flips,
+   the page cross-fades. Loops gently while the panel is in view. */
 const BACK = [0, 1], STRIP = [0, 1, 2, 3, 11], tabsEl = $("#mBackTabs"), pageEl = $("#mBackPage"), keysEl = $("#mBackKeys");
 const stripEls = STRIP.map(i => {
   const t = TABS[i], d = document.createElement("div"); d.className = "tab"; d.append(favEl(t.k));
   const s = document.createElement("span"); s.className = "trunc"; s.textContent = t.title; d.append(s); tabsEl.append(d); return d;
 });
-function drawBack(k) {
+const pgs = BACK.map(i => {
+  const t = TABS[i], p = document.createElement("div"), u = document.createElement("div"), h = document.createElement("div"), sk = document.createElement("div");
+  p.className = "pg"; u.className = "url"; u.textContent = t.disp; h.className = "pt"; h.textContent = t.title; sk.className = "sk"; sk.innerHTML = "<i></i><i></i><i></i><i></i>";
+  p.append(u, h, sk); pageEl.append(p); return p;
+});
+const [kAlt, kZ] = keysEl.children;
+let cur = 0;
+function showBack(k) {
+  cur = k;
   stripEls.forEach((el, j) => el.classList.toggle("on", STRIP[j] === BACK[k]));
-  const t = TABS[BACK[k]], u = document.createElement("div"), h = document.createElement("div"), sk = document.createElement("div");
-  u.className = "url"; u.textContent = t.disp; h.className = "pt"; h.textContent = t.title; sk.className = "sk";
-  sk.innerHTML = "<i></i><i></i><i></i><i></i>";
-  pageEl.replaceChildren(u, h, sk); pageEl.classList.remove("swap"); void pageEl.offsetWidth; pageEl.classList.add("swap");
+  pgs.forEach((p, j) => p.classList.toggle("on", j === k));
 }
-drawBack(0);
-if (!reduced) onceVisible($("#mBack"), () => {
-  let k = 0;
-  setInterval(() => {
-    if (document.hidden) return;
-    keysEl.classList.add("down");
-    setTimeout(() => { k ^= 1; drawBack(k); keysEl.classList.remove("down"); }, 260);
-  }, 2600);
-}, .5);
+showBack(0);
+if (canMove) {
+  let inView = false, looping = false;
+  async function loop() {
+    if (looping) return; looping = true;
+    await wait(900);
+    while (inView) {
+      if (!document.hidden) {
+        kAlt.classList.add("dn"); await wait(220);
+        kZ.classList.add("dn"); await wait(160);
+        showBack(cur ^ 1); await wait(260);
+        kZ.classList.remove("dn"); await wait(160);
+        kAlt.classList.remove("dn");
+      }
+      await wait(2100);
+    }
+    kAlt.classList.remove("dn"); kZ.classList.remove("dn"); looping = false;
+  }
+  whenInView($("#mBack"), () => { inView = true; loop(); }, () => { inView = false; });
+}

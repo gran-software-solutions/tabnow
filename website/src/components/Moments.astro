@@ -5,33 +5,47 @@ const { t } = useT(Astro.currentLocale);
 const glass = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
 ---
 
+
 <Moment k="fuzzy" id="features">
   <div class="ov big" id="mFuzzy" aria-hidden="true">
     <div class="q"><Fragment set:html={glass} /><span class="typed" id="mFuzzyQ"></span><span class="n" id="mFuzzyN"></span></div>
     <ul id="mFuzzyRows"></ul>
+    <div class="foot">
+      <span class="k"><kbd>↑</kbd><kbd>↓</kbd> {t('demo.navigate')}</span>
+      <span class="k"><kbd>↵</kbd> {t('demo.open')}</span>
+      <span class="k"><kbd>{t('key.ctrl')}</kbd><kbd>⌫</kbd> {t('demo.closeTab')}</span>
+      <span class="k"><kbd>/</kbd> {t('demo.scopes')}</span>
+      <span class="k end"><kbd>{t('key.esc')}</kbd> {t('demo.dismiss')}</span>
+    </div>
   </div>
 </Moment>
 
-<Moment k="windows" band>
+<Moment k="windows" id="windows" band>
   <div class="ov big" id="mWin" aria-hidden="true">
-    <div class="q"><Fragment set:html={glass} /><span class="typed ph">{t('demo.placeholder')}</span></div>
+    <div class="q"><Fragment set:html={glass} /><span class="typed ph" id="mWinQ" data-ph={t('demo.placeholder')}>{t('demo.placeholder')}</span></div>
     <ul id="mWinRows"></ul>
+    <div class="foot">
+      <span class="k"><kbd>↑</kbd><kbd>↓</kbd> {t('demo.navigate')}</span>
+      <span class="k"><kbd>↵</kbd> {t('demo.open')}</span>
+      <span class="k"><kbd>{t('key.ctrl')}</kbd><kbd>⌫</kbd> {t('demo.closeTab')}</span>
+      <span class="k"><kbd>/</kbd> {t('demo.scopes')}</span>
+      <span class="k end"><kbd>{t('key.esc')}</kbd> {t('demo.dismiss')}</span>
+    </div>
   </div>
-  <div class="menu" aria-hidden="true">
+  <div class="menu" id="mWinMenu" aria-hidden="true">
     <div class="on"><code>/t</code>{t('scopes.tabs')}</div>
     <div><code>/b</code>{t('scopes.bookmarks')}<span>{t('scopes.optIn')}</span></div>
     <div><code>/h</code>{t('scopes.history')}<span>{t('scopes.optIn')}</span></div>
   </div>
 </Moment>
 
-<Moment k="back">
+<Moment k="back" id="back">
   <div class="browser" id="mBack" aria-hidden="true">
     <div class="strip" id="mBackTabs"></div>
     <div class="page" id="mBackPage"></div>
   </div>
-  <div class="press" id="mBackKeys" aria-hidden="true"><kbd>{'Alt'}</kbd><kbd>Z</kbd></div>
+  <div class="press" id="mBackKeys" aria-hidden="true"><kbd>{t('key.alt')}</kbd><kbd>Z</kbd></div>
 </Moment>
-
 <Moment k="themes" id="themes" band>
   <div class="themes" id="themesBox">
     {['light', 'dark'].map((theme) => (

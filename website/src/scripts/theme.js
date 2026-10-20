@@ -24,5 +24,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
   if (!stored) setTheme(e.matches ? 'dark' : 'light', false);
 });
 addEventListener('keydown', (e) => {
-  if (e.altKey && e.key.toLowerCase() === 't') { e.preventDefault(); toggle(); }
+  if (e.altKey && e.code === 'KeyT') { e.preventDefault(); toggle(); }
 });
+// On a Mac the opening shortcut is Cmd+E: swap the key caps that say so.
+if (/Mac|iPhone|iPad/.test(navigator.platform)) document.querySelectorAll('[data-mod]').forEach((el) => { el.textContent = el.dataset.mac; });

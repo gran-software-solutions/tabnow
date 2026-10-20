@@ -8,7 +8,7 @@ const { t, list } = useT(Astro.currentLocale);
     <h2 data-reveal>{t('keys.titleA')} <em>{t('keys.titleB')}</em></h2>
     <div class="strip6" data-reveal>
       {list('keys.items').map((item) => (
-        <div><span class="kk">{item.keys.map((k) => <kbd>{k}</kbd>)}</span><span class="d">{item.text}</span></div>
+        <div><span class="kk">{item.keys.map((k, i) => (item.mod && i === 0) ? <kbd data-mod data-mac={t('key.mod')}>{k}</kbd> : <kbd>{k}</kbd>)}</span><span class="d">{item.text}</span></div>
       ))}
     </div>
     <p class="mac">{t('keys.lead')}</p>

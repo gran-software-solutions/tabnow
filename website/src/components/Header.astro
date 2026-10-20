@@ -9,10 +9,11 @@ const base = home ? '' : localePath(locale, '/');
 
 <nav aria-label={t('a11y.nav')}>
   <a class="logo" href={home ? '#top' : localePath(locale, '/')}><img src="/icon-128.png" alt="" width="24" height="24" />{BRAND}</a>
+  <a class="l" href={`${base}#try`}>{t('nav.try')}</a>
   <a class="l" href={`${base}#features`}>{t('nav.features')}</a>
-  <a class="l" href={`${base}#keys`}>{t('nav.keys')}</a>
   <a class="l" href={`${base}#themes`}>{t('nav.themes')}</a>
   <a class="l" href={`${base}#privacy`}>{t('nav.privacy')}</a>
+  <a class="l" href={`${base}#keys`}>{t('nav.keys')}</a>
   <button
     class="sw"
     type="button"

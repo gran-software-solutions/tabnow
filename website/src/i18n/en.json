@@ -1,7 +1,7 @@
 {
   "meta": {
     "homeTitle": "TabNow: every tab, one keystroke away",
-    "homeDescription": "TabNow is a fast fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter. Searches every window, private by design, open source.",
+    "homeDescription": "TabNow is a fast fuzzy finder for your open tabs. Press Alt+E (Cmd+E on a Mac), type a few letters, hit Enter. Searches every window, private by design, open source.",
     "legalTitle": "{page} · TabNow",
     "notFoundTitle": "Page not found · TabNow",
     "ogAlt": "TabNow, a fuzzy finder for your open browser tabs"
@@ -12,10 +12,11 @@
     "footerNav": "Footer"
   },
   "nav": {
+    "try": "Try it",
     "features": "Search",
-    "keys": "Keys",
     "themes": "Themes",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "keys": "Keys"
   },
   "theme": {
     "title": "Light / dark (Alt+T)",
@@ -29,13 +30,15 @@
   },
   "key": {
     "ctrl": "Ctrl",
+    "alt": "Alt",
+    "mod": "Cmd",
     "esc": "esc"
   },
   "hero": {
     "titleA": "Every tab,",
     "titleB": "one keystroke",
     "titleC": "away.",
-    "subtitle": "A fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.",
+    "subtitle": "A fuzzy finder for your open tabs. Press Alt+E (Cmd+E on a Mac), type a few letters, hit Enter.",
     "how": "How it works",
     "try": "try it below"
   },
@@ -91,9 +94,9 @@
   "keys": {
     "titleA": "Hands stay",
     "titleB": "on the keyboard.",
-    "lead": "Cmd replaces Ctrl on macOS.",
+    "lead": "On a Mac, Cmd+E opens the finder.",
     "items": [
-      { "keys": ["Ctrl", "E"], "text": "Open the finder" },
+      { "keys": ["Alt", "E"], "mod": true, "text": "Open the finder" },
       { "keys": ["Alt", "Z"], "text": "Previous tab" },
       { "keys": ["↑", "↓"], "text": "Move" },
       { "keys": ["↵"], "text": "Go to the tab" },
@@ -126,7 +129,7 @@
     "steps": [
       "Open TabNow in the Chrome Web Store.",
       "Click <strong>Add to Chrome</strong>.",
-      "Press <code>Ctrl+E</code> on any page. Change the key at <code>chrome://extensions/shortcuts</code>."
+      "Press <code>Alt+E</code> on any page (<code>Cmd+E</code> on a Mac). Change the key at <code>chrome://extensions/shortcuts</code>."
     ]
   },
   "footer": {
