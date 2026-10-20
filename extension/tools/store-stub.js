@@ -87,6 +87,7 @@
     } },
     tabs: { query: () => asyncOf(tabs.map(t => ({ ...t }))), update() {}, remove() {}, create() {} },
     windows: { update() {} },
+    commands: { getAll: async () => [{ name: "_execute_action", shortcut: "Alt+E" }, { name: "previous-tab", shortcut: "Alt+Z" }] },
     permissions: {
       contains: async () => !!S.perms,
       request: async () => true,

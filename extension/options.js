@@ -26,6 +26,18 @@ function recorder(id, key, combo, def) {
   reset.addEventListener("click", () => save(def));
   show();
 }
+// The open and previous-tab keys belong to the browser (defaults Alt+E and Alt+Z): show them, and "Change"
+// opens the browser's shortcuts page. Refreshed on focus, so a change there shows up on return.
+async function showCommands() {
+  const keys = Object.fromEntries((await chrome.commands.getAll()).map(c => [c.name, c.shortcut]));
+  document.getElementById("cmdOpen").textContent = keys._execute_action || msg("optNotSet");
+  document.getElementById("cmdPrevious").textContent = keys["previous-tab"] || msg("optNotSet");
+}
+showCommands();
+addEventListener("focus", showCommands);
+document.querySelectorAll("[data-shortcuts]").forEach(b =>
+  b.addEventListener("click", () => chrome.tabs.create({ url: "chrome://extensions/shortcuts" })));
+
 recorder("close", "closeKey", await loadClose(), DEFAULT_CLOSE);
 recorder("themeKey", "themeKey", await loadThemeKey(), DEFAULT_THEME_KEY);
 

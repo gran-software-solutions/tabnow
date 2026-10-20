@@ -47,5 +47,9 @@
   "optionsTip": { "message": "Settings" },
   "optLight": { "message": "Light" },
   "optDark": { "message": "Dark" },
-  "optNote": { "message": "Keys the browser reserves, such as Ctrl+W or Ctrl+N, never reach TabNow. The open and previous-tab shortcuts are set in your browser's extension shortcuts page." }
+  "optOpen": { "message": "Open TabNow" },
+  "optBrowserKeyHint": { "message": "Set in the browser's shortcuts page" },
+  "optChange": { "message": "Change" },
+  "optNotSet": { "message": "Not set" },
+  "optNote": { "message": "Keys the browser reserves, such as Ctrl+W or Ctrl+N, never reach TabNow. If another extension already uses Alt+E or Alt+Z, the browser leaves that key unset: pick your own with Change." }
 }
