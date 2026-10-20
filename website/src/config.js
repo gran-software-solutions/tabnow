@@ -31,9 +31,8 @@ export function install() {
 // this site (public/a.js, written by tools/fetch-tracker.mjs), so no third party serves code
 // to a visitor. The website id is public (it is in every page).
 // PUBLIC_ANALYTICS_ID='' turns the counter off for a build.
-// The host is the shared umami for now (same server). Switch the default to https://stats.tabnow.app
-// once its DNS record exists.
+// The host is this site's own address for the shared umami (same server).
 export const ANALYTICS = {
-  host: env.PUBLIC_ANALYTICS_URL || 'https://analytics.consultingcockpit.com',
+  host: env.PUBLIC_ANALYTICS_URL || 'https://stats.tabnow.app',
   websiteId: env.PUBLIC_ANALYTICS_ID ?? '725b321e-c543-4fb0-8581-3d7a1cc95cc9',
 };
