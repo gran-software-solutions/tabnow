@@ -12,7 +12,7 @@
     "footerNav": "Footer"
   },
   "nav": {
-    "features": "Features",
+    "features": "Search",
     "keys": "Keys",
     "themes": "Themes",
     "privacy": "Privacy"
@@ -23,7 +23,7 @@
     "toLight": "Switch to light"
   },
   "install": {
-    "button": "Install",
+    "button": "Add to Chrome",
     "soon": "Coming soon to the Chrome Web Store",
     "soonShort": "Coming soon"
   },
@@ -52,58 +52,60 @@
     "count": "{n} of {total}",
     "off": "Off"
   },
-  "features": {
-    "label": "Features",
-    "titleA": "Find it,",
-    "titleB": "then get on with it.",
-    "lead": "TabNow is a small Chrome extension. No windows to sort, no tab groups to keep tidy.",
-    "items": [
-      { "title": "Find any tab in a keystroke", "text": "<code>Ctrl+E</code>, a few letters, <code>Enter</code>. The previous tab is preselected, so <code>Ctrl+E</code> <code>Enter</code> flips back." },
-      { "title": "Fast and fuzzy", "text": "Type \"gh pr\" and get the GitHub pull request. Domain ranks above title, title above the rest of the address." },
-      { "title": "Keyboard first", "text": "Arrows or <code>Ctrl+J</code> / <code>Ctrl+K</code> to move, <code>Ctrl+Backspace</code> to close a tab. The mouse works too." },
-      { "title": "Every window", "text": "All open windows in one list. Bookmarks and history join in when you turn them on, with <code>/b</code> and <code>/h</code>." },
-      { "title": "Private by design", "text": "No network requests, no account, no analytics. Nothing leaves your browser." },
-      { "title": "Fits your browser", "text": "Light and dark, adjustable opacity, blur and size. <code>Alt+Z</code> jumps to the previous tab without opening anything." }
-    ]
+  "moments": {
+    "fuzzy": {
+      "titleA": "Type",
+      "titleB": "less.",
+      "text": "Type <code>gh pr</code> and get the pull request. Domain first, then title."
+    },
+    "windows": {
+      "titleA": "Every",
+      "titleB": "window.",
+      "text": "All open windows in one list. Bookmarks and history join in when you turn them on, with <code>/b</code> and <code>/h</code>."
+    },
+    "back": {
+      "titleA": "Back and",
+      "titleB": "forth.",
+      "text": "<kbd>Alt</kbd> <kbd>Z</kbd> jumps to the previous tab without opening anything."
+    },
+    "themes": {
+      "titleA": "Day and",
+      "titleB": "night.",
+      "text": "TabNow follows your system, or you pick. <kbd>Alt</kbd> <kbd>T</kbd> switches on the spot."
+    }
+  },
+  "scopes": {
+    "tabs": "Tabs",
+    "bookmarks": "Bookmarks",
+    "history": "History",
+    "optIn": "opt-in"
+  },
+  "themes": {
+    "light": "Light",
+    "dark": "Dark",
+    "opacity": "Opacity",
+    "blur": "Blur",
+    "size": "Size",
+    "reset": "Reset"
   },
   "keys": {
-    "label": "Keys",
     "titleA": "Hands stay",
     "titleB": "on the keyboard.",
     "lead": "Cmd replaces Ctrl on macOS.",
     "items": [
       { "keys": ["Ctrl", "E"], "text": "Open the finder" },
-      { "keys": ["Alt", "Z"], "text": "Jump to the previous tab" },
-      { "keys": ["↑", "↓"], "text": "Move the selection" },
-      { "keys": ["Ctrl", "J", "K"], "text": "Same, without leaving home row" },
+      { "keys": ["Alt", "Z"], "text": "Previous tab" },
+      { "keys": ["↑", "↓"], "text": "Move" },
       { "keys": ["↵"], "text": "Go to the tab" },
-      { "keys": ["Ctrl", "⌫"], "text": "Close the selected tab" },
-      { "keys": ["Ctrl", "U"], "text": "Clear the search" },
-      { "keys": ["/"], "text": "Scopes: tabs, bookmarks, history" },
-      { "keys": ["Alt", "T"], "text": "Light or dark" },
+      { "keys": ["Ctrl", "⌫"], "text": "Close the tab" },
       { "keys": ["esc"], "text": "Dismiss" }
     ]
   },
-  "themes": {
-    "label": "Themes",
-    "titleA": "Day and night,",
-    "titleB": "same desk.",
-    "lead": "TabNow follows your system, or you pick. <kbd>Alt</kbd> <kbd>T</kbd> switches on the spot. Try the same three options you get on the options page.",
-    "opacity": "Opacity",
-    "opacityHint": "Lower lets the page show through.",
-    "blur": "Blur",
-    "blurHint": "Higher softens the page behind.",
-    "size": "Size",
-    "sizeHint": "Makes the search box and its text bigger or smaller.",
-    "reset": "Reset",
-    "light": "Light",
-    "dark": "Dark"
-  },
   "privacy": {
-    "label": "Privacy",
     "big": "No network requests.",
     "bigEm": "Ever.",
-    "lead": "No account, no analytics, no servers. About 600 lines of plain JavaScript with no dependencies, open source under MIT. Here is what it asks the browser for, and why.",
+    "lead": "No account, no analytics, no servers. Plain JavaScript, open source under MIT.",
+    "permsTitle": "What it asks the browser for",
     "optional": "optional",
     "perms": [
       { "name": "tabs", "text": "Read titles and addresses of open tabs, so you can search them." },
@@ -117,9 +119,8 @@
     "policy": "Read the full privacy policy"
   },
   "installSection": {
-    "label": "Install",
-    "titleA": "Three steps,",
-    "titleB": "half a minute.",
+    "titleA": "Get",
+    "titleB": "TabNow.",
     "lead": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc.",
     "leadSoon": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc. Not in the Web Store yet.",
     "steps": [

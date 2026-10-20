@@ -3,18 +3,16 @@ import { useT, localePath } from '../i18n/index.js';
 const { t, list: items, locale } = useT(Astro.currentLocale);
 ---
 
-<section class="s" id="privacy">
-  <div class="wrap"><div class="row">
-    <div class="lab">{t('privacy.label')}</div>
-    <div>
-      <p class="big-q">{t('privacy.big')} <em>{t('privacy.bigEm')}</em></p>
-      <p class="lead">{t('privacy.lead')}</p>
-      <div class="perms">
-        {items('privacy.perms').map((perm) => (
-          <div class:list={[perm.optional && 'opt']}><b data-optional={perm.optional ? t('privacy.optional') : undefined}>{perm.name}</b><span set:html={perm.text} /></div>
-        ))}
-      </div>
-      <p class="more"><a href={localePath(locale, '/privacy/')}>{t('privacy.policy')}</a></p>
+<section class="moment privacy" id="privacy">
+  <div class="wrap">
+    <p class="big-q" data-reveal>{t('privacy.big')} <em>{t('privacy.bigEm')}</em></p>
+    <p class="say" data-reveal>{t('privacy.lead')}</p>
+    <h3 class="permhead" data-reveal>{t('privacy.permsTitle')}</h3>
+    <div class="perms" data-reveal>
+      {items('privacy.perms').map((perm) => (
+        <div class:list={[perm.optional && 'opt']}><b data-optional={perm.optional ? t('privacy.optional') : undefined}>{perm.name}</b><span set:html={perm.text} /></div>
+      ))}
     </div>
-  </div></div>
+    <p class="more"><a href={localePath(locale, '/privacy/')}>{t('privacy.policy')}</a></p>
+  </div>
 </section>

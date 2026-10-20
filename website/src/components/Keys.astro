@@ -3,17 +3,14 @@ import { useT } from '../i18n/index.js';
 const { t, list } = useT(Astro.currentLocale);
 ---
 
-<section class="s" id="keys">
-  <div class="wrap"><div class="row">
-    <div class="lab">{t('keys.label')}</div>
-    <div>
-      <h2>{t('keys.titleA')} <em>{t('keys.titleB')}</em></h2>
-      <p class="lead">{t('keys.lead')}</p>
-      <div class="keys">
-        {list('keys.items').map((item) => (
-          <div><span class="kk">{item.keys.map((k) => <kbd>{k}</kbd>)}</span><span class="d">{item.text}</span></div>
-        ))}
-      </div>
+<section class="moment band keysec" id="keys">
+  <div class="wrap">
+    <h2 data-reveal>{t('keys.titleA')} <em>{t('keys.titleB')}</em></h2>
+    <div class="strip6" data-reveal>
+      {list('keys.items').map((item) => (
+        <div><span class="kk">{item.keys.map((k) => <kbd>{k}</kbd>)}</span><span class="d">{item.text}</span></div>
+      ))}
     </div>
-  </div></div>
+    <p class="mac">{t('keys.lead')}</p>
+  </div>
 </section>

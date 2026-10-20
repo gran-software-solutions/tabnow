@@ -6,16 +6,13 @@ const { t, list } = useT(Astro.currentLocale);
 const { soon } = install();
 ---
 
-<section class="s" id="install">
-  <div class="wrap"><div class="row">
-    <div class="lab">{t('installSection.label')}</div>
-    <div>
-      <h2>{t('installSection.titleA')} <em>{t('installSection.titleB')}</em></h2>
-      <p class="lead">{soon ? t('installSection.leadSoon') : t('installSection.lead')}</p>
-      <ol class="steps">
-        {list('installSection.steps').map((step) => <li><span set:html={step} /></li>)}
-      </ol>
-      <InstallButton />
-    </div>
-  </div></div>
+<section class="moment closing" id="install">
+  <div class="wrap">
+    <h2 data-reveal>{t('installSection.titleA')} <em>{t('installSection.titleB')}</em></h2>
+    <div class="go-btn" data-reveal><InstallButton /></div>
+    <ol class="steps" data-reveal>
+      {list('installSection.steps').map((step) => <li><span set:html={step} /></li>)}
+    </ol>
+    <p class="mac">{soon ? t('installSection.leadSoon') : t('installSection.lead')}</p>
+  </div>
 </section>

@@ -15,11 +15,11 @@ if (reduced) html.classList.add("rm");
 
 /* favicon + row builders shared by panel and theme previews */
 const favEl = (k, cls = "fav") => { const [bg, fg, ch] = FAV[k], i = document.createElement("i"); i.className = cls; i.style.cssText = `background:${bg};color:${fg}`; i.textContent = ch; return i; };
-function rowEl(r, on, done) {
+function rowEl(r, on, done, away) {
   const t = r.tab, li = document.createElement("li");
   if (on) li.className = "on";
   if (done) li.classList.add("done");
-  li.append(favEl(t.k));
+  const fv = favEl(t.k); if (away) fv.classList.add("away"); li.append(fv);
   const txt = document.createElement("div"); txt.className = "txt";
   const a = document.createElement("div"); a.className = "t trunc"; a.append(hl(t.title, r.th));
   const u = document.createElement("div"); u.className = "u trunc";
@@ -215,3 +215,51 @@ cards.forEach((el, i) => {
 document.fonts.ready.then(() => { L = null; update(); });
 addEventListener("resize", () => { L = null; update(); });
 setTimeout(autoType, reduced ? 0 : Math.max(...settle) + 900);
+
+/* ---- moments: scroll-in reveals, and the three panels that are not the hero ---- */
+html.classList.add("rv");
+const seen = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); seen.unobserve(e.target); } }), { threshold: .25 });
+document.querySelectorAll("[data-reveal]").forEach(el => seen.observe(el));
+const onceVisible = (el, fn, th = .6) => { const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); fn(); } }, { threshold: th }); io.observe(el); };
+
+/* 1. Type less: the extension's own ranking, typed out once when scrolled into view */
+const mq = $("#mFuzzyQ"), mn = $("#mFuzzyN"), mr = $("#mFuzzyRows");
+function drawFuzzy(q) {
+  const res = q ? search(TABS, q) : [];
+  mq.textContent = q;
+  mr.replaceChildren(...res.slice(0, 4).map((r, i) => rowEl(r, i === 0)));
+  mn.textContent = q ? fill(S.count, { n: res.length, total: TABS.length }) : "";
+}
+drawFuzzy(TYPED);
+if (!reduced) onceVisible($("#mFuzzy"), () => {
+  let n = 0; drawFuzzy("");
+  const step = () => { n++; drawFuzzy(TYPED.slice(0, n)); if (n < TYPED.length) setTimeout(step, 230 + (TYPED[n] === " " ? 120 : 0)); };
+  setTimeout(step, 500);
+});
+
+/* 2. Every window: rows from other windows carry the small window badge */
+const WIN = [[0, 0], [1, 1], [2, 1], [3, 0], [4, 1]];
+$("#mWinRows").append(...WIN.map(([i, away], k) => { const li = rowEl({ tab: TABS[i], th: [], uh: [] }, k === 0, false, away); li.style.setProperty("--d", 250 + k * 110 + "ms"); return li; }));
+
+/* 3. Back and forth: Alt+Z flips between the last two tabs */
+const BACK = [0, 1], STRIP = [0, 1, 2, 3, 11], tabsEl = $("#mBackTabs"), pageEl = $("#mBackPage"), keysEl = $("#mBackKeys");
+const stripEls = STRIP.map(i => {
+  const t = TABS[i], d = document.createElement("div"); d.className = "tab"; d.append(favEl(t.k));
+  const s = document.createElement("span"); s.className = "trunc"; s.textContent = t.title; d.append(s); tabsEl.append(d); return d;
+});
+function drawBack(k) {
+  stripEls.forEach((el, j) => el.classList.toggle("on", STRIP[j] === BACK[k]));
+  const t = TABS[BACK[k]], u = document.createElement("div"), h = document.createElement("div"), sk = document.createElement("div");
+  u.className = "url"; u.textContent = t.disp; h.className = "pt"; h.textContent = t.title; sk.className = "sk";
+  sk.innerHTML = "<i></i><i></i><i></i><i></i>";
+  pageEl.replaceChildren(u, h, sk); pageEl.classList.remove("swap"); void pageEl.offsetWidth; pageEl.classList.add("swap");
+}
+drawBack(0);
+if (!reduced) onceVisible($("#mBack"), () => {
+  let k = 0;
+  setInterval(() => {
+    if (document.hidden) return;
+    keysEl.classList.add("down");
+    setTimeout(() => { k ^= 1; drawBack(k); keysEl.classList.remove("down"); }, 260);
+  }, 2600);
+}, .5);
