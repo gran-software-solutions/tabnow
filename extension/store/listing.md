@@ -1,6 +1,6 @@
 # TabNow: Chrome Web Store listing
 
-Draft for the store dashboard (version 0.1.0). Images are in this folder; build them with
+Text for the store dashboard (version 0.1.1 submitted 20.10.2026). Images are in this folder; build them with
 `node extension/tools/store-images.mjs`. Build the zip with `node extension/tools/pack-extension.mjs`
 (writes `dist/tabnow-<version>.zip`).
 
@@ -42,7 +42,8 @@ Good to know
 - Chrome pages (chrome://), the new tab page and the Web Store cannot show the search box on the page, so TabNow opens it in a small window there.
 - Works in Chrome 121 or newer, and in other browsers that install extensions from the Chrome Web Store.
 
-Source and help: https://github.com/gran-software-solutions/tabnow
+Website: https://tabnow.app
+Source: https://github.com/gran-software-solutions/tabnow
 Questions? hello@gransoftware.de
 
 ## Category
@@ -103,13 +104,18 @@ No. All code is in the package. There is no `eval`, no remote script, no `fetch`
   - Website content: no
 - Certifications (tick all three): data is not sold to third parties; not used or transferred for purposes unrelated to the single purpose; not used for creditworthiness or lending.
 - "Contains in-app purchases": no. There is no Pro plan.
-- Privacy policy URL: https://github.com/gran-software-solutions/tabnow/blob/main/PRIVACY.md (until the website is live; it only works once PRIVACY.md is pushed to main).
+- Privacy policy URL: https://tabnow.app/privacy/
 
 ## URLs
 
-- Homepage: https://TODO-tabnow-website (placeholder; until the site is live use https://github.com/gran-software-solutions/tabnow)
-- Support: https://github.com/gran-software-solutions/tabnow/issues (or hello@gransoftware.de)
-- Privacy policy: https://github.com/gran-software-solutions/tabnow/blob/main/PRIVACY.md (switch to https://TODO-tabnow-website/privacy once the site is live)
+- Homepage: https://tabnow.app/
+- Support: https://github.com/gran-software-solutions/tabnow/issues (questions by mail: hello@gransoftware.de)
+- Privacy policy: https://tabnow.app/privacy/
+
+The 0.1.1 submission (20.10.2026) still carries the GitHub homepage and privacy links. Changing anything in
+the dashboard while it is pending means cancelling the review, which puts the item back at the start of the
+queue. So the links and the description line above are switched in the dashboard on approval day (step on
+GRAN-148), together with `storeLive` in `website/src/config.js`. The Edge listing uses these links from the start.
 
 ## Images (this folder)
 
