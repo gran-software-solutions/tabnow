@@ -214,16 +214,83 @@ html.fade .band { transition: background-color .5s ease; }
 .canvas { position: relative; height: 440px; overflow: hidden; display: grid; place-items: center; background: var(--bg); border-radius: 18px; box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); isolation: isolate; }
 .canvas .cap { position: absolute; z-index: 3; bottom: 14px; left: 18px; font-size: 14px; font-weight: 500; color: var(--fg); background: rgb(var(--g) / .75); padding: 3px 10px; border-radius: 7px; }
 .backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
-.backdrop i { position: absolute; display: block; border-radius: 4px; background: color-mix(in srgb, var(--fg) 20%, transparent); }
-.backdrop i.hd { border-radius: 0; background: color-mix(in srgb, var(--fg) 9%, transparent); }
-.backdrop i.img { border-radius: 8px; background: color-mix(in srgb, var(--fg) 12%, transparent); }
-.backdrop i.h { background: color-mix(in srgb, var(--fg) 30%, transparent); }
-.backdrop .art { position: absolute; left: 28px; right: 28px; top: 56px; color: var(--fg); text-align: left; }
-.backdrop .pic { height: 132px; border-radius: 10px; background: var(--hit); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 20px; }
-.backdrop .pic b { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 54px; line-height: 1; }
-.backdrop .pic span { font-size: 14px; opacity: .85; }
-.backdrop h4 { margin: 20px 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
-.backdrop p { margin: 0 0 10px; font-size: 15px; line-height: 1.55; color: var(--fg); }
+/* real pages behind the panel (scenes.js) */
+.wp { position: absolute; inset: 0; display: flex; flex-direction: column; text-align: left; font: 400 12px/1.4 "IBM Plex Sans", system-ui, sans-serif; }
+.wp-bar { flex: none; height: 32px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: var(--wb); border-bottom: 1px solid var(--wl); }
+.wp-bar i { width: 9px; height: 9px; border-radius: 50%; background: #ff5f57; }
+.wp-bar i:nth-child(2) { background: #febc2e; } .wp-bar i:nth-child(3) { background: #28c840; }
+.wp-url { margin-left: 10px; flex: 1; max-width: 330px; height: 20px; line-height: 20px; padding: 0 12px; border-radius: 10px; background: var(--wo); color: var(--wm); font-size: 11px; white-space: nowrap; overflow: hidden; }
+.wp-view { flex: 1; min-height: 0; overflow: hidden; background: var(--wp); color: var(--wf); }
+.wp em { font-style: normal; }
+.wp b { font-weight: 600; }
+.canvas[data-theme="light"] .wp { --wb: #e9edf3; --wo: #fff; --wl: #d6dbe3; --wm: #5f6368; --wp: #f6f8fc; --wf: #1f1f1f; }
+.canvas[data-theme="dark"] .wp { --wb: #161b22; --wo: #0d1117; --wl: #30363d; --wm: #8b949e; --wp: #0d1117; --wf: #e6edf3; }
+
+/* gmail */
+.gm { height: 100%; display: flex; flex-direction: column; --gl: #e1e5ea; --gs: #5f6368; }
+.gm-top { flex: none; height: 46px; display: flex; align-items: center; gap: 14px; padding: 0 14px; }
+.gm-menu { display: grid; gap: 3px; } .gm-menu i { display: block; width: 15px; height: 2px; background: #5f6368; border-radius: 1px; }
+.gm-logo { font: 500 19px/1 "IBM Plex Sans", sans-serif; color: #5f6368; letter-spacing: -.01em; }
+.gm-search { flex: 1; height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 16px; background: #eaf1fb; color: #5f6368; font-size: 12.5px; }
+.gm-av { width: 26px; height: 26px; border-radius: 50%; background: #1a73e8; color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 12px; }
+.gm-body { flex: 1; min-height: 0; display: flex; }
+.gm-nav { flex: none; width: 118px; padding: 4px 8px 0 8px; font-size: 12px; color: #1f1f1f; }
+.gm-nav .cmp { height: 36px; margin-bottom: 8px; border-radius: 12px; background: #c2e7ff; display: flex; align-items: center; padding-left: 14px; font-weight: 500; }
+.gm-nav div { display: flex; justify-content: space-between; height: 26px; align-items: center; padding: 0 10px; border-radius: 0 13px 13px 0; margin-left: -8px; padding-left: 18px; }
+.gm-nav .cmp { margin-left: 0; padding-left: 14px; border-radius: 12px; }
+.gm-nav .on { background: #d3e3fd; font-weight: 700; }
+.gm-nav b { font-size: 11px; font-weight: 600; }
+.gm-main { flex: 1; min-width: 0; background: #fff; border-radius: 14px 0 0 0; overflow: hidden; }
+.gm-tools { height: 34px; display: flex; align-items: center; gap: 14px; padding: 0 12px; border-bottom: 1px solid var(--gl); font-size: 12px; color: var(--gs); }
+.gm-tools .on { color: #0b57d0; font-weight: 500; box-shadow: 0 2px 0 #0b57d0; padding: 8px 0; }
+.gm-tools time { margin-left: auto; font-size: 11px; }
+.gm .cb { flex: none; width: 12px; height: 12px; border: 1.5px solid #747775; border-radius: 2px; }
+.gm .st { flex: none; width: 12px; height: 12px; background: #c4c7c5; clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 80% 100%, 50% 76%, 20% 100%, 30% 60%, 0 38%, 38% 36%); }
+.gm .m { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid #edf0f3; color: #444746; background: #f2f6fc; }
+.gm .m.u { background: #fff; color: #1f1f1f; }
+.gm .m .fr { flex: none; width: 84px; font-weight: 400; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.gm .m.u .fr { font-weight: 700; }
+.gm .m .sb { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm .m .sb b { font-weight: 400; } .gm .m.u .sb b { font-weight: 700; }
+.gm .m .sb em { color: #5f6368; }
+.gm .m time { flex: none; font-size: 11px; color: #5f6368; } .gm .m.u time { color: #1f1f1f; font-weight: 700; }
+
+/* github pull request */
+.gh { height: 100%; --gl: #30363d; --gm: #8b949e; --gb: #161b22; }
+.gh-head { height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: var(--gb); }
+.gh-chip { width: 22px; height: 22px; border-radius: 50%; background: #e6edf3; color: #0d1117; display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+.gh-repo { font-size: 13px; color: #9ecbff; } .gh-repo b { color: #58a6ff; } .gh-repo u { text-decoration: none; color: var(--gm); }
+.gh-find { margin-left: auto; padding: 3px 10px; border: 1px solid var(--gl); border-radius: 6px; color: var(--gm); font-size: 11px; }
+.gh-nav { display: flex; gap: 2px; padding: 0 12px; background: var(--gb); border-bottom: 1px solid var(--gl); font-size: 12px; }
+.gh-nav span { padding: 8px 8px 9px; color: #c9d1d9; white-space: nowrap; }
+.gh-nav span.on { font-weight: 600; box-shadow: inset 0 -2px 0 #f78166; }
+.gh em, .gh-tabs em { padding: 0 6px; border-radius: 9px; background: #6e768166; font-size: 10.5px; margin-left: 3px; }
+.gh-body { padding: 14px 18px 0; }
+.gh h1 { margin: 0; font: 400 20px/1.25 "IBM Plex Sans", sans-serif; letter-spacing: -.01em; color: #e6edf3; }
+.gh h1 s { text-decoration: none; color: var(--gm); }
+.gh-meta { display: flex; align-items: center; gap: 10px; margin: 9px 0 10px; color: var(--gm); font-size: 12px; white-space: nowrap; }
+.gh-meta .open { padding: 4px 11px; border-radius: 14px; background: #238636; color: #fff; font-weight: 600; font-size: 12px; }
+.gh-meta b { color: #e6edf3; }
+.gh code { font: 400 11.5px/1.5 "IBM Plex Mono", ui-monospace, monospace; }
+.gh-meta code { padding: 1px 6px; border-radius: 6px; background: #388bfd26; color: #79c0ff; }
+.gh-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--gl); font-size: 12.5px; }
+.gh-tabs span { padding: 7px 10px; color: #c9d1d9; white-space: nowrap; }
+.gh-tabs span.on { font-weight: 600; box-shadow: inset 0 -2px 0 #f78166; }
+.gh-cmt { display: flex; gap: 10px; margin: 12px 0; }
+.gh-cmt .av { flex: none; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3a4a8c, #8957e5); display: grid; place-items: center; font-weight: 600; }
+.gh-cmt > div { flex: 1; border: 1px solid var(--gl); border-radius: 6px; overflow: hidden; }
+.gh-cmt .ch { padding: 7px 12px; background: var(--gb); border-bottom: 1px solid var(--gl); color: var(--gm); font-size: 12px; } .gh-cmt .ch b { color: #e6edf3; }
+.gh-cmt p { margin: 0; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #e6edf3; }
+.gh-cmt p code { padding: 1px 5px; border-radius: 5px; background: #6e768166; }
+.gh-diff { border: 1px solid var(--gl); border-radius: 6px; overflow: hidden; }
+.gh-diff .fh { display: flex; justify-content: space-between; padding: 6px 12px; background: var(--gb); border-bottom: 1px solid var(--gl); font: 500 12px "IBM Plex Mono", monospace; }
+.gh-diff .fh i { font-style: normal; } .gh-diff .p { color: #3fb950; } .gh-diff .m { color: #f85149; }
+.gh-diff .r { display: flex; white-space: pre; font-size: 11.5px; line-height: 20px; color: #e6edf3; }
+.gh-diff .r u { flex: none; width: 40px; text-align: right; padding-right: 10px; text-decoration: none; color: #6e7681; font: 11px/20px "IBM Plex Mono", monospace; }
+.gh-diff .r code { flex: 1; }
+.gh-diff .r.h { background: #388bfd1a; color: #79c0ff; } .gh-diff .r.h u { color: #79c0ff; width: auto; padding: 0 8px 0 12px; }
+.gh-diff .r.a { background: #2ea04326; } .gh-diff .r.a u { background: #3fb95033; }
+.gh-diff .r.x { background: #f851491a; } .gh-diff .r.x u { background: #f8514933; }
 .canvas .ov { position: relative; z-index: 2; width: 340px; background: rgb(var(--g) / var(--alpha)); backdrop-filter: blur(var(--blur)); transform: scale(var(--zoom)); box-shadow: inset 0 0 0 1px var(--line), 0 14px 36px rgb(0 0 0 / .1); }
 .canvas .q { font-size: 17px; padding: 13px 16px; gap: 10px; }
 .canvas .q svg { width: 18px; height: 18px; }

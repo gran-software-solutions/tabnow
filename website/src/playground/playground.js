@@ -3,6 +3,7 @@
 // chrome.* calls through window.__tn (see tools/playground-stub.js). The panel itself is the
 // extension's own search.html / search.js, copied to /playground/ext/ at build time.
 import { SITES, TABS, BOOKMARKS, HISTORY } from './data.js';
+import { mockPage } from './pages.js';
 
 const root = document.querySelector('[data-pg]');
 if (root) init(root);
@@ -222,53 +223,13 @@ function init(root) {
   strip.addEventListener('mouseleave', () => { clearTimeout(hoverTimer); card.hidden = true; });
   strip.addEventListener('click', () => (card.hidden = true));
 
-  /* ---------- mock pages: grey bars where text would be ---------- */
-  function rng(seed) { let s = seed * 9301 + 49297; return () => ((s = (s * 9301 + 49297) % 233280) / 233280); }
-  const bars = (r, n, a = 45, b = 98, cls = 'l') => Array.from({ length: n }, () => `<i class="${cls}" style="width:${Math.round(a + r() * (b - a))}%"></i>`).join('');
-  const rows = (n, f) => Array.from({ length: n }, (_, i) => f(i)).join('');
-
-  function top(site) {
-    const [host, bg, fg, ch] = SITES[site];
-    return `<div class="pp-top"><span class="pp-logo" style="background:${bg};color:${fg}">${esc(ch)}</span><b>${esc(host)}</b><i class="pp-find"></i><span class="pp-grow"></span><i class="pp-btn"></i><span class="pp-av"></span></div>`;
-  }
-  const heading = (title) => esc(title.replace(/ · Pull Request.*| · Issue.*| - Stack Overflow$| - Google (Docs|Sheets)$/, ''));
-
-  const LAYOUT = {
-    pr: (t, r) => `<div class="pp-main"><h1 class="pp-h">${heading(t.title)}</h1>
-      <div class="pp-row"><i class="pp-pill"></i><i class="l" style="width:300px;margin:0"></i></div>
-      <div class="pp-tabs"><i></i><i></i><i></i><i></i></div>
-      <div class="pp-cols"><div>
-        <div class="pp-box"><span class="pp-av"></span><div>${bars(r, 3)}</div></div>
-        <div class="pp-diff"><div class="fh"></div>${rows(13, (i) => `<div class="r ${[3, 4, 5, 9, 10].includes(i) ? 'a' : i === 7 ? 'x' : ''}"><i style="width:${30 + Math.round(r() * 60)}%"></i></div>`)}</div>
-      </div><div>${bars(r, 4, 40, 90, 'l d')}<div style="height:18px"></div>${bars(r, 5, 40, 90)}</div></div></div>`,
-    mail: (t, r) => `<div class="pp-mail"><div class="pp-nav"><div class="compose"></div>${rows(8, (i) => `<div class="n${i === 0 ? ' on' : ''}"><i style="width:${50 + Math.round(r() * 50)}px"></i></div>`)}</div>
-      <div class="pp-list">${rows(14, (i) => `<div class="m${i < 5 ? ' u' : ''}"><i style="width:110px"></i><i class="f" style="max-width:${40 + Math.round(r() * 45)}%"></i><i class="f" style="max-width:${5 + Math.round(r() * 20)}%;opacity:.6"></i><i style="width:40px;margin-left:auto"></i></div>`)}</div></div>`,
-    doc: (t, r) => `<div class="pp-doc"><div class="rail">${bars(r, 3, 40, 80, 'l d')}<div style="height:12px"></div>${bars(r, 9, 40, 90)}</div>
-      <div class="art"><h1 class="pp-h">${heading(t.title)}</h1><div style="height:10px"></div>${bars(r, 3)}<div class="pp-code">${bars(r, 4, 25, 75)}</div>${bars(r, 6)}</div></div>`,
-    sheet: (t, r) => `<div class="pp-sheet"><div class="fx"><i style="width:120px"></i><i style="width:260px"></i></div><div class="pp-grid">${rows(8 * 16, (n) => {
-      const c = n % 8, rr = Math.floor(n / 8);
-      if (rr === 0 || c === 0) return `<div class="h"><i style="width:${c ? 24 : 12}px"></i></div>`;
-      return `<div><i${c % 3 === 0 ? ' class="r"' : ''}></i></div>`;
-    })}</div></div>`,
-    qa: (t, r) => `<div class="pp-qa"><div class="v"><i></i><b></b><i></i></div><div><h1 class="pp-h">${heading(t.title)}</h1>
-      <div style="height:6px"></div>${bars(r, 4)}<div class="pp-code">${bars(r, 5, 25, 80)}</div>${bars(r, 3)}</div><div class="side">${bars(r, 6, 40, 90)}</div></div>`,
-    figma: (t, r) => `<div class="pp-figma"><div class="layers">${rows(14, (i) => `<div class="n" style="padding-left:${(i % 4 === 0 ? 0 : 14)}px"><i style="width:${50 + Math.round(r() * 60)}px"></i></div>`)}</div>
-      <div class="cv"><i class="c1" style="left:60px;top:50px;width:300px;height:240px"></i><i class="c2" style="left:400px;top:50px;width:300px;height:380px"></i><i style="left:60px;top:330px;width:300px;height:140px"></i><i style="left:740px;top:50px;width:120px;height:240px"></i></div>
-      <div class="props">${bars(r, 3, 40, 90, 'l d')}<div style="height:12px"></div>${bars(r, 8, 30, 90)}</div></div>`,
-    board: (t, r) => `<div class="pp-board">${rows(4, (c) => `<div class="col"><i></i>${rows(4 - (c % 2), () => `<div class="kc">${bars(r, 2, 50, 95)}<em></em></div>`)}</div>`)}</div>`,
-    video: (t, r) => `<div class="pp-video"><div><div class="player"></div><h1 class="pp-h" style="font-size:20px;margin-top:16px">${heading(t.title)}</h1>
-      <div class="up"><span class="pp-av"></span><i class="l" style="width:160px;margin:0"></i></div></div>
-      <div>${rows(6, () => `<div class="th"><i></i><div>${bars(r, 2, 60, 95)}${bars(r, 1, 30, 50, 'l s')}</div></div>`)}</div></div>`,
-    chat: (t, r) => `<div class="pp-chat"><div class="rail">${bars(r, 3, 40, 80, 'l d')}<div style="height:10px"></div>${bars(r, 9, 40, 90)}</div>
-      <div class="msgs">${rows(6, () => `<div class="msg"><span class="pp-av"></span><div>${bars(r, 1, 18, 30, 'l d')}${bars(r, 2, 50, 95)}</div></div>`)}</div></div>`,
-    plain: (t, r) => `<div class="pp-plain"><div class="ban"></div><h1 class="pp-h">${heading(t.title)}</h1><div style="height:8px"></div>${bars(r, 3)}
-      <div class="cards">${rows(3, () => `<div>${bars(r, 4, 40, 95)}</div>`)}</div></div>`,
-  };
+  /* ---------- mock pages: real-looking text per site type (pages.js) ---------- */
   function page(t) {
     if (t.url.startsWith('chrome://')) return '<div class="pp-new"><i class="bg1"></i><i class="box"></i></div>';
-    const site = info.get(t.url)?.key ?? 'cc';
-    const kind = SITES[site][4];
-    return top(site) + LAYOUT[kind](t, rng(t.id * 7 + 3));
+    const key = info.get(t.url)?.key ?? 'cc';
+    const [host, bg, fg, letter, kind] = SITES[key];
+    const path = new URL(t.url).pathname;
+    return mockPage(kind, t, { key, host, bg, fg, letter, path });
   }
 
   renderMarks();
