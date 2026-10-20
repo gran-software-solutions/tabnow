@@ -1,22 +1,18 @@
 /* TabNow site styles. The colour sets are the exact ones from extension/search.css (check-source
-   verifies every value is still there). Geist and Instrument Serif are self-hosted in public/fonts. */
-@font-face { font-family: 'Geist'; src: url('/fonts/geist-latin-wght-normal.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+   verifies every value is still there). Instrument Serif and IBM Plex are self-hosted in public/fonts. */
 @font-face { font-family: 'Instrument Serif'; src: url('/fonts/instrument-serif-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Instrument Serif'; src: url('/fonts/instrument-serif-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
-
-@font-face { font-family: 'Instrument Sans'; src: url('/fonts/instrument-sans-latin-wght-normal.woff2') format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }
 @font-face { font-family: 'IBM Plex Sans'; src: url('/fonts/ibm-plex-sans-latin-wght-normal.woff2') format('woff2'); font-weight: 400 600; font-style: normal; font-display: swap; }
 @font-face { font-family: 'IBM Plex Mono'; src: url('/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'IBM Plex Mono'; src: url('/fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Newsreader'; src: url('/fonts/newsreader-latin-wght-normal.woff2') format('woff2'); font-weight: 400 600; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Newsreader'; src: url('/fonts/newsreader-latin-wght-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 
 /* Font roles. body = running text, ui = nav/buttons/labels/key caps/mock panels, mono = code.
-   Default is Geist. The [data-font] blocks at the end are TEMPORARY (font comparison, remove after the choice). */
+   Headlines are Instrument Serif; everything else IBM Plex. */
 :root {
-  --font-body: "Geist", system-ui, sans-serif; --font-ui: "Geist", system-ui, sans-serif; --font-mono: "Geist", monospace;
-  --body-size: 16px; --body-lh: 1.55; --body-ls: 0; --sub-size: 17px; --say-size: 22px; --ui-ls: 0;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif; --font-ui: "IBM Plex Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --body-size: 16px; --body-lh: 1.6; --body-ls: 0; --sub-size: 17px; --say-size: 21px; --ui-ls: 0;
 }
+code { font-size: .84em; }
 
 /* Exact colour sets from extension/search.css */
 :root, [data-theme="light"] {
@@ -292,23 +288,3 @@ footer .links { display: flex; gap: 24px; flex-wrap: wrap; }
 nav, .btn, kbd, .hint, .card, .ov, .q, .foot, .tab, .opt, .permhead, footer, .menu, .canvas .cap, .rk, .empty, .skip { font-family: var(--font-ui); letter-spacing: var(--ui-ls); }
 .sub { font-size: var(--sub-size); }
 .say { font-size: var(--say-size); }
-
-/* ---- TEMPORARY: font comparison, remove after the choice ---- */
-[data-font="instrument-sans"] {
-  --font-body: "Instrument Sans", system-ui, sans-serif; --font-ui: "Instrument Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --body-size: 16.5px; --body-lh: 1.6; --body-ls: -.003em; --sub-size: 18px; --say-size: 22px;
-}
-[data-font="plex"] {
-  --font-body: "IBM Plex Sans", system-ui, sans-serif; --font-ui: "IBM Plex Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --body-size: 16px; --body-lh: 1.6; --body-ls: 0; --sub-size: 17px; --say-size: 21px;
-}
-[data-font="newsreader"] {
-  --font-body: "Newsreader", Georgia, serif; --font-ui: "Instrument Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --body-size: 18.5px; --body-lh: 1.55; --body-ls: 0; --sub-size: 20px; --say-size: 25px;
-}
-[data-font="instrument-sans"] code, [data-font="plex"] code, [data-font="newsreader"] code { font-size: .84em; }
-.fontpill { position: fixed; z-index: 200; right: 16px; bottom: 16px; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--solid); box-shadow: inset 0 0 0 1px var(--line), 0 6px 20px rgb(15 20 30 / .12); font: 500 12px/1 "Geist", system-ui, sans-serif; letter-spacing: 0; color: var(--muted); align-items: center; }
-.fontpill span { padding: 0 8px 0 10px; color: var(--faint); }
-.fontpill button { font: inherit; border: 0; background: none; color: inherit; padding: 7px 11px; border-radius: 999px; cursor: pointer; }
-.fontpill button:hover { color: var(--fg); }
-.fontpill button[aria-pressed="true"] { background: var(--hit); color: var(--on-hit); }
