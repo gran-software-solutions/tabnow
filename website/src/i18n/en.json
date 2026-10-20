@@ -107,7 +107,7 @@
   "privacy": {
     "big": "No network requests.",
     "bigEm": "Ever.",
-    "lead": "No account, no analytics, no servers. Plain JavaScript, open source under MIT.",
+    "lead": "The extension has no account, no analytics and no servers. Plain JavaScript, open source under MIT.",
     "permsTitle": "What it asks the browser for",
     "optional": "optional",
     "perms": [

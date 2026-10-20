@@ -1,4 +1,5 @@
 // One place for facts that are not translated. Shared by the page, the JSON-LD and the build checks.
+const env = import.meta.env ?? process.env;
 export const BRAND = 'TabNow';
 export const COMPANY = 'GRAN Software Solutions GmbH';
 export const COMPANY_URL = 'https://www.gransoftware.de';
@@ -25,3 +26,13 @@ export function install() {
     ? { href: webStoreUrl, soon: false }
     : { href: GITHUB_INSTALL_URL, soon: true };
 }
+
+// Visit counts: our own umami, the instance pigmo and stepkeep use. The tracker is a file on
+// this site (public/a.js, written by tools/fetch-tracker.mjs), so no third party serves code
+// to a visitor. The website id is public (it is in every page).
+// TODO(owner): replace REPLACE_WITH_UMAMI_ID with the id of the tabnow.app site in umami.
+// PUBLIC_ANALYTICS_ID='' turns the counter off for a build.
+export const ANALYTICS = {
+  host: env.PUBLIC_ANALYTICS_URL || `https://stats.${DOMAIN}`,
+  websiteId: env.PUBLIC_ANALYTICS_ID ?? 'REPLACE_WITH_UMAMI_ID',
+};

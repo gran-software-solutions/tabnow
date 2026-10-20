@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { ANALYTICS, DOMAIN } from '../config.js';
 import { useT, localePath, DEFAULT_LOCALE } from '../i18n/index.js';
 
 const { title, description, path = '/', jsonLd = null, noindex = false, home = false } = Astro.props;
@@ -48,6 +49,18 @@ const canonical = abs(localePath(locale, path));
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:alt" content={t('meta.ogAlt')} />
     <meta name="twitter:card" content="summary_large_image" />
+    {/* Counting, from this origin. No cookie, Do Not Track honoured, other hosts not counted. */}
+    {ANALYTICS.websiteId && (
+      <script
+        is:inline
+        src="/a.js"
+        defer
+        data-website-id={ANALYTICS.websiteId}
+        data-host-url={ANALYTICS.host}
+        data-do-not-track="true"
+        data-domains={`${DOMAIN},www.${DOMAIN}`}
+      />
+    )}
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
   </head>
   <body>

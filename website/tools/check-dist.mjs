@@ -71,6 +71,7 @@ for (const file of pages) {
   for (const match of html.matchAll(/<link\b[^>]*rel="(?:stylesheet|preload|preconnect|dns-prefetch)"[^>]*href="(?:https?:)?\/\/[^"]*"/g)) {
     errors.push(`${name}: remote resource: ${match[0].slice(0, 80)}`);
   }
+  if (/src="\/a\.js"/.test(html) && !existsSync(join(dist, 'a.js'))) errors.push(`${name}: page loads /a.js but dist/a.js is missing (run tools/fetch-tracker.mjs)`);
   if (/fonts\.(googleapis|gstatic)\.com/.test(html)) errors.push(`${name}: Google Fonts must not be used`);
 
   if (/\bundefined\b|\[object /.test(html.replace(/<script[\s\S]*?<\/script>/g, ''))) errors.push(`${name}: template hole ("undefined" or "[object")`);
@@ -85,7 +86,8 @@ for (const file of pages) {
 for (const file of files.filter((f) => /\.(css|js)$/.test(f))) {
   const text = readFileSync(file, 'utf8');
   for (const match of text.matchAll(/url\(\s*["']?(https?:)?\/\/[^)]*\)/g)) errors.push(`${relative(dist, file)}: remote url() ${match[0].slice(0, 80)}`);
-  if (/\b(fetch|XMLHttpRequest|sendBeacon)\b/.test(text)) errors.push(`${relative(dist, file)}: network call in a script (the demo must not talk to anything)`);
+  // The vendored umami tracker (public/a.js) posts its own count to the analytics host; every other script must not.
+  if (relative(dist, file) !== "a.js" && /\b(fetch|XMLHttpRequest|sendBeacon)\b/.test(text)) errors.push(`${relative(dist, file)}: network call in a script (the demo must not talk to anything)`);
 }
 
 // The home page carries the Install button, the demo and the theme toggle.

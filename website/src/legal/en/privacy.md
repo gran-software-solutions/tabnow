@@ -1,6 +1,6 @@
 Last updated: 20.10.2026
 
-TabNow is a browser extension that searches your open tabs. It collects no data. It has no server, no account and no analytics, and it makes no network requests.
+TabNow is a browser extension that searches your open tabs. The extension collects no data. It has no server, no account and no analytics, and it makes no network requests.
 
 ## What stays on your device
 
@@ -25,6 +25,20 @@ TabNow loads no code from the internet. All code ships inside the extension.
 ## Sharing
 
 We do not sell, share or transfer any data, because we do not have any.
+
+## This website
+
+The extension is one thing and this website (tabnow.app) is another. The statements above are about the extension. Here is what the website does.
+
+This site counts its visits with umami, an open-source counter we run ourselves on servers at Hetzner in Germany. The counting script is a file on this site, not one fetched from somewhere else. The only request it makes off this site is its own count, sent to stats.tabnow.app, our own analytics host.
+
+Each visit records the page address, the page you came from, the page title, the language and screen size your browser reports, and the browser, system and rough region worked out from your IP address. It also counts clicks on the Install button. The IP address itself is not stored: it is turned into a one-way value with a secret that changes every day, so a visit today cannot be linked to one yesterday. No personal profile is built. If your browser sends a Do Not Track signal, nothing is counted.
+
+No cookie is set and nothing is written to your device by the counter, which is why there is no consent banner. The counting rests on our legitimate interest in knowing whether these pages are read (Art. 6(1)(f) GDPR). Once the day's secret is gone, the counts lead back to nobody.
+
+If you switch between the light and dark theme, your browser remembers that choice in its own local storage. It is only the word "light" or "dark", it is never sent to us, and clearing your browser data removes it.
+
+Our web server also keeps technical access logs (IP address, time, page requested, browser type) to run and protect the site. They are kept for 30 days, then deleted (Art. 6(1)(f) GDPR). The site sets no cookies, shows no advertising and loads no third-party scripts or fonts.
 
 ## Open source
 
