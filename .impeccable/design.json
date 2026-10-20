@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T00:00:00Z",
+  "title": "Design System: TabNow",
+  "extensions": {
+    "colorMeta": {
+      "hit-blue": {"role": "primary", "displayName": "Hit Blue", "canonical": "#1f5fd6", "tonalRamp": ["#0d2a66","#123e92","#1750bd","#1f5fd6","#4b80e0","#7ba2e9","#adc5f2","#dde8fa"]},
+      "hit-blue-night": {"role": "primary", "displayName": "Hit Blue (night)", "canonical": "#9cbcff", "tonalRamp": ["#2a4a8c","#3b62b3","#5b82d6","#7ea1f2","#9cbcff","#b6cdff","#d0defe","#ebf1ff"]},
+      "ink": {"role": "neutral", "displayName": "Ink", "canonical": "#14171d", "tonalRamp": ["#14171d","#2a2f38","#424853","#5f6672","#8a909b","#b4b8c0","#d6d9de","#eef0f3"]},
+      "line": {"role": "neutral", "displayName": "Line", "canonical": "#e4e7ec", "tonalRamp": ["#9ba1ac","#b4b9c2","#c6cad2","#d5d9df","#e4e7ec","#eceef2","#f3f4f7","#fafbfc"]},
+      "paper": {"role": "neutral", "displayName": "Paper", "canonical": "#ffffff", "tonalRamp": ["#d6d9de","#e4e7ec","#eceef2","#f3f4f7","#f7f8fa","#fafbfc","#fdfdfe","#ffffff"]},
+      "paper-night": {"role": "neutral", "displayName": "Night Paper", "canonical": "#161920", "tonalRamp": ["#0b0d10","#101216","#161920","#1b1f27","#242932","#2c313b","#3a404c","#4a5160"]}
+    },
+    "typographyMeta": {
+      "display": {"displayName": "Display", "purpose": "Moment headlines and the privacy question; Instrument Serif."},
+      "hero": {"displayName": "Hero", "purpose": "Page h1 only."},
+      "lead": {"displayName": "Lead", "purpose": "One muted sentence under a headline."},
+      "body": {"displayName": "Body", "purpose": "Running text."},
+      "label": {"displayName": "Label", "purpose": "Nav, buttons, captions."},
+      "code": {"displayName": "Code", "purpose": "Shortcut and scope chips in copy."}
+    },
+    "shadows": [
+      {"name": "card-rest", "value": "0 1px 3px rgb(15 20 30 / .05)", "purpose": "Tab cards at rest."},
+      {"name": "panel", "value": "inset 0 0 0 1px #e4e7ec, 0 6px 24px rgb(15 20 30 / .05)", "purpose": "Hero panel."},
+      {"name": "panel-big", "value": "inset 0 0 0 1px #e4e7ec, 0 24px 60px rgb(15 20 30 / .07)", "purpose": "Large demo panel and browser mock."},
+      {"name": "lift", "value": "0 10px 26px rgb(15 20 30 / .12), 0 0 0 3px rgb(31 95 214 / .16)", "purpose": "Hovered or active tab card."},
+      {"name": "keycap", "value": "inset 0 0 0 1px #e4e7ec, 0 3px 0 #e4e7ec", "purpose": "Key cap underside; the only hard edge."}
+    ],
+    "motion": [
+      {"name": "ease-settle", "value": "cubic-bezier(.22, .7, .2, 1)", "purpose": "Card moves, row rises, scroll reveal."},
+      {"name": "theme-fade", "value": ".5s ease", "purpose": "Colour cross-fade when switching light and dark."},
+      {"name": "hover", "value": ".15s", "purpose": "Link and button state changes."}
+    ],
+    "breakpoints": [
+      {"name": "narrow", "value": "900px"}
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button", "kind": "button", "refersTo": "button-primary",
+      "description": "Blue fill action; install and try.",
+      "html": "<button class=\"ds-btn\">Add to Chrome</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;height:38px;padding:0 16px;border:0;border-radius:8px;background:#1f5fd6;color:#fff;font:500 14px 'IBM Plex Sans',system-ui,sans-serif;cursor:pointer;white-space:nowrap;transition:filter .15s,transform .12s}.ds-btn:hover{filter:brightness(1.06)}.ds-btn:active{transform:translateY(1px);filter:brightness(.97)}.ds-btn:focus-visible{outline:2px solid #1f5fd6;outline-offset:2px}"
+    },
+    {
+      "name": "Ghost Button", "kind": "button", "refersTo": "button-ghost",
+      "description": "Secondary action with a hairline ring.",
+      "html": "<button class=\"ds-ghost\">View source</button>",
+      "css": ".ds-ghost{display:inline-flex;align-items:center;height:38px;padding:0 16px;border:0;border-radius:8px;background:none;color:#14171d;box-shadow:inset 0 0 0 1px #e4e7ec;font:500 14px 'IBM Plex Sans',system-ui,sans-serif;cursor:pointer}.ds-ghost:hover{background:rgb(20 23 29 / .04)}.ds-ghost:focus-visible{outline:2px solid #1f5fd6;outline-offset:2px}"
+    },
+    {
+      "name": "Key Cap", "kind": "custom", "refersTo": "keycap",
+      "description": "Physical key with a 3px underside that presses down.",
+      "html": "<kbd class=\"ds-key\">Alt</kbd> <kbd class=\"ds-key\">E</kbd>",
+      "css": ".ds-key{display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:52px;padding:0 14px;border-radius:11px;background:#fff;color:#14171d;font:500 19px/1 'IBM Plex Sans',system-ui,sans-serif;box-shadow:inset 0 0 0 1px #e4e7ec,0 3px 0 #e4e7ec;transition:transform .12s,box-shadow .12s}.ds-key:hover{transform:translateY(-1px);box-shadow:inset 0 0 0 1px #e4e7ec,0 4px 0 #e4e7ec}.ds-key:active{transform:translateY(3px);box-shadow:inset 0 0 0 1px #e4e7ec,0 0 0 #e4e7ec}"
+    },
+    {
+      "name": "Search Panel", "kind": "custom", "refersTo": "panel",
+      "description": "The product's own panel: query row, result rows with a selected row, key hint footer.",
+      "html": "<div class=\"ds-panel\"><div class=\"ds-q\">gh pr<span>2</span></div><ul><li class=\"on\"><b>GitHub pull request</b><i>github.com/gran/tabnow</i></li><li><b>Gmail inbox</b><i>mail.google.com</i></li></ul><div class=\"ds-foot\">Enter to open</div></div>",
+      "css": ".ds-panel{width:360px;border-radius:16px;background:#fff;color:#14171d;box-shadow:inset 0 0 0 1px #e4e7ec,0 6px 24px rgb(15 20 30 / .05);font-family:'IBM Plex Sans',system-ui,sans-serif;overflow:hidden}.ds-q{display:flex;justify-content:space-between;padding:16px 20px;font-size:20px;font-weight:300;border-bottom:1px solid rgb(15 20 30 / .07)}.ds-q span{font-size:12px;color:#5f6672}.ds-panel ul{list-style:none;margin:0;padding:6px}.ds-panel li{display:grid;gap:2px;padding:8px 12px;border-radius:8px;transition:background-color .15s}.ds-panel li:not(.on):hover{background:rgb(20 23 29 / .04)}.ds-panel li.on{background:rgb(31 95 214 / .12)}.ds-panel li.on b{color:#1f5fd6}.ds-panel b{font-size:14px;font-weight:400}.ds-panel i{font-style:normal;font-size:12px;color:#5f6672}.ds-foot{padding:9px 16px;border-top:1px solid rgb(15 20 30 / .07);font-size:11.5px;color:#5f6672}"
+    },
+    {
+      "name": "Tab Card", "kind": "card", "refersTo": "tab-card",
+      "description": "Hero desk card; selected variant gets a blue border and halo.",
+      "html": "<div class=\"ds-card\"><span class=\"ds-fav\">G</span><div><b>Pull request</b><i>github.com</i></div></div>",
+      "css": ".ds-card{display:flex;align-items:center;gap:10px;width:168px;height:58px;padding:0 12px;border:1px solid #e4e7ec;border-radius:10px;background:#fff;color:#14171d;box-shadow:0 1px 3px rgb(15 20 30 / .05);font-family:'IBM Plex Sans',system-ui,sans-serif;transition:transform .4s cubic-bezier(.22,.7,.2,1),box-shadow .4s,border-color .3s}.ds-card:hover{transform:translateY(-7px);border-color:#1f5fd6;box-shadow:0 10px 26px rgb(15 20 30 / .12),0 0 0 3px rgb(31 95 214 / .16)}.ds-fav{width:18px;height:18px;border-radius:4px;background:#1f5fd6;color:#fff;display:grid;place-items:center;font:600 10px/1 'IBM Plex Sans',sans-serif}.ds-card div{display:grid;gap:1px}.ds-card b{font-size:12.5px;font-weight:500}.ds-card i{font-style:normal;font-size:11px;color:#5f6672}"
+    },
+    {
+      "name": "Scopes Menu", "kind": "nav", "refersTo": "panel",
+      "description": "Scope letters in mono with a muted description; active row tinted blue.",
+      "html": "<div class=\"ds-menu\"><div class=\"on\"><code>/t</code><span>tabs</span></div><div><code>/b</code><span>bookmarks</span></div><div><code>/h</code><span>history</span></div></div>",
+      "css": ".ds-menu{width:360px;padding:6px;border-radius:14px;background:#fff;color:#14171d;box-shadow:inset 0 0 0 1px #e4e7ec,0 16px 40px rgb(15 20 30 / .08);font:17px 'IBM Plex Sans',system-ui,sans-serif}.ds-menu div{display:flex;align-items:center;gap:14px;padding:11px 14px;border-radius:9px;transition:background-color .35s}.ds-menu div.on{background:rgb(31 95 214 / .12)}.ds-menu code{font:600 15px 'IBM Plex Mono',ui-monospace,monospace;min-width:26px}.ds-menu span{margin-left:auto;color:#6b7280;font-size:14px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Desk Under Glass",
+    "overview": "The page is a white desk with one real instrument on it: the extension's own search panel, scaled up and left to run. Nothing on the page explains that the panel does not already show. Headlines are large Instrument Serif set on a plain surface; everything that behaves like software is IBM Plex and uses the exact light and dark colour sets from the extension's stylesheet.",
+    "keyCharacteristics": [
+      "White page, one blue accent, hairline borders instead of fills.",
+      "The product UI is the illustration; mock panels share the real extension's parts and values.",
+      "Serif italic in the accent blue marks the one emphasised word of a headline.",
+      "Light and dark are equal citizens, switched with a data attribute and a 0.5s colour cross-fade.",
+      "Large radii on panels (16 to 20px), small on controls (6 to 10px)."
+    ],
+    "rules": [
+      {"name": "The One Blue Rule", "body": "Blue means \"selected or matched\" and nothing else. Do not use it for decoration, section colour, or illustration.", "section": "colors"},
+      {"name": "The Extension Parity Rule", "body": "Colour values for light and dark are copied from the extension's own stylesheet and stay in lockstep with it. Change them there first.", "section": "colors"},
+      {"name": "The Tint, Not Fill Rule", "body": "Hover, selection, highlight, band and code backgrounds are the foreground or blue mixed into transparent (4 to 38%), never a new hex.", "section": "colors"},
+      {"name": "The Two Voices Rule", "body": "Serif is for headlines and step numerals only. Anything interactive, however large, is Plex.", "section": "typography"},
+      {"name": "The Italic Accent Rule", "body": "At most one italic blue word per headline.", "section": "typography"},
+      {"name": "The Hairline Rule", "body": "Borders are inset 1px line-colour rings, not CSS borders, except dividers inside panels.", "section": "elevation"},
+      {"name": "The Keycap Only Rule", "body": "A hard bottom edge belongs to key caps and nothing else.", "section": "elevation"}
+    ],
+    "dos": [
+      "Do show the real panel parts (query row, rows, footer, kbd chips) wherever a feature is explained.",
+      "Do keep light and dark values identical to the extension's stylesheet and test both themes.",
+      "Do build borders as inset 1px rings in the line colour.",
+      "Do keep copy short and plain, with one lead sentence under a headline.",
+      "Do keep a 2px blue focus outline with 2px offset on every interactive element.",
+      "Do give every moving element a reduced-motion path."
+    ],
+    "donts": [
+      "Don't add a second accent colour, gradients, or colour for decoration.",
+      "Don't use serif for buttons, labels, or panel text.",
+      "Don't put hard or offset shadows on anything except key caps.",
+      "Don't add testimonials, counts, ratings or benchmarks; none exist.",
+      "Don't drift toward generic AI-made looks: no glow blobs, gradient headlines, or icon-in-circle feature grids."
+    ]
+  }
+}

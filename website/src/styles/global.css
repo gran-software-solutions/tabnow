@@ -24,7 +24,8 @@ code { font-size: .84em; }
   --hair: rgb(255 255 255 / .08); --solid: #1b1f27; --bg: rgb(22 25 31); --on-hit: rgb(22 25 31); --g: 22 25 31; --shadow: transparent; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scrollbar-color: color-mix(in srgb, var(--fg) 28%, transparent) transparent; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 400 var(--body-size) / var(--body-lh) var(--font-body); letter-spacing: var(--body-ls); -webkit-font-smoothing: antialiased; }
 /* theme cross-fade: colours only, so card motion is not affected */
 html.fade *, html.fade *::before, html.fade *::after { transition: background-color .5s ease, color .5s ease, border-color .5s ease, box-shadow .5s ease, fill .5s ease, stroke .5s ease !important; }
@@ -212,7 +213,8 @@ html.fade .band { transition: background-color .5s ease; }
 /* day and night */
 .themes { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; --alpha: .86; --blur: 24px; --zoom: 1; }
 .canvas { position: relative; height: 440px; overflow: hidden; display: grid; place-items: center; background: var(--bg); border-radius: 18px; box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); isolation: isolate; }
-.canvas .cap { position: absolute; z-index: 3; bottom: 14px; left: 18px; font-size: 14px; font-weight: 500; color: var(--fg); background: rgb(var(--g) / .75); padding: 3px 10px; border-radius: 7px; }
+.scene { margin: 0; }
+.scene .cap { margin-top: 14px; font-size: 14px; font-weight: 500; color: var(--muted); }
 .backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
 /* real pages behind the panel (scenes.js) */
 .wp { position: absolute; inset: 0; display: flex; flex-direction: column; text-align: left; font: 400 12px/1.4 "IBM Plex Sans", system-ui, sans-serif; }
@@ -358,7 +360,7 @@ input[type=range] { width: 100%; margin: 0; accent-color: var(--fg); height: 20p
 
 /* privacy */
 .big-q em { font-style: italic; color: var(--hit); }
-.permhead { margin: 76px 0 8px; font: 500 15px var(--font-ui); color: var(--muted); letter-spacing: .02em; }
+.permhead { margin: 76px 0 18px; font: 500 15px var(--font-ui); color: var(--muted); letter-spacing: .02em; }
 .perms { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; column-gap: 80px; max-width: 1040px; margin: 0 auto; text-align: left; }
 .perms > div { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); align-items: baseline; }
 .perms b { font-weight: 500; font-size: 17px; }
@@ -385,7 +387,7 @@ input[type=range] { width: 100%; margin: 0; accent-color: var(--fg); height: 20p
 .steps { list-style: none; counter-reset: s; display: grid; grid-template-columns: repeat(3, 1fr); gap: 56px; max-width: 1040px; margin: 76px auto 0; padding: 0; text-align: center; }
 .steps li { counter-increment: s; font-size: 17px; line-height: 1.5; text-wrap: balance; }
 .steps code { white-space: nowrap; }
-.steps li::before { content: counter(s); display: block; margin-bottom: 14px; font: italic 400 40px/1 "Instrument Serif", serif; color: var(--note); }
+.steps li::before { content: counter(s); display: block; margin-bottom: 14px; font: italic 400 40px/1 "Instrument Serif", serif; color: var(--muted); }
 .closing .mac { margin-top: 52px; }
 
 footer { border-top: 1px solid var(--line); padding: 36px 0 44px; color: var(--muted); font-size: 14px; }
@@ -409,6 +411,6 @@ footer .links { display: flex; gap: 24px; flex-wrap: wrap; }
 }
 
 /* UI text (nav, buttons, labels, key caps, mock panels) follows --font-ui; running text follows --font-body. */
-nav, .btn, kbd, .hint, .card, .ov, .q, .foot, .tab, .opt, .permhead, footer, .menu, .canvas .cap, .rk, .empty, .skip { font-family: var(--font-ui); letter-spacing: var(--ui-ls); }
+nav, .btn, kbd, .hint, .card, .ov, .q, .foot, .tab, .opt, .permhead, footer, .menu, .scene .cap, .rk, .empty, .skip { font-family: var(--font-ui); letter-spacing: var(--ui-ls); }
 .sub { font-size: var(--sub-size); }
 .say { font-size: var(--say-size); }

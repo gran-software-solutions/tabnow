@@ -49,8 +49,7 @@ const glass = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" strok
 <Moment k="themes" id="themes" band>
   <div class="themes" id="themesBox">
     {['light', 'dark'].map((theme) => (
-      <div class="canvas" data-theme={theme}>
-        <div class="cap">{t(`themes.${theme}`)}</div>
+      <figure class="scene"><div class="canvas" data-theme={theme}>
         <div class="backdrop" aria-hidden="true"></div>
         <div class="ov" data-static>
           <div class="q"><Fragment set:html={glass} /><span style="flex:1">{'gh pr'}</span><span class="n"></span></div>
@@ -61,7 +60,7 @@ const glass = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" strok
             <span class="k end"><kbd>{t('key.esc')}</kbd> {t('demo.dismiss')}</span>
           </div>
         </div>
-      </div>
+      </div><figcaption class="cap">{t(`themes.${theme}`)}</figcaption></figure>
     ))}
   </div>
   <div class="opts" id="opts">
