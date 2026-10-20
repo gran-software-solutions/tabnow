@@ -36,8 +36,9 @@ let seed = 11; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 
 let L = null; // { cx, inX, outX, cells }
 function buildCells() {
   seed = 11;
-  const W = hero.clientWidth, cx = W / 2, hr = hero.getBoundingClientRect(), pr = panel.getBoundingClientRect();
-  const pTop = pr.top - hr.top - 14, pBot = Math.max(pr.bottom - hr.top, 404 + 345) + 14;
+  const W = hero.clientWidth, cx = W / 2, hr = hero.getBoundingClientRect(), pr = rowsEl.getBoundingClientRect();
+  // keep clear only the stretch where the match cards sit (beside the four panel rows), so no other card can peek out from behind them
+  const pTop = pr.top - hr.top - 14, pBot = pr.bottom - hr.top + 14;
   const colsX = [cx - 300 - GAP - CW - 20 - CW, cx - 300 - GAP - CW, cx + 300 + GAP, cx + 300 + GAP + CW + 20];
   const cells = [], band = [];
   for (let r = 0; r < 9; r++) colsX.forEach((x, c) => {
@@ -48,9 +49,9 @@ function buildCells() {
   // deterministic shuffle so the desk looks scattered, not sorted
   for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
   // the four tabs that win "gh pr" start in the match column's free cells, so they glide a short way
-  const hot = new Set(search(TABS, TYPED).slice(0, ROWS).map(r => r.tab)), inner = band.slice(1, 1 + ROWS), rest = cells;
+  const hot = new Set(search(TABS, TYPED).slice(0, ROWS).map(r => r.tab)), inner = band.slice(0, ROWS), rest = cells;
   let hi = 0, ri = 0;
-  TABS.forEach(t => { t.cell = hot.has(t) ? inner[hi++] : rest[ri++]; t.jx = (rnd() - .5) * 10; t.jy = (rnd() - .5) * 14; t.jr = (rnd() - .5) * 4.4; });
+  TABS.forEach(t => { t.cell = (hot.has(t) ? inner[hi++] : rest[ri++]) || null; /* no free cell (very short window): card stays hidden, never piles onto another */ t.jx = (rnd() - .5) * 10; t.jy = (rnd() - .5) * 14; t.jr = (rnd() - .5) * 4.4; });
   L = { matchX: cx + 300 + GAP };
 }
 
@@ -107,8 +108,10 @@ function layout(q) {
       const h = b.height - 8; el.style.height = h + "px";
       el.style.setProperty("--x", L.matchX + "px"); el.style.setProperty("--y", b.top - hr.top + 4 + "px"); el.style.setProperty("--r", "0deg");
       el.querySelector(".rk").textContent = i + 1;
+    } else if (!t.cell) {
+      el.style.height = ""; el.style.visibility = "hidden";
     } else {
-      el.style.height = "";
+      el.style.height = ""; el.style.visibility = "";
       const calm = !!q;
       el.style.setProperty("--x", t.cell.x + (calm ? 0 : t.jx) + "px"); el.style.setProperty("--y", t.cell.y + (calm ? 0 : t.jy) + "px"); el.style.setProperty("--r", (calm ? 0 : t.jr) + "deg");
     }
@@ -205,7 +208,7 @@ for (const b of document.querySelectorAll("[data-static]")) {
 applyOpts();
 
 /* boot: cards settle, then the typing starts */
-buildCells(); update();
+update(); // builds the cells once the panel rows exist
 const settle = [];
 cards.forEach((el, i) => {
   const d = reduced ? 0 : 250 + i * 37 + (i % 5) * 60;
