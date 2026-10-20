@@ -42,7 +42,7 @@
 <script>
   const q = new URLSearchParams(location.search), size = q.get("size") ?? "small";
   const brand = '<div class="brand"><img src="/ext/icons/icon-128.png" alt="">TabNow</div>';
-  const keys = '<div class="keys"><kbd>Ctrl</kbd><kbd>E</kbd>then type, then Enter</div>';
+  const keys = '<div class="keys"><kbd>Alt</kbd><kbd>E</kbd>then type, then Enter</div>';
   const s = encodeURIComponent(JSON.stringify({ q: "gh pr" }));
   document.getElementById("t").className = size;
   document.getElementById("t").innerHTML = size === "small"

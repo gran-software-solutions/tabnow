@@ -21,9 +21,9 @@ Fast fuzzy search across all your open tabs.
 
 Plain text, paste as is. No markdown.
 
-TabNow finds any open tab in a few keystrokes. Press Ctrl+E (Cmd+E on a Mac), type a few letters, press Enter. You are on that tab.
+TabNow finds any open tab in a few keystrokes. Press Alt+E (Cmd+E on a Mac), type a few letters, press Enter. You are on that tab.
 
-It searches every tab in every window. The most recently used tabs come first, and the previous tab is already selected, so Ctrl+E then Enter takes you back to where you just were.
+It searches every tab in every window. The most recently used tabs come first, and the previous tab is already selected, so Alt+E then Enter takes you back to where you just were.
 
 What it does
 - Fuzzy search. Type words in any order: "gh pr" finds a GitHub pull request. All words must match. A match in the site name ranks above the title, and the title above the rest of the address. Matched letters are highlighted.
@@ -38,7 +38,7 @@ Private by design
 TabNow makes no network requests. It has no account, no analytics and no ads, and it loads no code from the internet. Your tabs, bookmarks and history are read on your device to fill the list and are never sent anywhere. Only your settings are stored, with the browser's own storage. The code is open source (MIT).
 
 Good to know
-- The shortcut Ctrl+E replaces Chrome's Ctrl+E (search from the address bar) while the extension is installed. You can change it at chrome://extensions/shortcuts.
+- The shortcut is Alt+E (Cmd+E on a Mac). On Windows and Linux, Chrome uses Alt+E (and Alt+F) to open its menu; TabNow takes Alt+E, and Alt+F still opens the menu. You can change the shortcut at chrome://extensions/shortcuts.
 - Chrome pages (chrome://), the new tab page and the Web Store cannot show the search box on the page, so TabNow opens it in a small window there.
 - Works in Chrome 121 or newer, and in other browsers that install extensions from the Chrome Web Store.
 
@@ -120,5 +120,5 @@ No. All code is in the package. There is no `eval`, no remote script, no `fetch`
 
 ## Tester notes (Edge Add-ons asks for them; harmless for Chrome)
 
-Open any web page, press Ctrl+E, type a few letters of an open tab's title and press Enter. Press / to see the
+Open any web page, press Alt+E, type a few letters of an open tab's title and press Enter. Press / to see the
 scopes (bookmarks and history are off until you turn them on in the options page). No account or key is needed.
