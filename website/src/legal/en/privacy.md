@@ -30,7 +30,7 @@ We do not sell, share or transfer any data, because we do not have any.
 
 The extension is one thing and this website (tabnow.app) is another. The statements above are about the extension. Here is what the website does.
 
-This site counts its visits with umami, an open-source counter we run ourselves on servers at Hetzner in Germany. The counting script is a file on this site, not one fetched from somewhere else. The only request it makes off this site is its own count, sent to stats.tabnow.app, our own analytics host.
+This site counts its visits with umami, an open-source counter we run ourselves on our own server at Hetzner in Germany. The counting script is a file on this site, not one fetched from somewhere else. The only request it makes off this site is its own count, sent to our own analytics server.
 
 Each visit records the page address, the page you came from, the page title, the language and screen size your browser reports, and the browser, system and rough region worked out from your IP address. It also counts clicks on the Install button. The IP address itself is not stored: it is turned into a one-way value with a secret that changes every day, so a visit today cannot be linked to one yesterday. No personal profile is built. If your browser sends a Do Not Track signal, nothing is counted.
 

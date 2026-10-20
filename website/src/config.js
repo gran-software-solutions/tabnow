@@ -30,9 +30,10 @@ export function install() {
 // Visit counts: our own umami, the instance pigmo and stepkeep use. The tracker is a file on
 // this site (public/a.js, written by tools/fetch-tracker.mjs), so no third party serves code
 // to a visitor. The website id is public (it is in every page).
-// TODO(owner): replace REPLACE_WITH_UMAMI_ID with the id of the tabnow.app site in umami.
 // PUBLIC_ANALYTICS_ID='' turns the counter off for a build.
+// The host is the shared umami for now (same server). Switch the default to https://stats.tabnow.app
+// once its DNS record exists.
 export const ANALYTICS = {
-  host: env.PUBLIC_ANALYTICS_URL || `https://stats.${DOMAIN}`,
-  websiteId: env.PUBLIC_ANALYTICS_ID ?? 'REPLACE_WITH_UMAMI_ID',
+  host: env.PUBLIC_ANALYTICS_URL || 'https://analytics.consultingcockpit.com',
+  websiteId: env.PUBLIC_ANALYTICS_ID ?? '725b321e-c543-4fb0-8581-3d7a1cc95cc9',
 };
