@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TabNow: every tab, one keystroke away</title>
+<meta name="description" content="TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter. Private, open source, no account.">
+<link rel="icon" href="icon-128.png">
+<style>
+:root{--bg:#07090d;--bg2:#0d1118;--panel:#12161e;--fg:#eceef2;--muted:#a0a7b4;--faint:#6d7585;--line:#252a34;--hair:rgb(255 255 255/.08);--hit:#9cbcff;--btn:#9cbcff;--btnfg:#07101f;--glow:rgb(31 95 214/.35);--grid:rgb(255 255 255/.035);--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;color-scheme:dark}
+:root[data-theme=light]{--bg:#f6f7fa;--bg2:#eceff4;--panel:#fff;--fg:#14171d;--muted:#4d5562;--faint:#6b7280;--line:#dde1e8;--hair:rgb(15 20 30/.09);--hit:#1f5fd6;--btn:#1f5fd6;--btnfg:#fff;--glow:rgb(31 95 214/.16);--grid:rgb(15 20 30/.045);color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--hit)}
+:focus-visible{outline:2px solid var(--hit);outline-offset:2px;border-radius:4px}
+.wrap{width:min(1120px,100% - 40px);margin-inline:auto}
+.mono{font-family:var(--mono)}
+kbd{display:inline-flex;align-items:center;justify-content:center;min-width:1.7em;height:1.7em;padding:0 .5em;font:600 .78em/1 var(--mono);color:var(--fg);background:linear-gradient(var(--panel),var(--bg2));border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;vertical-align:middle;white-space:nowrap}
+.bg{position:absolute;inset:0 0 auto;height:900px;z-index:-1;pointer-events:none;background:radial-gradient(60% 55% at 50% 0,var(--glow),transparent 70%),linear-gradient(var(--grid) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/48px 48px;-webkit-mask:linear-gradient(#000 40%,transparent);mask:linear-gradient(#000 40%,transparent)}
+header.top{display:flex;align-items:center;gap:16px;padding:18px 0}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--fg);text-decoration:none;letter-spacing:-.01em}
+.brand img{width:28px;height:28px;border-radius:7px}
+.top nav{margin-left:auto;display:flex;gap:22px;font-size:14px}
+.top nav a{color:var(--muted);text-decoration:none}.top nav a:hover{color:var(--fg)}
+.theme{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;height:34px;padding:0 10px;font:500 12px var(--mono);cursor:pointer}
+.theme:hover{color:var(--fg);border-color:var(--faint)}
+.hero{text-align:center;padding:36px 0 24px}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font:500 12px var(--mono);color:var(--hit);border:1px solid var(--hair);border-radius:99px;padding:5px 12px;background:color-mix(in srgb,var(--hit) 8%,transparent)}
+h1{font-size:clamp(38px,7vw,76px);line-height:1.02;letter-spacing:-.04em;margin:22px 0 16px;font-weight:700}
+h1 span{background:linear-gradient(100deg,var(--fg) 20%,var(--hit));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{max-width:620px;margin:0 auto;color:var(--muted);font-size:clamp(16px,2.2vw,19px)}
+.cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:28px 0 8px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 22px;border-radius:10px;font-weight:600;text-decoration:none;font-size:15px;border:1px solid var(--line);color:var(--fg);background:var(--panel)}
+.btn.p{background:var(--btn);color:var(--btnfg);border-color:transparent;box-shadow:0 0 0 1px color-mix(in srgb,var(--btn) 50%,transparent),0 8px 30px var(--glow)}
+.btn:hover{transform:translateY(-1px)}.btn{transition:transform .15s}
+.note{color:var(--faint);font-size:13px;margin:10px 0 0}
+/* demo */
+.stage{margin:36px auto 0;width:min(760px,100%);text-align:left}
+.bar{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;padding:8px 8px 0;background:var(--bg2);border:1px solid var(--hair);border-bottom:0;border-radius:12px 12px 0 0}
+.bar::-webkit-scrollbar{display:none}
+.bt{flex:0 0 auto;display:flex;align-items:center;gap:7px;max-width:150px;height:32px;padding:0 12px;border-radius:8px 8px 0 0;font-size:12px;color:var(--faint);white-space:nowrap}
+.bt span.n{overflow:hidden;text-overflow:ellipsis}
+.bt.act{background:var(--panel);color:var(--fg);box-shadow:inset 0 2px 0 var(--hit)}
+.bt.w2{border-left:1px dashed var(--line)}
+.page{position:relative;min-height:520px;padding:24px 16px;background:var(--panel);border:1px solid var(--hair);border-radius:0 0 14px 14px;box-shadow:0 30px 80px rgb(0 0 0/.35),0 0 80px var(--glow);overflow:hidden}
+.ghost{position:absolute;inset:0;padding:22px;opacity:.35;pointer-events:none}
+.ghost i{display:block;height:10px;border-radius:5px;background:var(--line);margin-bottom:12px}
+.ghost b{display:block;font:600 13px var(--mono);color:var(--faint);margin-bottom:16px}
+.ov{position:relative;z-index:1;width:min(620px,100%);margin:0 auto;display:flex;flex-direction:column;background:color-mix(in srgb,var(--panel) 86%,transparent);backdrop-filter:blur(18px);border-radius:16px;box-shadow:inset 0 0 0 1px var(--hair),0 20px 60px rgb(0 0 0/.35);overflow:visible}
+.q{position:relative;display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--hair);font-size:19px;font-weight:300}
+.q svg{flex:none;color:var(--muted)}
+.q input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--fg);font:inherit;caret-color:var(--hit)}
+.q input::placeholder{color:var(--faint)}
+.chip{flex:none;display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:7px;font:500 13px var(--sans);color:var(--hit);background:color-mix(in srgb,var(--hit) 14%,transparent)}
+.chip:empty{display:none}
+.cnt{flex:none;font-size:12px;font-weight:400;color:var(--faint);font-variant-numeric:tabular-nums}
+.menu{position:absolute;left:44px;top:calc(100% + 4px);z-index:5;min-width:min(280px,calc(100% - 48px));padding:5px;border-radius:10px;background:var(--panel);box-shadow:0 12px 40px rgb(0 0 0/.4),inset 0 0 0 1px var(--hair);font-size:13px;font-weight:400}
+.menu[hidden]{display:none}
+.menu div{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer}
+.menu div.on{background:color-mix(in srgb,var(--hit) 14%,transparent)}
+.menu code{font:600 12px var(--mono);color:var(--hit);min-width:22px}
+.menu span{color:var(--muted);margin-left:auto}
+ul.res{list-style:none;margin:0;padding:6px;max-height:340px;overflow-y:auto}
+.res li{cursor:pointer;display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;--rb:var(--panel)}
+.res li.on{background:color-mix(in srgb,var(--hit) 13%,transparent);--rb:color-mix(in srgb,var(--hit) 13%,var(--panel))}
+.res li.on .t{color:var(--hit)}
+.res li.sec{cursor:default;padding:10px 12px 3px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.fav{flex:none;position:relative;width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font:700 11px/1 var(--sans);color:#fff}
+.fav.away::after{content:"";position:absolute;right:-5px;bottom:-4px;width:9px;height:7px;border-radius:2px;background:var(--rb);border:1.5px solid var(--hit);border-top-width:3px;box-shadow:0 0 0 1.5px var(--rb)}
+.txt{display:grid;gap:2px;min-width:0;flex:1}
+.t{font-size:14px}.u{font-size:12px;font-family:var(--mono);color:var(--faint)}
+.t,.u{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u .host{color:var(--muted)}
+.badge{flex:none;font:500 10.5px var(--mono);color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+.go{flex:none;visibility:hidden;color:var(--hit)}.res li.on .go{visibility:visible}
+mark{background:color-mix(in srgb,var(--hit) 28%,transparent);color:var(--fg);font-weight:600;border-radius:3px}
+.empty{padding:18px;color:var(--muted);cursor:default}
+.foot-k{display:flex;align-items:center;gap:16px;padding:10px 16px;border-top:1px solid var(--hair);font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.foot-k span{display:inline-flex;align-items:center;gap:5px}
+.foot-k .end{margin-left:auto}
+.hint{margin-top:14px;text-align:center;color:var(--faint);font-size:13px}
+.toast{position:absolute;z-index:6;left:50%;bottom:16px;transform:translate(-50%,20px);opacity:0;background:var(--fg);color:var(--bg);font-size:13px;font-weight:500;padding:8px 14px;border-radius:9px;transition:.25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+/* sections */
+section{padding:84px 0}
+.lab{font:500 12px var(--mono);color:var(--hit);letter-spacing:.08em;text-transform:uppercase}
+h2{font-size:clamp(28px,4.5vw,44px);letter-spacing:-.03em;line-height:1.1;margin:10px 0 36px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{padding:24px;border:1px solid var(--hair);border-radius:14px;background:linear-gradient(160deg,var(--panel),var(--bg2));position:relative}
+.card:hover{border-color:color-mix(in srgb,var(--hit) 45%,transparent)}
+.card .no{font:600 12px var(--mono);color:var(--hit)}
+.card h3{margin:10px 0 8px;font-size:19px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:15px}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:0 48px;max-width:860px}
+.keys div{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--hair);color:var(--muted)}
+.keys .k{display:flex;gap:4px;flex:none}
+.priv{background:var(--bg2);border-block:1px solid var(--hair)}
+.priv-g{display:grid;grid-template-columns:1fr 1.2fr;gap:48px;align-items:start}
+.big{font-size:clamp(34px,6vw,60px);font-weight:700;letter-spacing:-.04em;line-height:1.05;margin:10px 0 16px}
+.perm{list-style:none;margin:0;padding:0;border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:var(--panel)}
+.perm li{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:13px 18px;border-bottom:1px solid var(--hair);font-size:14px;color:var(--muted)}
+.perm li:last-child{border:0}.perm code{color:var(--hit);font-size:13px}
+.perm em{font-style:normal;color:var(--faint);font-size:11px;font-family:var(--mono)}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;counter-reset:s}
+.steps li{counter-increment:s;padding:22px;border:1px solid var(--hair);border-radius:14px;background:var(--panel);color:var(--muted);font-size:15px}
+.steps li::before{content:counter(s,decimal-leading-zero);display:block;font:600 13px var(--mono);color:var(--hit);margin-bottom:10px}
+.steps b{display:block;color:var(--fg);font-size:17px;margin-bottom:4px}
+.steps code{font-size:12.5px;background:var(--bg2);padding:1px 6px;border-radius:5px;color:var(--fg);word-break:break-all}
+footer{border-top:1px solid var(--hair);padding:36px 0 48px;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:20px 40px;justify-content:space-between;align-items:center}
+footer ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 22px}
+footer a{color:var(--muted)}footer a:hover{color:var(--hit)}
+@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.priv-g{grid-template-columns:1fr;gap:28px}}
+@media(max-width:620px){.wrap{width:calc(100% - 32px)}.top nav{display:none}.theme{margin-left:auto}section{padding:56px 0}.grid,.steps,.keys{grid-template-columns:1fr}.page{padding:14px 8px;min-height:460px}.q{font-size:17px;padding:14px}.foot-k .opt{display:none}.perm li{grid-template-columns:1fr;gap:2px}.hero{padding-top:16px}.btn{width:100%;justify-content:center}.toast{white-space:normal;width:max-content;max-width:90%;text-align:center}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<div class="wrap">
+<header class="top">
+  <a class="brand" href="#"><img src="icon-128.png" alt="" width="28" height="28">TabNow</a>
+  <nav aria-label="Sections"><a href="#features">Features</a><a href="#keys">Shortcuts</a><a href="#privacy">Privacy</a><a href="#install">Install</a></nav>
+  <button class="theme" id="theme" type="button" aria-label="Toggle light and dark theme">light</button>
+</header>
+
+<main>
+<div class="hero" id="demo">
+  <span class="eyebrow"><kbd>Ctrl</kbd><kbd>E</kbd> open · type · <kbd>↵</kbd> go</span>
+  <h1><span>Every tab,</span><br>one keystroke away.</h1>
+  <p class="sub">TabNow is a fuzzy finder for your open tabs. Press <kbd>Ctrl</kbd>+<kbd>E</kbd>, type a few letters, hit <kbd>Enter</kbd>.</p>
+  <div class="cta">
+    <a class="btn p" href="https://github.com/gran-software-solutions/tabnow">Install from GitHub</a>
+    <a class="btn" href="#features">See how it works</a>
+  </div>
+  <p class="note">Web Store coming soon. Chrome 121+, Edge, Brave, Opera, Vivaldi, Arc. Free, MIT.</p>
+
+  <div class="stage">
+    <div class="bar" id="bar" role="presentation" aria-label="Fake browser tab bar"></div>
+    <div class="page">
+      <div class="ghost" aria-hidden="true"><b>// the page you are on</b><i style="width:55%"></i><i style="width:80%"></i><i style="width:68%"></i><i style="width:74%"></i><i style="width:40%"></i></div>
+      <div class="ov" role="dialog" aria-label="TabNow demo">
+        <div class="q">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <span class="chip" id="chip"></span>
+          <input id="in" type="text" autofocus autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search tabs… try “gh pr”" aria-label="Search open tabs" role="combobox" aria-expanded="true" aria-controls="res">
+          <span class="cnt" id="cnt"></span>
+          <div class="menu" id="menu" role="listbox" hidden></div>
+        </div>
+        <ul class="res" id="res" role="listbox" aria-label="Results"></ul>
+        <div class="foot-k"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span class="opt"><kbd>⌃⌫</kbd> close tab</span><span class="opt"><kbd>/</kbd> scopes</span><span class="end"><kbd>esc</kbd> clear</span></div>
+      </div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+    <p class="hint">This is a live demo with fake tabs. Try <kbd>gh pr</kbd>, <kbd>/</kbd>, <kbd>Ctrl</kbd>+<kbd>J</kbd>/<kbd>K</kbd>, <kbd>Ctrl</kbd>+<kbd>⌫</kbd>. <kbd>Ctrl</kbd>+<kbd>E</kbd> anywhere on this page jumps back here.</p>
+  </div>
+</div>
+
+<section id="features">
+  <div class="lab">// features</div>
+  <h2>Built for people with 80 tabs open.</h2>
+  <div class="grid">
+    <article class="card"><span class="no">01</span><h3>Find any tab in a keystroke</h3><p><kbd>Ctrl</kbd>+<kbd>E</kbd>, a few letters, <kbd>Enter</kbd>. The previous tab is preselected, so <kbd>Ctrl</kbd>+<kbd>E</kbd> <kbd>Enter</kbd> flips back. <kbd>Alt</kbd>+<kbd>Z</kbd> jumps there without opening anything.</p></article>
+    <article class="card"><span class="no">02</span><h3>Fast and fuzzy</h3><p>“gh pr” finds the GitHub pull request. Every word must match. Domain ranks above title, title above the rest of the URL. Matched letters light up.</p></article>
+    <article class="card"><span class="no">03</span><h3>Keyboard-only, mouse welcome</h3><p>Arrows or <kbd>Ctrl</kbd>+<kbd>J</kbd>/<kbd>K</kbd> to move, <kbd>Ctrl</kbd>+<kbd>⌫</kbd> to close a tab, <kbd>Esc</kbd> to leave. Click works too.</p></article>
+    <article class="card"><span class="no">04</span><h3>Private by design</h3><p>Zero network requests. No account, no analytics. Open source, about 600 lines of plain JS.</p></article>
+    <article class="card"><span class="no">05</span><h3>Every window, plus more</h3><p>Searches all windows, with a small badge on tabs from other windows. Type <kbd>/b</kbd> for bookmarks or <kbd>/h</kbd> for 90 days of history, if you opt in.</p></article>
+    <article class="card"><span class="no">06</span><h3>Fits your browser</h3><p>Light and dark (<kbd>Alt</kbd>+<kbd>T</kbd>). A frosted glass panel with adjustable opacity, blur and size. Rebind the keys.</p></article>
+  </div>
+</section>
+
+<section id="keys" style="padding-top:0">
+  <div class="lab">// cheat sheet</div>
+  <h2>Keys worth remembering.</h2>
+  <div class="keys">
+    <div>Open TabNow<span class="k"><kbd>Ctrl</kbd><kbd>E</kbd></span></div>
+    <div>Previous tab, no overlay<span class="k"><kbd>Alt</kbd><kbd>Z</kbd></span></div>
+    <div>Move selection<span class="k"><kbd>↑</kbd><kbd>↓</kbd></span></div>
+    <div>Same, Vim-style<span class="k"><kbd>Ctrl</kbd><kbd>J</kbd><kbd>K</kbd></span></div>
+    <div>Switch to tab<span class="k"><kbd>↵</kbd></span></div>
+    <div>Close selected tab<span class="k"><kbd>Ctrl</kbd><kbd>⌫</kbd></span></div>
+    <div>Scopes: tabs, bookmarks, history<span class="k"><kbd>/t</kbd><kbd>/b</kbd><kbd>/h</kbd></span></div>
+    <div>Clear the query<span class="k"><kbd>Ctrl</kbd><kbd>U</kbd></span></div>
+    <div>Light / dark<span class="k"><kbd>Alt</kbd><kbd>T</kbd></span></div>
+    <div>Dismiss<span class="k"><kbd>Esc</kbd></span></div>
+  </div>
+  <p class="note">On macOS, <kbd>Ctrl</kbd>+<kbd>E</kbd> is <kbd>Cmd</kbd>+<kbd>E</kbd>.</p>
+</section>
+</main>
+
+<div class="priv" id="privacy"><div class="wrap"><section>
+  <div class="priv-g">
+    <div>
+      <div class="lab">// privacy</div>
+      <p class="big">No network requests. Ever.</p>
+      <p style="color:var(--muted);max-width:440px">No account, no analytics, nothing leaves your browser. Plain JavaScript, no dependencies, MIT licensed. Read every line on GitHub.</p>
+    </div>
+    <ul class="perm" aria-label="Permissions explained">
+      <li><code>tabs</code><span>To list and switch your open tabs.</span></li>
+      <li><code>activeTab</code><span>To show the overlay on the page you are on.</span></li>
+      <li><code>scripting</code><span>To put the overlay on that page.</span></li>
+      <li><code>favicon</code><span>To show site icons, read locally.</span></li>
+      <li><code>storage</code><span>To save your options.</span></li>
+      <li><code>history</code><span>Optional. Only if you turn on <kbd>/h</kbd>. <em>asks first</em></span></li>
+      <li><code>bookmarks</code><span>Optional. Only if you turn on <kbd>/b</kbd>. <em>asks first</em></span></li>
+    </ul>
+  </div>
+</section></div></div>
+
+<div class="wrap">
+<section id="install">
+  <div class="lab">// install</div>
+  <h2>Four steps. About a minute.</h2>
+  <ol class="steps">
+    <li><b>Clone the repo</b><code>git clone github.com/gran-software-solutions/tabnow</code></li>
+    <li><b>Open extensions</b>Go to <code>chrome://extensions</code></li>
+    <li><b>Developer mode</b>Switch it on, top right.</li>
+    <li><b>Load unpacked</b>Pick the <code>extension/</code> folder. Press <kbd>Ctrl</kbd>+<kbd>E</kbd>.</li>
+  </ol>
+  <p class="note">Not in the Web Store yet, coming soon. <a href="https://github.com/gran-software-solutions/tabnow">Open the repo</a>.</p>
+</section>
+</div>
+
+<footer><div class="wrap">
+  <div><a href="https://www.gransoftware.de">Made by GRAN Software Solutions</a><br><span style="font-size:13px;color:var(--faint)">MIT License · v0.1.0</span></div>
+  <ul aria-label="Links">
+    <li><a href="https://github.com/gran-software-solutions/tabnow">GitHub</a></li>
+    <li><a href="#">LinkedIn</a></li><li><a href="#">X</a></li><li><a href="#">Reddit</a></li>
+  </ul>
+</div></footer>
+
+<script>
+// Ported from extension/fuzzy.js
+function match(q,text){const t=text.toLowerCase(),at=t.indexOf(q);
+ if(at>=0){const start=at===0||/\W/.test(t[at-1]);return{score:100+q.length*10+(start?40:0)-at*.1,hits:[...Array(q.length)].map((_,k)=>at+k)}}
+ let score=0,last=-2,k=0;const hits=[];
+ for(let j=0;j<t.length&&k<q.length;j++){if(t[j]!==q[k])continue;score+=j===last+1?5:(j===0||/\W/.test(t[j-1])?3:1);hits.push(j);last=j;k++}
+ return k===q.length&&hits[k-1]-hits[0]<q.length*3?{score,hits}:null}
+function search(items,q){const words=q.toLowerCase().split(/\s+/).filter(Boolean);
+ if(!words.length)return items.map(tab=>({tab,th:[],uh:[]}));const out=[];
+ for(const tab of items){let score=0;const th=[],uh=[];
+  for(const w of words){const d=match(w,tab.disp.split("/")[0]),a=match(w,tab.title),b=match(w,tab.disp);
+   const best=Math.max((d?d.score:-1)*1.5,(a?a.score:-1)*1.2,b?b.score:-1);
+   if(best<0){score=-1;break}score+=best;
+   if(d&&best===d.score*1.5)uh.push(...d.hits);else if(a&&best===a.score*1.2)th.push(...a.hits);else uh.push(...b.hits)}
+  if(score>=0)out.push({tab,score,th,uh})}
+ return out.sort((x,y)=>y.score-x.score)}
+function hl(text,hits,from=0){const set=new Set(hits),frag=document.createDocumentFragment();let buf="",on=false;
+ const flush=()=>{if(!buf)return;if(on){const m=document.createElement("mark");m.textContent=buf;frag.append(m)}else frag.append(buf);buf=""};
+ [...text].forEach((ch,i)=>{const h=set.has(i+from);if(h!==on){flush();on=h}buf+=ch});flush();return frag}
+const SCOPES=[{code:"t",kind:"tab",name:"Tabs",d:"open tabs"},{code:"b",kind:"bookmark",name:"Bookmarks",d:"opt-in"},{code:"h",kind:"history",name:"History",d:"last 90 days, opt-in"}];
+function parseScope(v){const m=/^\/([a-z]) /i.exec(v),hit=m&&SCOPES.find(s=>s.code===m[1].toLowerCase());
+ if(hit)return{scope:hit,rest:v.slice(3)};
+ const f=/^\/([a-z]*)$/i.exec(v);if(!f)return{};const x=f[1].toLowerCase();
+ return{menu:SCOPES.filter(s=>s.code.startsWith(x)||s.kind.startsWith(x))}}
+
+// Fake data, MRU order (index 0 = current tab)
+const T=(title,disp,c,l,w)=>({title,disp,c,l,w:!!w,kind:"tab"});
+let tabs=[
+ T("Add fuzzy ranking by domain · Pull Request #482 · acme/web","github.com/acme/web/pull/482","#24292f","G"),
+ T("Inbox (12) - dusan@acme.io - Gmail","mail.google.com/mail/u/0/#inbox","#d93025","M"),
+ T("ACME-214 Checkout fails on Safari - Linear","linear.app/acme/issue/ACME-214","#5e6ad2","L"),
+ T("Onboarding flow v3 – Figma","figma.com/file/8fK2/onboarding-flow-v3","#a259ff","F",1),
+ T("localhost:3000 – Dashboard","localhost:3000/dashboard","#0f766e","3"),
+ T("Q4 roadmap - Google Docs","docs.google.com/document/d/1xQ/edit","#1a73e8","D"),
+ T("javascript - Why does await in forEach not wait? - Stack Overflow","stackoverflow.com/questions/37576685","#f48024","S"),
+ T("Array.prototype.flatMap() - JavaScript | MDN","developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap","#1b1b1b","M"),
+ T("Sprint 42 board - Jira","acme.atlassian.net/jira/software/projects/ACME/boards/1","#0052cc","J",1),
+ T("EC2 Management Console - eu-central-1","eu-central-1.console.aws.amazon.com/ec2/home","#ff9900","A",1),
+ T("Meeting notes 14.10. - Notion","notion.so/acme/Meeting-notes-14-10-3f2a","#2b2b2b","N"),
+ T("Rust in 100 Seconds - YouTube","youtube.com/watch?v=5C_HPTJg5ek","#ff0000","Y"),
+ T("r/programming - Reddit","reddit.com/r/programming","#ff4500","R"),
+ T("Home / X","x.com/home","#14171a","X"),
+ T("(3) Feed | LinkedIn","linkedin.com/feed","#0a66c2","in")
+];
+const BM=[T("TypeScript Handbook","typescriptlang.org/docs/handbook","#3178c6","T"),T("Can I use","caniuse.com","#2a6","C"),T("Hacker's Delight reading list","gist.github.com/dod/reading-list","#555","H"),T("Tailwind CSS Docs","tailwindcss.com/docs","#06b6d4","T")].map(x=>({...x,kind:"bookmark"}));
+const HI=[T("Postgres: Documentation: 16: EXPLAIN","postgresql.org/docs/16/sql-explain.html","#336791","P"),T("Vercel Dashboard","vercel.com/acme/web","#111","V"),T("Cron expression generator","crontab.guru","#7c3aed","C"),T("Weather Berlin","wetter.com/berlin","#0ea5e9","W"),T("Docker Hub: node","hub.docker.com/_/node","#2496ed","D")].map(x=>({...x,kind:"history"}));
+const ORDER=tabs.map(t=>t); // fixed order for the fake tab bar
+const $=id=>document.getElementById(id),inp=$("in"),res=$("res"),menuEl=$("menu"),chip=$("chip"),cnt=$("cnt"),bar=$("bar"),toast=$("toast");
+let rows=[],sel=0,menuItems=[],menuSel=0,tt;
+
+function say(m){toast.textContent=m;toast.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>toast.classList.remove("show"),2200)}
+function drawBar(){bar.textContent="";ORDER.filter(t=>tabs.includes(t)).forEach(t=>{const d=document.createElement("div");d.className="bt"+(t===tabs[0]?" act":"")+(t.w?" w2":"");
+ const f=document.createElement("span");f.className="fav";f.style.cssText=`background:${t.c};width:12px;height:12px;font-size:8px;border-radius:3px`;f.textContent=t.l[0];
+ const n=document.createElement("span");n.className="n";n.textContent=t.title;d.append(f,n);bar.append(d)});
+ const a=bar.querySelector(".act");if(a)bar.scrollLeft=a.offsetLeft-60}
+function fav(t,away){const f=document.createElement("span");f.className="fav"+(away?" away":"");f.style.background=t.c;f.textContent=t.l;return f}
+function render(){
+ const v=inp.value,p=parseScope(v);
+ menuEl.hidden=!p.menu;menuItems=p.menu||[];if(menuSel>=menuItems.length)menuSel=0;
+ menuEl.textContent="";menuItems.forEach((s,i)=>{const d=document.createElement("div");d.setAttribute("role","option");if(i===menuSel)d.className="on";
+  d.innerHTML=`<code>/${s.code}</code>${s.name}<span>${s.d}</span>`;d.onmousedown=e=>{e.preventDefault();pickScope(s)};menuEl.append(d)});
+ chip.textContent=p.scope?p.scope.name:"";
+ const q=p.scope?p.rest:(p.menu?"":v),pool=p.scope?(p.scope.kind==="tab"?tabs:p.scope.kind==="bookmark"?BM:HI):tabs;
+ rows=p.menu?[]:search(pool,q);
+ if(!q.trim()&&!p.scope&&rows.length>1)sel=Math.min(Math.max(sel,0),rows.length-1);else sel=Math.min(sel,Math.max(rows.length-1,0));
+ res.textContent="";
+ if(!rows.length){const li=document.createElement("li");li.className="empty";li.textContent=p.menu?"Pick a scope above.":"No matches.";res.append(li)}
+ rows.forEach((r,i)=>{const t=r.tab,li=document.createElement("li");li.setAttribute("role","option");li.id="r"+i;if(i===sel)li.className="on",li.setAttribute("aria-selected","true");
+  const tx=document.createElement("div");tx.className="txt";
+  const ti=document.createElement("div");ti.className="t";ti.append(hl(t.title,r.th));
+  const u=document.createElement("div");u.className="u";const host=document.createElement("span");host.className="host";const slash=t.disp.indexOf("/"),hl_=slash<0?t.disp.length:slash;
+  host.append(hl(t.disp.slice(0,hl_),r.uh));const path=document.createElement("span");path.append(hl(t.disp.slice(hl_),r.uh,hl_));
+  u.append(host,path);tx.append(ti,u);li.append(fav(t,t.w&&t.kind==="tab"),tx);
+  if(t.w&&t.kind==="tab"){const b=document.createElement("span");b.className="badge";b.textContent="other window";li.append(b)}
+  const g=document.createElement("span");g.className="go";g.textContent="↵";li.append(g);
+  li.onmousemove=()=>{if(sel!==i){sel=i;mark()}};li.onclick=()=>open(i);res.append(li)});
+ cnt.textContent=p.menu?"":rows.length+"/"+pool.length;
+ inp.setAttribute("aria-activedescendant",rows.length?"r"+sel:"");
+}
+function mark(){[...res.children].forEach((li,i)=>{li.classList.toggle("on",i===sel);if(i===sel)li.scrollIntoView({block:"nearest"})});inp.setAttribute("aria-activedescendant","r"+sel)}
+function pickScope(s){inp.value="/"+s.code+" ";sel=0;render();inp.focus()}
+function open(i){const r=rows[i];if(!r)return;const t=r.tab;
+ if(t.kind==="tab"){tabs=[t,...tabs.filter(x=>x!==t)];say(t.w?"Switched to window 2: "+t.title.split(/ [-–·|] /)[0]:"Switched to "+t.title.split(/ [-–·|] /)[0])}
+ else{const nt={...t,kind:"tab"};tabs.unshift(nt);ORDER.push(nt);say("Opened "+t.title)}
+ inp.value="";sel=1;drawBar();render();inp.focus()}
+function move(d){if(!menuEl.hidden){menuSel=(menuSel+d+menuItems.length)%menuItems.length;render();return}
+ if(!rows.length)return;sel=(sel+d+rows.length)%rows.length;mark()}
+inp.addEventListener("input",()=>{sel=0;menuSel=0;render()});
+inp.addEventListener("keydown",e=>{const c=e.ctrlKey||e.metaKey,k=e.key;
+ if(k==="ArrowDown"||(c&&k==="j")){e.preventDefault();move(1)}
+ else if(k==="ArrowUp"||(c&&k==="k")){e.preventDefault();move(-1)}
+ else if(k==="Enter"){e.preventDefault();if(!menuEl.hidden&&menuItems[menuSel])pickScope(menuItems[menuSel]);else open(sel)}
+ else if(k==="Tab"&&!menuEl.hidden&&menuItems[menuSel]){e.preventDefault();pickScope(menuItems[menuSel])}
+ else if(c&&k==="Backspace"){e.preventDefault();const r=rows[sel];if(r&&r.tab.kind==="tab"){const wasAct=r.tab===tabs[0];tabs=tabs.filter(x=>x!==r.tab);say("Closed "+r.tab.title.split(/ [-–·|] /)[0]+(wasAct?"":""));drawBar();render()}}
+ else if(c&&k==="u"){e.preventDefault();inp.value="";sel=1;render()}
+ else if(k==="Escape"){e.preventDefault();inp.value="";sel=1;render()}});
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="e"){e.preventDefault();$("demo").scrollIntoView({block:"start"});inp.focus({preventScroll:true});inp.select()}});
+$("theme").onclick=function(){const r=document.documentElement,l=r.dataset.theme==="dark";r.dataset.theme=l?"light":"dark";this.textContent=l?"dark":"light"};
+sel=1;drawBar();render();
+if(matchMedia("(min-width:621px)").matches)inp.focus({preventScroll:true});
+</script>
+</body>
+</html>
