@@ -9,7 +9,7 @@ const dist = join(root, 'dist');
 // Hosts a link may point to. TabNow is not a shop: no payment hosts.
 const ALLOWED_HOSTS = new Set([
   'chromewebstore.google.com', 'github.com', 'www.gransoftware.de', 'gransoftware.de',
-  'www.linkedin.com', 'x.com', 'www.reddit.com', 'opensource.org',
+  'opensource.org',
 ]);
 const strict = process.env.STRICT === '1';
 const errors = [];

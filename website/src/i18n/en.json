@@ -125,7 +125,7 @@
     "titleA": "Get",
     "titleB": "TabNow.",
     "lead": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc.",
-    "leadSoon": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc. Not in the Web Store yet.",
+    "leadSoon": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc. Not in the Web Store yet, coming soon.",
     "steps": [
       "Open TabNow in the Chrome Web Store.",
       "Click <strong>Add to Chrome</strong>.",
@@ -135,10 +135,7 @@
   "footer": {
     "made": "Made by",
     "license": "MIT",
-    "github": "GitHub",
-    "linkedin": "LinkedIn",
-    "x": "X",
-    "reddit": "Reddit"
+    "github": "GitHub"
   },
   "legal": {
     "privacy": "Privacy",

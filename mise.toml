@@ -1,0 +1,41 @@
+[tools]
+node = "22"
+
+# Build the website and push it as an nginx image, as pigmo and stepkeep do. Only from main.
+# Needs Docker and the registry password in website/.env (DOCKER_PASSWORD=..., not in git).
+# Flux image automation picks up the new main-<ts>-<sha> tag by itself.
+[tasks.deploy]
+description = "Website: build, check, and push the tabnow-website image (main only)"
+dir = "{{config_root}}/website"
+run = """
+#!/usr/bin/env bash
+set -e
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" != "main" ]; then
+    echo "Deploy is only permitted from 'main'. Current branch is '$BRANCH'."
+    exit 1
+fi
+
+echo "Building and checking the site..."
+npm run build
+
+set -a
+[ -f .env ] && . ./.env
+set +a
+: "${DOCKER_PASSWORD:?DOCKER_PASSWORD is not set, put it in website/.env}"
+
+REGISTRY=rg.pl-waw.scw.cloud/gransoftware-prod/tabnow-website
+TAG="${BRANCH}-$(date +%s)-$(git rev-parse --short HEAD)"
+echo "Image tag: $TAG"
+
+trap 'docker logout rg.pl-waw.scw.cloud >/dev/null 2>&1 || true' EXIT
+echo "$DOCKER_PASSWORD" | docker login rg.pl-waw.scw.cloud -u nologin --password-stdin
+
+docker build -t "$REGISTRY:$TAG" -t "$REGISTRY:${BRANCH}-latest" .
+docker push "$REGISTRY:$TAG"
+docker push "$REGISTRY:${BRANCH}-latest"
+
+echo
+echo "Pushed $REGISTRY:$TAG"
+"""

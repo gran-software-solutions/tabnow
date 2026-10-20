@@ -1,7 +1,7 @@
 import { defineConfig } from 'astro/config';
 import { DEFAULT_LOCALE, LOCALES } from './src/i18n/locales.js';
 
-// TODO: tabnow.app is a placeholder, the production domain is not decided. SITE_URL overrides it.
+// SITE_URL overrides it for a build.
 const site = process.env.SITE_URL || 'https://tabnow.app';
 
 // dummies/ holds the click dummies (design history). It is outside src/ and public/, so Astro

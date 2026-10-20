@@ -4,25 +4,20 @@ export const COMPANY = 'GRAN Software Solutions GmbH';
 export const COMPANY_URL = 'https://www.gransoftware.de';
 export const SUPPORT_EMAIL = 'hello@gransoftware.de';
 export const IMPRINT_URL = 'https://gransoftware.de/impressum';
-// TODO: the production domain is not decided; tabnow.app is a placeholder. SITE_URL overrides it for a build.
+// SITE_URL overrides it for a build.
 export const DOMAIN = 'tabnow.app';
 
 // The Chrome Web Store listing (draft created 20.10.2026; the link works once Google approves it).
-// While null, every Install button says
-// "Coming soon to the Chrome Web Store" and opens the install steps on GitHub. Set the URL and
-// every Install button links to the store instead.
-export const webStoreUrl = 'https://chromewebstore.google.com/detail/tabnow-fuzzy-tab-search/mepimfhgphlbfopbenbiojhbgekineih';
+// storeLive is the single switch. While false, every Install button says "Coming soon to the Chrome
+// Web Store" (the header says "Coming soon") and opens the install section on GitHub. On approval
+// day set storeLive to true: every button, the install section, JSON-LD and llms.txt switch to the store.
+export const storeLive = false;
+const STORE_URL = 'https://chromewebstore.google.com/detail/tabnow-fuzzy-tab-search/mepimfhgphlbfopbenbiojhbgekineih';
+export const webStoreUrl = storeLive ? STORE_URL : null;
 
 export const GITHUB_URL = 'https://github.com/gran-software-solutions/tabnow';
 // Where the install steps are while the store listing does not exist yet.
 export const GITHUB_INSTALL_URL = `${GITHUB_URL}#install`;
-
-// TODO: placeholders. GRAN's real profile URLs are not in the repo yet. Replace before launch.
-export const SOCIAL = [
-  { id: 'linkedin', url: 'https://www.linkedin.com/company/PLACEHOLDER-gran-software-solutions' },
-  { id: 'x', url: 'https://x.com/PLACEHOLDER-gran' },
-  { id: 'reddit', url: 'https://www.reddit.com/user/PLACEHOLDER-gran' },
-];
 
 // Install button target and label state, one rule for every button on the site.
 export function install() {
