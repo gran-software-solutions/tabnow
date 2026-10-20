@@ -4,6 +4,20 @@
 @font-face { font-family: 'Instrument Serif'; src: url('/fonts/instrument-serif-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Instrument Serif'; src: url('/fonts/instrument-serif-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 
+@font-face { font-family: 'Instrument Sans'; src: url('/fonts/instrument-sans-latin-wght-normal.woff2') format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Sans'; src: url('/fonts/ibm-plex-sans-latin-wght-normal.woff2') format('woff2'); font-weight: 400 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('/fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Newsreader'; src: url('/fonts/newsreader-latin-wght-normal.woff2') format('woff2'); font-weight: 400 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Newsreader'; src: url('/fonts/newsreader-latin-wght-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+
+/* Font roles. body = running text, ui = nav/buttons/labels/key caps/mock panels, mono = code.
+   Default is Geist. The [data-font] blocks at the end are TEMPORARY (font comparison, remove after the choice). */
+:root {
+  --font-body: "Geist", system-ui, sans-serif; --font-ui: "Geist", system-ui, sans-serif; --font-mono: "Geist", monospace;
+  --body-size: 16px; --body-lh: 1.55; --body-ls: 0; --sub-size: 17px; --say-size: 22px; --ui-ls: 0;
+}
+
 /* Exact colour sets from extension/search.css */
 :root, [data-theme="light"] {
   --fg: #14171d; --muted: #5f6672; --faint: #9ba1ac; --line: #e4e7ec; --hit: #1f5fd6;
@@ -15,7 +29,7 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.55 "Geist", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 var(--body-size) / var(--body-lh) var(--font-body); letter-spacing: var(--body-ls); -webkit-font-smoothing: antialiased; }
 /* theme cross-fade: colours only, so card motion is not affected */
 html.fade *, html.fade *::before, html.fade *::after { transition: background-color .5s ease, color .5s ease, border-color .5s ease, box-shadow .5s ease, fill .5s ease, stroke .5s ease !important; }
 a { color: inherit; }
@@ -28,7 +42,7 @@ nav .logo { display: flex; align-items: center; gap: 10px; font-weight: 500; fon
 nav .logo img { width: 24px; height: 24px; border-radius: 6px; }
 nav a.l { color: var(--muted); text-decoration: none; }
 nav a.l:hover { color: var(--fg); }
-.btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 8px; background: var(--hit); color: var(--on-hit); font: 500 14px "Geist", sans-serif; text-decoration: none; border: 0; cursor: pointer; }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 8px; background: var(--hit); color: var(--on-hit); font: 500 14px var(--font-ui); text-decoration: none; border: 0; cursor: pointer; }
 .btn:hover { filter: brightness(1.06); }
 .btn.ghost { background: none; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
 .btn.ghost:hover { background: color-mix(in srgb, var(--fg) 4%, transparent); filter: none; }
@@ -46,7 +60,7 @@ h1 em { font-style: italic; color: var(--hit); }
 .sub { margin: 18px auto 0; color: var(--muted); font-size: 17px; max-width: 640px; text-wrap: balance; }
 .cta { margin-top: 22px; display: flex; gap: 10px; justify-content: center; align-items: center; }
 .hint { color: var(--muted); font-size: 13px; margin-left: 10px; display: inline-flex; gap: 8px; align-items: center; }
-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; font: 500 11px/1 "Geist", sans-serif; color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); border-radius: 6px; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; font: 500 11px/1 var(--font-ui); color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); border-radius: 6px; }
 
 /* cards on the desk. Position is set from script in hero pixels. */
 .card { --drift: 14px; position: absolute; left: 0; top: 0; width: 168px; height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: var(--solid); border: 1px solid var(--line); border-radius: 10px;
@@ -64,7 +78,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .card .u { font-size: 11px; color: var(--muted); }
 .trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 [data-theme="dark"] .fav { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); }
-.fav { flex: none; width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; font: 600 10px/1 "Geist", sans-serif; }
+.fav { flex: none; width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; font: 600 10px/1 var(--font-ui); }
 .rk { position: absolute; top: -9px; left: -9px; width: 20px; height: 20px; border-radius: 50%; background: var(--solid); border: 1px solid var(--line); color: var(--muted); font-size: 11px; display: none; place-items: center; font-variant-numeric: tabular-nums; }
 .card.slot .rk { display: grid; }
 .card.on .rk { border-color: var(--hit); color: var(--hit); }
@@ -109,7 +123,7 @@ nav .nav-links { display: contents; }
 .btn[data-soon] { height: auto; min-height: 38px; padding-block: 6px; }
 .legal { max-width: 46rem; padding-top: 110px; padding-bottom: 64px; }
 .legal h1 { font-size: 44px; margin-bottom: 1.5rem; }
-.legal h2 { font: 500 20px/1.3 "Geist", sans-serif; margin: 2rem 0 .5rem; }
+.legal h2 { font: 500 20px/1.3 var(--font-ui); margin: 2rem 0 .5rem; }
 .legal p, .legal ul { margin-block: .75rem; }
 .legal ul { padding-left: 1.25rem; }
 .legal table { width: 100%; border-collapse: collapse; margin-block: 1rem; font-size: .95rem; }
@@ -120,7 +134,7 @@ footer .links { display: flex; gap: 24px; flex-wrap: wrap; }
 /* ---- V3: quiet and few. Four centred moments, one panel each. ---- */
 [data-theme="light"] { --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1.5' y='1.5' width='21' height='21' rx='3' fill='none' stroke='%231f5fd6' stroke-width='3'/%3E%3Crect x='1.5' y='1.5' width='21' height='6' fill='%231f5fd6'/%3E%3C/svg%3E"); }
 [data-theme="dark"] { --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1.5' y='1.5' width='21' height='21' rx='3' fill='none' stroke='%239cbcff' stroke-width='3'/%3E%3Crect x='1.5' y='1.5' width='21' height='6' fill='%239cbcff'/%3E%3C/svg%3E"); }
-code { font: 500 .86em "Geist", monospace; background: color-mix(in srgb, var(--fg) 6%, transparent); padding: 2px 8px; border-radius: 6px; color: var(--fg); }
+code { font: 500 .86em var(--font-mono); background: color-mix(in srgb, var(--fg) 6%, transparent); padding: 2px 8px; border-radius: 6px; color: var(--fg); }
 .band { background: color-mix(in srgb, var(--line) 38%, var(--bg)); }
 html.fade .band { transition: background-color .5s ease; }
 
@@ -169,7 +183,7 @@ html.fade .band { transition: background-color .5s ease; }
 [data-theme="dark"] .menu { box-shadow: inset 0 0 0 1px var(--line), 0 16px 40px rgb(0 0 0 / .35); }
 .menu div { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border-radius: 9px; }
 .menu div.on { background: color-mix(in srgb, var(--hit) 12%, transparent); }
-.menu code { font: 600 15px "Geist", monospace; color: var(--fg); background: none; padding: 0; min-width: 26px; }
+.menu code { font: 600 15px var(--font-mono); color: var(--fg); background: none; padding: 0; min-width: 26px; }
 .menu span { margin-left: auto; color: var(--faint); font-size: 14px; }
 .menu { transition: opacity .6s ease, transform .6s cubic-bezier(.22,.7,.2,1); }
 .menu.pre { opacity: 0; transform: translateY(8px); }
@@ -219,7 +233,7 @@ input[type=range] { width: 100%; margin: 0; accent-color: var(--fg); height: 20p
 
 /* privacy */
 .big-q em { font-style: italic; color: var(--hit); }
-.permhead { margin: 76px 0 8px; font: 500 15px "Geist", sans-serif; color: var(--muted); letter-spacing: .02em; }
+.permhead { margin: 76px 0 8px; font: 500 15px var(--font-ui); color: var(--muted); letter-spacing: .02em; }
 .perms { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; column-gap: 80px; max-width: 1040px; margin: 0 auto; text-align: left; }
 .perms > div { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); align-items: baseline; }
 .perms b { font-weight: 500; font-size: 17px; }
@@ -265,3 +279,28 @@ footer .links { display: flex; gap: 24px; flex-wrap: wrap; }
   .perms > div { grid-template-columns: 1fr; gap: 2px; }
   footer .wrap { flex-wrap: wrap; } footer .sp { margin-left: 0; }
 }
+
+/* UI text (nav, buttons, labels, key caps, mock panels) follows --font-ui; running text follows --font-body. */
+nav, .btn, kbd, .hint, .card, .ov, .q, .foot, .tab, .opt, .permhead, footer, .menu, .canvas .cap, .rk, .empty, .skip { font-family: var(--font-ui); letter-spacing: var(--ui-ls); }
+.sub { font-size: var(--sub-size); }
+.say { font-size: var(--say-size); }
+
+/* ---- TEMPORARY: font comparison, remove after the choice ---- */
+[data-font="instrument-sans"] {
+  --font-body: "Instrument Sans", system-ui, sans-serif; --font-ui: "Instrument Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --body-size: 16.5px; --body-lh: 1.6; --body-ls: -.003em; --sub-size: 18px; --say-size: 22px;
+}
+[data-font="plex"] {
+  --font-body: "IBM Plex Sans", system-ui, sans-serif; --font-ui: "IBM Plex Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --body-size: 16px; --body-lh: 1.6; --body-ls: 0; --sub-size: 17px; --say-size: 21px;
+}
+[data-font="newsreader"] {
+  --font-body: "Newsreader", Georgia, serif; --font-ui: "Instrument Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --body-size: 18.5px; --body-lh: 1.55; --body-ls: 0; --sub-size: 20px; --say-size: 25px;
+}
+[data-font="instrument-sans"] code, [data-font="plex"] code, [data-font="newsreader"] code { font-size: .84em; }
+.fontpill { position: fixed; z-index: 200; right: 16px; bottom: 16px; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--solid); box-shadow: inset 0 0 0 1px var(--line), 0 6px 20px rgb(15 20 30 / .12); font: 500 12px/1 "Geist", system-ui, sans-serif; letter-spacing: 0; color: var(--muted); align-items: center; }
+.fontpill span { padding: 0 8px 0 10px; color: var(--faint); }
+.fontpill button { font: inherit; border: 0; background: none; color: inherit; padding: 7px 11px; border-radius: 999px; cursor: pointer; }
+.fontpill button:hover { color: var(--fg); }
+.fontpill button[aria-pressed="true"] { background: var(--hit); color: var(--on-hit); }

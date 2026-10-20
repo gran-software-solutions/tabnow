@@ -36,6 +36,25 @@ const canonical = abs(localePath(locale, path));
         document.documentElement.dataset.theme = t;
       })();
     </script>
+    {/* TEMPORARY: font comparison, remove after the choice. ?font=geist|instrument-sans|plex|newsreader, kept in sessionStorage. */}
+    <script is:inline>
+      (function () {
+        var ok = ['geist', 'instrument-sans', 'plex', 'newsreader'], f = null;
+        try { f = new URLSearchParams(location.search).get('font'); if (f && ok.indexOf(f) > -1) sessionStorage.setItem('tabnow-font', f); else f = sessionStorage.getItem('tabnow-font'); } catch (e) {}
+        if (ok.indexOf(f) < 0) return;
+        document.documentElement.dataset.font = f;
+        document.addEventListener('DOMContentLoaded', function () {
+          var pill = document.createElement('div'); pill.className = 'fontpill'; pill.setAttribute('role', 'group'); pill.setAttribute('aria-label', 'Font comparison');
+          pill.innerHTML = '<span>Font:</span>';
+          [['geist', 'Geist'], ['instrument-sans', 'Instrument Sans'], ['plex', 'Plex'], ['newsreader', 'Newsreader']].forEach(function (o) {
+            var b = document.createElement('button'); b.type = 'button'; b.textContent = o[1]; b.setAttribute('aria-pressed', String(o[0] === f));
+            b.onclick = function () { try { sessionStorage.setItem('tabnow-font', o[0]); } catch (e) {} document.documentElement.dataset.font = o[0]; pill.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); };
+            pill.appendChild(b);
+          });
+          document.body.appendChild(pill);
+        });
+      })();
+    </script>
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TabNow" />
     <meta property="og:locale" content="en_US" />
