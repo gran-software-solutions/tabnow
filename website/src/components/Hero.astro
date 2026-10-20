@@ -1,0 +1,43 @@
+---
+import { useT } from '../i18n/index.js';
+import InstallButton from './InstallButton.astro';
+const { t } = useT(Astro.currentLocale);
+---
+
+<header
+  class="hero"
+  id="top"
+  data-empty={t('demo.empty')}
+  data-switched={t('demo.switched')}
+  data-count={t('demo.count', { n: '{n}', total: '{total}' })}
+  data-off={t('demo.off')}
+>
+  <div class="head">
+    <h1>{t('hero.titleA')}<br /><em>{t('hero.titleB')}</em> {t('hero.titleC')}</h1>
+    <p class="sub">{t('hero.subtitle')}</p>
+    <div class="cta">
+      <InstallButton />
+      <a class="btn ghost" href="#features">{t('hero.how')}</a>
+      <span class="hint"><kbd>{t('key.ctrl')}</kbd><kbd>E</kbd> {t('hero.try')}</span>
+    </div>
+  </div>
+  <div class="ov" id="panel" role="search" aria-label={t('demo.label')}>
+    <div class="q">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" placeholder={t('demo.placeholder')} autocomplete="off" spellcheck="false" aria-label={t('demo.placeholder')} />
+      <span class="n" id="n"></span>
+    </div>
+    <ul id="rows"></ul>
+    <div class="foot">
+      <span class="k"><kbd>↑</kbd><kbd>↓</kbd> {t('demo.navigate')}</span>
+      <span class="k"><kbd>↵</kbd> {t('demo.open')}</span>
+      <span class="k"><kbd>{t('key.ctrl')}</kbd><kbd>⌫</kbd> {t('demo.closeTab')}</span>
+      <span class="k"><kbd>/</kbd> {t('demo.scopes')}</span>
+      <span class="k end"><kbd>{t('key.esc')}</kbd> {t('demo.dismiss')}</span>
+    </div>
+  </div>
+</header>
+
+<script>
+  import '../scripts/demo.js';
+</script>

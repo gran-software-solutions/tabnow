@@ -1,0 +1,8 @@
+---
+import LegalPage from '../../components/LegalPage.astro';
+import { localeStaticPaths } from '../../i18n/locales.js';
+
+export const getStaticPaths = localeStaticPaths;
+---
+
+<LegalPage slug="imprint" />

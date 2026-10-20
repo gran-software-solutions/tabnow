@@ -1,0 +1,9 @@
+apiVersion: v2
+name: tabnow-website
+description: The TabNow landing page (tabnow.app), served by nginx
+type: application
+# Bump this on every chart edit. The HelmRelease reconciles with
+# reconcileStrategy: ChartVersion, so Flux re-packages the chart only when this
+# line changes: a template change under an unchanged version is never deployed.
+version: 0.1.0
+appVersion: "1.0"

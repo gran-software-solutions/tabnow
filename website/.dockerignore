@@ -1,0 +1,4 @@
+# The image is the built site and its server config, nothing else.
+*
+!dist/
+!nginx.conf

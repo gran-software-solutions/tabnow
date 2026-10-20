@@ -1,0 +1,61 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { useT, localePath, DEFAULT_LOCALE } from '../i18n/index.js';
+
+const { title, description, path = '/', jsonLd = null, noindex = false, home = false } = Astro.props;
+const locale = Astro.currentLocale ?? DEFAULT_LOCALE;
+const { t } = useT(locale);
+
+const abs = (p) => new URL(p, Astro.site).href;
+const canonical = abs(localePath(locale, path));
+---
+
+<!doctype html>
+<html lang={locale} data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {/* Legal pages and the 404: kept out of search results, their links still followed. */}
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/instrument-serif-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161920" media="(prefers-color-scheme: dark)" />
+    {/* Theme before first paint: saved choice, else the system setting. No flash. The rest lives in scripts/theme.js. */}
+    <script is:inline>
+      (function () {
+        var t = null; try { t = localStorage.getItem('tabnow-theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TabNow" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={abs('/og.png')} />
+    <meta property="og:image:width" content="1400" />
+    <meta property="og:image:height" content="560" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content={t('meta.ogAlt')} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
+  </head>
+  <body>
+    <a class="skip" href="#main">{t('a11y.skip')}</a>
+    <Header home={home} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "tabnow-site",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "sync": "node tools/sync-fuzzy.mjs",
+    "predev": "npm run sync",
+    "dev": "astro dev",
+    "build": "node tools/check-source.mjs && astro build && node tools/check-dist.mjs",
+    "preview": "astro preview",
+    "prebuild": "npm run sync",
+    "precheck": "npm run sync",
+    "check": "node tools/check-source.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.3.3"
+  }
+}

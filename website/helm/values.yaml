@@ -1,0 +1,22 @@
+replicaCount: 1
+
+image:
+  repository: rg.pl-waw.scw.cloud/gransoftware-prod/tabnow-website
+  pullPolicy: Always
+  tag: "latest"
+
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+# Off, and with no host of its own: gran-platform's prod overlay supplies the whole block for
+# tabnow.app, as it does for pigmo.app and stepkeep.app. One place for the hostname, or they drift.
+ingress:
+  enabled: false
+  className: traefik
+  annotations: {}
+  hosts: []
+  tls: []

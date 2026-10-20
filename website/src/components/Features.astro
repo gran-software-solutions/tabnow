@@ -1,0 +1,19 @@
+---
+import { useT } from '../i18n/index.js';
+const { t, list } = useT(Astro.currentLocale);
+---
+
+<section class="s" id="features">
+  <div class="wrap"><div class="row">
+    <div class="lab">{t('features.label')}</div>
+    <div>
+      <h2>{t('features.titleA')} <em>{t('features.titleB')}</em></h2>
+      <p class="lead">{t('features.lead')}</p>
+      <div class="list">
+        {list('features.items').map((item, i) => (
+          <div><span class="no">{String(i + 1).padStart(2, '0')}</span><h3>{item.title}</h3><p set:html={item.text} /></div>
+        ))}
+      </div>
+    </div>
+  </div></div>
+</section>

@@ -1,0 +1,39 @@
+---
+import Base from '../../layouts/Base.astro';
+import Hero from '../../components/Hero.astro';
+import Features from '../../components/Features.astro';
+import Keys from '../../components/Keys.astro';
+import Themes from '../../components/Themes.astro';
+import Privacy from '../../components/Privacy.astro';
+import Install from '../../components/Install.astro';
+import { useT, localePath } from '../../i18n/index.js';
+import { localeStaticPaths } from '../../i18n/locales.js';
+import { webStoreUrl, GITHUB_URL, SUPPORT_EMAIL, COMPANY, COMPANY_URL } from '../../config.js';
+
+export const getStaticPaths = localeStaticPaths;
+
+const { t, locale } = useT(Astro.currentLocale);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'TabNow',
+  description: t('meta.homeDescription'),
+  applicationCategory: 'BrowserApplication',
+  operatingSystem: 'Chrome 121 or newer, Edge, Brave, Opera, Vivaldi, Arc',
+  url: new URL(localePath(locale, '/'), Astro.site).href,
+  license: 'https://opensource.org/licenses/MIT',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+  downloadUrl: webStoreUrl ?? GITHUB_URL,
+  author: { '@type': 'Organization', name: COMPANY, url: COMPANY_URL, email: SUPPORT_EMAIL },
+};
+---
+
+<Base title={t('meta.homeTitle')} description={t('meta.homeDescription')} path="/" jsonLd={jsonLd} home>
+  <Hero />
+  <Features />
+  <Keys />
+  <Themes />
+  <Privacy />
+  <Install />
+</Base>

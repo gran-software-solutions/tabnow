@@ -1,0 +1,18 @@
+---
+import { useT, localePath } from '../i18n/index.js';
+import { COMPANY, COMPANY_URL, GITHUB_URL, SOCIAL } from '../config.js';
+const { t, locale } = useT(Astro.currentLocale);
+---
+
+<footer>
+  <div class="wrap">
+    <span>{t('footer.made')} <a href={COMPANY_URL} rel="noopener">{COMPANY}</a> · {t('footer.license')}</span>
+    <span class="sp"></span>
+    <div class="links" role="navigation" aria-label={t('a11y.footerNav')}>
+      <a href={localePath(locale, '/imprint/')}>{t('legal.imprint')}</a>
+      <a href={localePath(locale, '/privacy/')}>{t('legal.privacy')}</a>
+      <a href={GITHUB_URL} rel="noopener">{t('footer.github')}</a>
+      {SOCIAL.map((s) => <a href={s.url} rel="noopener">{t(`footer.${s.id}`)}</a>)}
+    </div>
+  </div>
+</footer>

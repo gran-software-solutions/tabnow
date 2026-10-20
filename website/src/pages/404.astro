@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import { useT, localePath } from '../i18n/index.js';
+const { t, locale } = useT(Astro.currentLocale);
+---
+
+<Base title={t('meta.notFoundTitle')} path="/404/" noindex>
+  <section class="wrap section">
+    <h1>{t('notFound.title')}</h1>
+    <p class="muted">{t('notFound.text')}</p>
+    <p><a class="btn btn-primary" href={localePath(locale, '/')}>{t('notFound.back')}</a></p>
+  </section>
+</Base>
+
+<style>
+  p { margin-top: 1.25rem; }
+</style>

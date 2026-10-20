@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+import { useT, localePath, DEFAULT_LOCALE } from '../i18n/index.js';
+
+const { slug } = Astro.props;
+const { t, locale } = useT(Astro.currentLocale);
+
+// Legal text is one reviewed Markdown file per language.
+const files = import.meta.glob('../legal/*/*.md', { eager: true });
+const doc = files[`../legal/${locale}/${slug}.md`] ?? files[`../legal/${DEFAULT_LOCALE}/${slug}.md`];
+if (!doc) throw new Error(`[legal] no text for "${slug}"`);
+const { Content } = doc;
+const name = t(`legal.${slug}`);
+---
+
+<Base title={t('meta.legalTitle', { page: name })} path={`/${slug}/`} noindex>
+  <article class="wrap legal">
+    <h1>{name}</h1>
+    <Content />
+    <p><a href={localePath(locale, '/')}>{t('legal.back')}</a></p>
+  </article>
+</Base>

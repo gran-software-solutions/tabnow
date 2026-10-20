@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "homeTitle": "TabNow: every tab, one keystroke away",
+    "homeDescription": "TabNow is a fast fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter. Searches every window, private by design, open source.",
+    "legalTitle": "{page} · TabNow",
+    "notFoundTitle": "Page not found · TabNow",
+    "ogAlt": "TabNow, a fuzzy finder for your open browser tabs"
+  },
+  "a11y": {
+    "skip": "Skip to content",
+    "nav": "Main",
+    "footerNav": "Footer"
+  },
+  "nav": {
+    "features": "Features",
+    "keys": "Keys",
+    "themes": "Themes",
+    "privacy": "Privacy"
+  },
+  "theme": {
+    "title": "Light / dark (Alt+T)",
+    "toDark": "Switch to dark",
+    "toLight": "Switch to light"
+  },
+  "install": {
+    "button": "Install",
+    "soon": "Coming soon to the Chrome Web Store",
+    "soonShort": "Coming soon"
+  },
+  "key": {
+    "ctrl": "Ctrl",
+    "esc": "esc"
+  },
+  "hero": {
+    "titleA": "Every tab,",
+    "titleB": "one keystroke",
+    "titleC": "away.",
+    "subtitle": "A fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.",
+    "how": "How it works",
+    "try": "try it below"
+  },
+  "demo": {
+    "label": "Live demo of the TabNow finder",
+    "placeholder": "Search your tabs",
+    "navigate": "navigate",
+    "open": "open",
+    "closeTab": "close tab",
+    "scopes": "scopes",
+    "dismiss": "dismiss",
+    "empty": "No tabs match.",
+    "switched": "Switched ✓",
+    "count": "{n} of {total}",
+    "off": "Off"
+  },
+  "features": {
+    "label": "Features",
+    "titleA": "Find it,",
+    "titleB": "then get on with it.",
+    "lead": "TabNow is a small Chrome extension. No windows to sort, no tab groups to keep tidy.",
+    "items": [
+      { "title": "Find any tab in a keystroke", "text": "<code>Ctrl+E</code>, a few letters, <code>Enter</code>. The previous tab is preselected, so <code>Ctrl+E</code> <code>Enter</code> flips back." },
+      { "title": "Fast and fuzzy", "text": "Type \"gh pr\" and get the GitHub pull request. Domain ranks above title, title above the rest of the address." },
+      { "title": "Keyboard first", "text": "Arrows or <code>Ctrl+J</code> / <code>Ctrl+K</code> to move, <code>Ctrl+Backspace</code> to close a tab. The mouse works too." },
+      { "title": "Every window", "text": "All open windows in one list. Bookmarks and history join in when you turn them on, with <code>/b</code> and <code>/h</code>." },
+      { "title": "Private by design", "text": "No network requests, no account, no analytics. Nothing leaves your browser." },
+      { "title": "Fits your browser", "text": "Light and dark, adjustable opacity, blur and size. <code>Alt+Z</code> jumps to the previous tab without opening anything." }
+    ]
+  },
+  "keys": {
+    "label": "Keys",
+    "titleA": "Hands stay",
+    "titleB": "on the keyboard.",
+    "lead": "Cmd replaces Ctrl on macOS.",
+    "items": [
+      { "keys": ["Ctrl", "E"], "text": "Open the finder" },
+      { "keys": ["Alt", "Z"], "text": "Jump to the previous tab" },
+      { "keys": ["↑", "↓"], "text": "Move the selection" },
+      { "keys": ["Ctrl", "J", "K"], "text": "Same, without leaving home row" },
+      { "keys": ["↵"], "text": "Go to the tab" },
+      { "keys": ["Ctrl", "⌫"], "text": "Close the selected tab" },
+      { "keys": ["Ctrl", "U"], "text": "Clear the search" },
+      { "keys": ["/"], "text": "Scopes: tabs, bookmarks, history" },
+      { "keys": ["Alt", "T"], "text": "Light or dark" },
+      { "keys": ["esc"], "text": "Dismiss" }
+    ]
+  },
+  "themes": {
+    "label": "Themes",
+    "titleA": "Day and night,",
+    "titleB": "same desk.",
+    "lead": "TabNow follows your system, or you pick. <kbd>Alt</kbd> <kbd>T</kbd> switches on the spot. Try the same three options you get on the options page.",
+    "opacity": "Opacity",
+    "opacityHint": "Lower lets the page show through.",
+    "blur": "Blur",
+    "blurHint": "Higher softens the page behind.",
+    "size": "Size",
+    "sizeHint": "Makes the search box and its text bigger or smaller.",
+    "reset": "Reset",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "privacy": {
+    "label": "Privacy",
+    "big": "No network requests.",
+    "bigEm": "Ever.",
+    "lead": "No account, no analytics, no servers. About 600 lines of plain JavaScript with no dependencies, open source under MIT. Here is what it asks the browser for, and why.",
+    "optional": "optional",
+    "perms": [
+      { "name": "tabs", "text": "Read titles and addresses of open tabs, so you can search them." },
+      { "name": "activeTab", "text": "Show the finder on the page you are on." },
+      { "name": "scripting", "text": "Put the finder on that page." },
+      { "name": "favicon", "text": "Show each site's small icon." },
+      { "name": "storage", "text": "Remember your settings on this device." },
+      { "name": "bookmarks", "optional": true, "text": "Only if you turn on <code>/b</code>. The browser asks first." },
+      { "name": "history", "optional": true, "text": "Only if you turn on <code>/h</code>. Last 90 days, searched locally." }
+    ],
+    "policy": "Read the full privacy policy"
+  },
+  "installSection": {
+    "label": "Install",
+    "titleA": "Four steps,",
+    "titleB": "one minute.",
+    "lead": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc.",
+    "leadSoon": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc. Not in the Web Store yet.",
+    "steps": [
+      "Clone the repository from GitHub.",
+      "Open <code>chrome://extensions</code>.",
+      "Turn on Developer mode.",
+      "Choose Load unpacked and pick the <code>extension/</code> folder."
+    ],
+    "github": "Get it on GitHub"
+  },
+  "footer": {
+    "made": "Made by",
+    "license": "MIT",
+    "github": "GitHub",
+    "linkedin": "LinkedIn",
+    "x": "X",
+    "reddit": "Reddit"
+  },
+  "legal": {
+    "privacy": "Privacy",
+    "imprint": "Imprint",
+    "back": "Back to the home page"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "That page does not exist.",
+    "back": "Back to the home page"
+  },
+  "llms": {
+    "tagline": "A fuzzy finder for your open tabs."
+  }
+}
