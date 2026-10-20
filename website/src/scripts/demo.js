@@ -195,10 +195,14 @@ function applyOpts() {
 Object.values(sliders).forEach(el => el.addEventListener("input", applyOpts));
 $("#o-reset").addEventListener("click", () => { for (const k in sliders) sliders[k].value = DEF[k]; applyOpts(); });
 for (const bd of document.querySelectorAll(".backdrop")) {
-  const bars = [[0, 0, 100, 34, "hd"], [20, 11, 60, 12, ""], [250, 13, 28, 8, ""], [300, 13, 28, 8, ""], [28, 56, 332, 128, "img"], [28, 204, 190, 16, "h"]];
-  [236, 254, 272, 290].forEach((t, k) => bars.push([28, t, [320, 300, 330, 190][k], 9, ""]));
-  [334, 352, 370].forEach((t, k) => bars.push([28, t, [300, 320, 240][k], 9, ""]));
-  bd.innerHTML = bars.map(([l, t, w, h, c]) => `<i class="${c}" style="left:${l}px;top:${t}px;width:${c === "hd" ? "100%" : w + "px"};height:${h}px"></i>`).join("");
+  // A real-looking page with readable text and a solid image block, so the opacity and blur sliders show.
+  bd.innerHTML = `<i class="hd" style="left:0;top:0;width:100%;height:34px"></i>
+    <div class="art">
+      <div class="pic"><b>Q4</b><span>Roadmap review</span></div>
+      <h4>Ship the store listing before Friday</h4>
+      <p>Screenshots, the short description and the privacy answers are ready. The review usually takes a few days, so the landing page goes live first and the Install button switches on approval day.</p>
+      <p>Open questions: the domain, the social links, and whether the first release opens with Alt+E on every platform.</p>
+    </div>`;
 }
 const staticRes = search(TABS, TYPED);
 for (const b of document.querySelectorAll("[data-static]")) {

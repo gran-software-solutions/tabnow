@@ -218,7 +218,13 @@ html.fade .band { transition: background-color .5s ease; }
 .backdrop i.hd { border-radius: 0; background: color-mix(in srgb, var(--fg) 9%, transparent); }
 .backdrop i.img { border-radius: 8px; background: color-mix(in srgb, var(--fg) 12%, transparent); }
 .backdrop i.h { background: color-mix(in srgb, var(--fg) 30%, transparent); }
-.canvas .ov { position: relative; z-index: 2; width: 340px; background: rgb(var(--g) / var(--alpha)); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); transform: scale(var(--zoom)); box-shadow: inset 0 0 0 1px var(--line), 0 14px 36px rgb(0 0 0 / .1); }
+.backdrop .art { position: absolute; left: 28px; right: 28px; top: 56px; color: var(--fg); text-align: left; }
+.backdrop .pic { height: 132px; border-radius: 10px; background: var(--hit); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 20px; }
+.backdrop .pic b { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 54px; line-height: 1; }
+.backdrop .pic span { font-size: 14px; opacity: .85; }
+.backdrop h4 { margin: 20px 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+.backdrop p { margin: 0 0 10px; font-size: 15px; line-height: 1.55; color: var(--fg); }
+.canvas .ov { position: relative; z-index: 2; width: 340px; background: rgb(var(--g) / var(--alpha)); backdrop-filter: blur(var(--blur)); transform: scale(var(--zoom)); box-shadow: inset 0 0 0 1px var(--line), 0 14px 36px rgb(0 0 0 / .1); }
 .canvas .q { font-size: 17px; padding: 13px 16px; gap: 10px; }
 .canvas .q svg { width: 18px; height: 18px; }
 .canvas .ov .t { font-size: 13.5px; }
