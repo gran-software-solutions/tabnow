@@ -164,9 +164,11 @@ function init(root) {
     if (prev) activate(prev.id);
   }
 
-  // Alt+E / Cmd+E opens and closes, Alt+Z flips to the previous tab. Letters come from the physical key
-  // (Option+E types a dead accent key on a Mac).
+  // Space opens it (only once the window is clicked, so scrolling the page with Space still works): browser and extension shortcuts always need Ctrl, Alt or Cmd, so nothing
+  // installed (TabNow itself included) can catch it first. Alt+E / Cmd+E work too when nothing else takes them.
+  // Alt+Z flips to the previous tab. Letters come from the physical key (Option+E types a dead accent key on a Mac).
   const noCtrl = (e) => !e.ctrlKey && !e.shiftKey;
+  const isSpace = (e) => e.code === 'Space' && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey;
   const isToggle = (e) => e.code === 'KeyE' && noCtrl(e) && ((e.altKey && !e.metaKey) || (e.metaKey && !e.altKey));
   const isPrevious = (e) => e.code === 'KeyZ' && noCtrl(e) && e.altKey && !e.metaKey;
 
@@ -182,7 +184,7 @@ function init(root) {
   document.addEventListener('keydown', (e) => {
     const inside = root.contains(document.activeElement) || win.matches(':hover');
     if (!inside) return;
-    if (isToggle(e)) { e.preventDefault(); e.stopPropagation(); toggle(); }
+    if (isToggle(e) || (isSpace(e) && !panel && root.contains(document.activeElement))) { e.preventDefault(); e.stopPropagation(); toggle(); }
     else if (isPrevious(e)) { e.preventDefault(); e.stopPropagation(); previous(); }
     else if (e.key === 'Escape' && panel) { e.preventDefault(); closePanel(); }
   }, true);
