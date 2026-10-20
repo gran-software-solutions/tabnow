@@ -3,7 +3,7 @@
 // src/lib/ by tools/sync-fuzzy.mjs), so the demo ranks tabs exactly like the real thing.
 import { search, hl } from '../lib/fuzzy.js';
 import { FAV, TABS } from '../data/tabs.js';
-import { gmailScene, prScene } from './scenes.js';
+import { slidesScene, videoScene } from './scenes.js';
 
 const $ = s => document.querySelector(s);
 const html = document.documentElement;
@@ -196,8 +196,8 @@ function applyOpts() {
 Object.values(sliders).forEach(el => el.addEventListener("input", applyOpts));
 $("#o-reset").addEventListener("click", () => { for (const k in sliders) sliders[k].value = DEF[k]; applyOpts(); });
 for (const bd of document.querySelectorAll(".backdrop")) {
-  // A real page behind the panel so the opacity and blur sliders show: Gmail by day, a GitHub pull request by night.
-  bd.innerHTML = (bd.closest(".canvas").dataset.theme === "dark" ? prScene : gmailScene)();
+  // A real page behind the panel so the opacity and blur sliders show: Google Slides by day, a YouTube video by night.
+  bd.innerHTML = (bd.closest(".canvas").dataset.theme === "dark" ? videoScene : slidesScene)();
 }
 const staticRes = search(TABS, TYPED);
 for (const b of document.querySelectorAll("[data-static]")) {

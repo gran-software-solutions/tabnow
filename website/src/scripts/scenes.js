@@ -1,5 +1,6 @@
 // Realistic pages for the "Day and night" canvases. Plain HTML/CSS, no images, no requests.
-// Light canvas: a Gmail-style inbox. Dark canvas: a GitHub-style pull request. Styles: .wp in global.css.
+// Light canvas: a Google Slides editor. Dark canvas: a YouTube watch page. Big, high-contrast shapes sit right behind the panel so the opacity and blur sliders are easy to see.
+// The Gmail and pull request scenes stay available below. Styles: .wp in global.css.
 const chrome = (url, inner) => `<div class="wp"><div class="wp-bar"><i></i><i></i><i></i><span class="wp-url">${url}</span></div><div class="wp-view">${inner}</div></div>`;
 
 const MAIL = [
@@ -50,4 +51,23 @@ export const prScene = () => chrome('github.com/gran-software-solutions/tabnow/p
 <div class="r x"><u>46</u><code>-const SOURCES = ['tabs'];</code></div>
 <div class="r a"><u>46</u><code>+const SOURCES = ['tabs', 'bookmarks', 'history'];</code></div></div>
     </div>
+  </div>`);
+
+const thumb = (n, on) => `<div class="sd-th${on ? ' on' : ''}"><span>${n}</span><div class="sl-mini sl-m${n}"></div></div>`;
+export const slidesScene = () => chrome('docs.google.com/presentation/d/1xT4bNow/edit#slide=id.p3', `
+  <div class="sd">
+    <div class="sd-top"><span class="sd-ic"></span><div><b>TabNow store listing</b><span>File  Edit  View  Insert  Format  Slide  Arrange  Tools</span></div><span class="sd-share">Share</span></div>
+    <div class="sd-tool"><i></i><i></i><i></i><u></u><i></i><i></i><i></i><i></i></div>
+    <div class="sd-body">
+      <div class="sd-film">${[1, 2, 3, 4].map((n) => thumb(n, n === 3)).join('')}</div>
+      <div class="sd-stage"><div class="sd-slide"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><b>Find any tab in a second</b></div></div>
+    </div>
+  </div>`);
+
+export const videoScene = () => chrome('youtube.com/watch?v=Tn7kQ2xLw4E', `
+  <div class="yt">
+    <div class="yt-top"><span class="yt-logo"><i></i>Video</span><span class="yt-search">Search</span><span class="yt-av">A</span></div>
+    <div class="yt-player"><div class="yt-still"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><b>TabNow in 60 seconds</b></div>
+      <div class="yt-ctl"><span class="yt-play"></span><div class="yt-prog"><i></i></div><time>0:38 / 1:00</time></div></div>
+    <div class="yt-meta"><h1>TabNow in 60 seconds: search every open tab</h1><div><span class="yt-ch">G</span><b>GRAN Software</b><em>12K subscribers</em><span class="yt-sub">Subscribe</span></div></div>
   </div>`);
