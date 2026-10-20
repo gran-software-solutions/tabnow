@@ -26,6 +26,15 @@ function init(root) {
     win.setAttribute('aria-label', S.labelMac);
   }
 
+  // Small screens: scale the 1280px window to the width of its box. Phones only get the picture (no focus, no clicks).
+  const fit = $('[data-fit]');
+  const phone = matchMedia('(max-width: 700px)');
+  const rescale = () => { const w = fit.clientWidth; if (w) fit.style.setProperty('--pg-scale', w / 1280); };
+  const lock = () => { win.inert = phone.matches; if (phone.matches) closePanel(); };
+  new ResizeObserver(rescale).observe(fit);
+  phone.addEventListener('change', lock);
+  rescale();
+
   /* ---------- the fake browser's data ---------- */
   const full = (key, path) => 'https://' + SITES[key][0] + path;
   const strip0 = (u) => u.replace(/^https?:\/\//, '');
@@ -122,6 +131,7 @@ function init(root) {
 
   /* ---------- the TabNow overlay (same layers as overlay() in extension/background.js) ---------- */
   let panel = null;
+  lock();
   const isDark = () => html.dataset.theme === 'dark';
   function paint(p, dark) {
     p.scrim.style.background = dark ? 'rgb(0 0 0/.32)' : 'rgb(20 24 32/.12)';

@@ -21,8 +21,10 @@ const s = {
   <div class="pgs-head">
     <h2 id="try-h">{t('playground.titleA')} <em>{t('playground.titleB')}</em></h2>
     <p class="pgs-line" data-line>{t('playground.line')}</p>
+    <p class="pgs-line pgs-line-touch">{t('playground.lineTouch')}</p>
   </div>
 
+  <div class="pg-fit" data-fit>
   <div class="pg-win" tabindex="0" role="application" aria-label={t('playground.label')} data-win>
     <div class="pg-top">
       <div class="pg-dots" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -59,6 +61,7 @@ const s = {
     </div>
     <div class="pg-card" data-card hidden></div>
   </div>
+  </div>
 
   <div class="pgs-under">
     <button class="btn" type="button" data-open>
@@ -66,6 +69,7 @@ const s = {
       <span class="keys"><kbd data-mod>{t('playground.keyAlt')}</kbd><kbd>E</kbd></span>
     </button>
   </div>
+  <p class="pgs-note">{t('playground.touchNote')}</p>
 </section>
 
 <script>
@@ -73,6 +77,8 @@ const s = {
 </script>
 
 <style is:global>
+  .pg-fit { display: contents; }
+  .pgs-line-touch, .pgs-note { display: none; }
   .pgs { padding: 72px 0 130px; text-align: center; }
   .pgs-head h2 { margin: 0; font: 400 96px/1 "Instrument Serif", serif; letter-spacing: -.015em; }
   .pgs-head h2 em { font-style: italic; color: var(--hit); }
@@ -376,4 +382,22 @@ const s = {
   .pq-art h1 { margin-top: 8px; font-size: 32px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; } .pq-art h2 { margin-top: 22px; font-size: 20px; font-weight: 600; }
   .pq-art p { margin-top: 10px; font-size: 15px; line-height: 1.6; } .pq-art .lede { font-size: 17px; color: var(--pq-sub); }
   .pq-art pre { margin: 14px 0 0; padding: 12px 16px; border-radius: 8px; background: var(--p-b1); font-size: 13px; line-height: 1.55; overflow: hidden; }
+
+  /* Phones and tablets: the 1280x700 window is scaled to the available width (--pg-scale, set by playground.js). */
+  @media (max-width: 900px) {
+    .pgs { padding: 56px 20px 80px; }
+    .pgs-head h2 { font-size: 52px; }
+    .pgs-line { font-size: 17px; margin-top: 16px; }
+    .pg-fit { display: block; position: relative; width: 100%; max-width: 1280px; margin: 36px auto 0; aspect-ratio: 1280 / 700; overflow: hidden; border-radius: 6px; }
+    .pg-fit .pg-win { position: absolute; left: 0; top: 0; margin: 0; transform-origin: 0 0; transform: scale(var(--pg-scale, .5)); }
+    .pgs-under { margin-top: 24px; }
+  }
+  /* Phones: only a picture, with a note instead of the button. */
+  @media (max-width: 700px) {
+    .pgs-head h2 { font-size: 48px; }
+    .pgs-line:not(.pgs-line-touch), .pgs-under, .pg-hint { display: none; }
+    .pgs-line-touch { display: block; }
+    .pg-fit { pointer-events: none; margin-top: 28px; border-radius: 4px; }
+    .pgs-note { display: block; max-width: 22rem; margin: 22px auto 0; font-size: 15px; line-height: 1.5; color: var(--muted); text-wrap: balance; }
+  }
 </style>

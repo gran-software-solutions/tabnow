@@ -408,6 +408,50 @@ footer .links { display: flex; gap: 24px; flex-wrap: wrap; }
   .strip6 { grid-template-columns: repeat(2, 1fr); gap: 32px 16px; }
   .perms > div { grid-template-columns: 1fr; gap: 2px; }
   footer .wrap { flex-wrap: wrap; } footer .sp { margin-left: 0; }
+  /* hero: normal flow, panel under the buttons, no floating cards */
+  nav a.l { display: none; } nav .logo { min-width: 0; } nav .btn, nav .btn[data-soon] { min-height: 40px; padding: 0 14px; flex: none; }
+  .hero { height: auto; padding: 0 16px 56px; }
+  .head { position: static; padding: 108px 0 0; }
+  h1 { font-size: 48px; }
+  .sub { font-size: 16px; margin-top: 16px; }
+  .cta { flex-wrap: wrap; margin-top: 22px; }
+  .cta .btn { min-height: 44px; } .cta .btn[data-soon] { white-space: normal; text-align: center; line-height: 1.3; }
+  .hint, .card { display: none; }
+  #panel { position: static; width: auto; max-width: 600px; margin: 36px auto 0; }
+  .foot { gap: 12px; padding: 9px 12px; }
+  .foot .k:nth-child(3), .foot .k:nth-child(4) { display: none; }
+  .q { padding: 14px 16px; font-size: 18px; }
+  .q .n { white-space: nowrap; }
+  /* panels in the sections */
+  .moment h2, .big-q { font-size: 52px; }
+  .big ul { padding: 6px; } .big li { padding: 10px 12px; gap: 12px; }
+  .big .q { gap: 12px; } .big .q svg { width: 22px; height: 22px; } .big .q .n { font-size: 13px; white-space: nowrap; }
+  .big .foot { padding: 11px 16px; gap: 14px; font-size: 13px; }
+  .big .t, .big .u { overflow: hidden; text-overflow: ellipsis; }
+  #mFuzzyRows { min-height: 252px; }
+  .menu { width: auto; max-width: 360px; font-size: 16px; } .menu div { padding: 12px 12px; gap: 12px; }
+  .tab { padding: 0 10px; gap: 8px; font-size: 13px; }
+  .tab:not(.on) { flex: 0 0 38px; justify-content: center; padding: 0; } .tab:not(.on) .trunc { display: none; }
+  .tab.on { flex: 1; }
+  .page { height: 236px; } .pg { padding: 28px 22px; } .page .pt { font-size: 22px; } .page .sk { margin-top: 24px; }
+  .press kbd { min-width: 56px; height: 52px; }
+  /* day and night */
+  .themes { gap: 32px; }
+  .canvas { height: 400px; }
+  .canvas .ov { width: min(340px, calc(100% - 24px)); }
+  .canvas .foot { gap: 10px; padding: 9px 12px; }
+  .canvas .foot .k:nth-child(3) { display: inline-flex; }
+  .opts { gap: 22px; margin-top: 40px; } .opt .top { font-size: 16px; margin-bottom: 4px; }
+  input[type=range] { height: 40px; }
+  .opts .btn { width: 100%; height: 44px; justify-content: center; }
+  /* privacy, keys, install */
+  .permhead { margin-top: 48px; }
+  .strip6 .kk { flex-wrap: wrap; justify-content: center; }
+  .strip6 kbd { min-width: 44px; height: 44px; padding: 0 10px; font-size: 17px; }
+  .go-btn { margin-top: 32px; }
+  .go-btn .btn, .go-btn .btn[data-soon] { height: auto; min-height: 56px; padding: 10px 24px; font-size: 17px; white-space: normal; text-align: center; justify-content: center; }
+  .steps { gap: 36px; margin-top: 52px; }
+  footer .wrap { gap: 14px; }
 }
 
 /* UI text (nav, buttons, labels, key caps, mock panels) follows --font-ui; running text follows --font-body. */

@@ -155,6 +155,8 @@
     "titleB": "here.",
     "line": "Click the window and press Space. Installed, it is Alt+E on any page.",
     "lineMac": "Click the window and press Space. Installed, it is Cmd+E on any page.",
+    "lineTouch": "A browser with 43 open tabs in two windows, and TabNow ready to search them.",
+    "touchNote": "TabNow runs in Chrome on a computer. Open this page there to try it.",
     "hint": "Click the window, then press Space",
     "hintMac": "Click the window, then press Space",
     "button": "Open TabNow",
