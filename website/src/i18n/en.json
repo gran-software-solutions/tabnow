@@ -129,7 +129,7 @@
     "steps": [
       "Open TabNow in the Chrome Web Store.",
       "Click <strong>Add to Chrome</strong>.",
-      "Press <code>Alt+E</code> on any page (<code>Cmd+E</code> on a Mac). Change the key at <code>chrome://extensions/shortcuts</code>."
+      "Press <code>Alt+E</code> on any page. On a Mac, <code>Cmd+E</code>. Change it at <code>chrome://extensions/shortcuts</code>."
     ]
   },
   "footer": {
