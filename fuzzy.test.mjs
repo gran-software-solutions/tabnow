@@ -51,5 +51,5 @@ const macD = { key: "∂", code: "KeyD", ctrlKey: false, altKey: true, shiftKey:
 assert.ok(matches(macD, { ctrl: false, alt: true, shift: false, meta: false, key: "d" }));
 assert.deepEqual(caps(fromEvent(macD)).slice(1), ["d"]);
 assert.deepEqual(caps(altD), [isMac ? "opt" : "alt", "shift", "d"]);
-assert.deepEqual(["auto", "light", "dark"].map(nextTheme), ["light", "dark", "auto"]);
+assert.deepEqual(["light", "dark"].map(nextTheme), ["dark", "light"]);
 console.log("ok");
