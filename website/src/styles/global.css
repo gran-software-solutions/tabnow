@@ -238,32 +238,37 @@ html.fade .band { transition: background-color .5s ease; }
 .sd-film { flex: none; width: 66px; padding: 4px 6px; display: grid; gap: 6px; align-content: start; }
 .sd-th { display: flex; gap: 4px; align-items: flex-start; font-size: 9px; color: #5f6368; }
 .sd-th.on .sl-mini { box-shadow: 0 0 0 2px #0b57d0; }
-.sl-mini { flex: 1; aspect-ratio: 16/9; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px #c4c7c5; }
-.sl-m1 { background: #1a56db; } .sl-m2 { background: #ffc107; } .sl-m3 { background: repeating-linear-gradient(90deg, #0b3bd1 0 6px, #ffc400 6px 12px); } .sl-m4 { background: #e8453c; }
+.sl-mini { position: relative; flex: 1; aspect-ratio: 16/9; border-radius: 2px; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px #c4c7c5; }
+.sl-a { background: #1f5fd6; } .sl-a b { position: absolute; left: 12%; top: 18%; width: 52%; height: 12%; background: #fff; }
+.sl-a s { position: absolute; left: 12%; right: 12%; bottom: 0; height: 40%; background: #ffc83d; }
+.sl-b i { position: absolute; bottom: 0; width: 12%; background: #1f5fd6; } .sl-b i:nth-child(1) { left: 12%; height: 30%; } .sl-b i:nth-child(2) { left: 32%; height: 50%; } .sl-b i:nth-child(3) { left: 52%; height: 40%; } .sl-b i:nth-child(4) { left: 72%; height: 70%; }
+.sl-c b { position: absolute; left: 12%; height: 8%; background: #5f6368; } .sl-c b:nth-child(1) { top: 20%; width: 60%; } .sl-c b:nth-child(2) { top: 42%; width: 45%; } .sl-c b:nth-child(3) { top: 64%; width: 52%; }
 .sd-stage { flex: 1; min-width: 0; padding: 6px 12px 12px 6px; display: grid; }
-/* fine bold stripes under the whole panel area, with big solid shapes on top */
-.sd-slide { position: relative; overflow: hidden; background: repeating-linear-gradient(90deg, #0b3bd1 0 8px, #ffc400 8px 16px); box-shadow: 0 0 0 1px #c4c7c5, 0 2px 8px rgb(0 0 0 / .12); }
-.sd-slide i { position: absolute; display: block; }
-.sd-slide .c1 { width: 150px; height: 150px; left: 14%; top: -30px; border-radius: 50%; background: #e8302a; }
-.sd-slide .c2 { width: 120px; height: 120px; right: 12%; top: 40px; border-radius: 50%; background: #0f9d58; }
-.sd-slide .c3 { left: 0; right: 0; bottom: 0; height: 62%; background: repeating-linear-gradient(90deg, #000 0 7px, #fff 7px 14px); }
-.sd-slide .c4 { width: 90px; height: 90px; left: 44%; top: 38%; background: #8e24aa; transform: rotate(18deg); }
-.sd-slide b { position: absolute; left: 6%; top: 8%; font: 700 26px/1.1 "IBM Plex Sans", sans-serif; color: #111; background: #fff; padding: 4px 10px; }
+.sd-slide { position: relative; overflow: hidden; background: #1f5fd6; color: #fff; box-shadow: 0 0 0 1px #c4c7c5, 0 2px 8px rgb(0 0 0 / .12); }
+.sd-slide h2 { position: absolute; left: 6%; top: 7%; margin: 0; font: 700 30px/1.1 "IBM Plex Sans", sans-serif; letter-spacing: -.01em; }
+.sd-slide ul { position: absolute; left: 7%; top: 30%; margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.7; }
+.sd-chart { position: absolute; left: 6%; right: 6%; bottom: 7%; height: 68%; display: flex; align-items: flex-end; gap: 4%; }
+.sd-chart span { position: relative; flex: 1; height: var(--h); }
+.sd-chart i { position: absolute; inset: 0; background: #fff; } .sd-chart span:nth-child(odd) i { background: #ffc83d; }
+.sd-chart u { position: absolute; left: 0; right: 0; top: 100%; margin-top: 2px; text-align: center; text-decoration: none; font-size: 10px; color: #dbe6fb; }
 
-/* youtube (dark canvas backdrop) */
+/* youtube (dark canvas backdrop): a conference talk */
 .yt { height: 100%; display: flex; flex-direction: column; background: #0f0f0f; color: #f1f1f1; }
 .yt-top { flex: none; height: 38px; display: flex; align-items: center; gap: 12px; padding: 0 14px; }
 .yt-logo { display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 14px; letter-spacing: -.02em; } .yt-logo i { width: 22px; height: 15px; border-radius: 4px; background: #f00; }
 .yt-search { flex: 1; max-width: 260px; margin: 0 auto; padding: 5px 14px; border: 1px solid #303030; border-radius: 16px; color: #888; }
 .yt-av { width: 24px; height: 24px; border-radius: 50%; background: #8957e5; display: grid; place-items: center; font-weight: 600; }
 .yt-player { position: relative; flex: none; height: 276px; background: #000; overflow: hidden; }
-.yt-still { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #ff2d55 0 8px, #00d4ff 8px 16px); }
-.yt-still i { position: absolute; display: block; }
-.yt-still .b1 { left: 8%; top: 12%; width: 150px; height: 150px; border-radius: 50%; background: #ffe600; }
-.yt-still .b2 { right: 10%; top: 8%; width: 130px; height: 130px; background: #7c3aed; transform: rotate(12deg); }
-.yt-still .b3 { left: 0; right: 0; bottom: 0; height: 58%; background: repeating-linear-gradient(90deg, #fff 0 7px, #000 7px 14px); }
-.yt-still .b4 { left: 42%; top: 30%; width: 100px; height: 100px; border-radius: 50%; background: #22c55e; }
-.yt-still b { position: absolute; left: 6%; top: 48%; font: 800 28px/1.1 "IBM Plex Sans", sans-serif; background: #000; color: #fff; padding: 4px 12px; }
+.yt-still { position: absolute; inset: 0; background: #12141a; }
+.yt-screen { position: absolute; left: 7%; right: 7%; top: 8%; bottom: 14%; background: #1c4db8; overflow: hidden; }
+.yt-screen h2 { position: absolute; left: 6%; top: 8%; width: 70%; margin: 0; font: 700 28px/1.12 "IBM Plex Sans", sans-serif; color: #fff; letter-spacing: -.01em; }
+.yt-chart { position: absolute; left: 6%; right: 6%; bottom: 8%; height: 66%; display: flex; align-items: flex-end; gap: 4%; }
+.yt-chart span { position: relative; flex: 1; height: var(--h); }
+.yt-chart i { position: absolute; inset: 0; background: #ffc83d; } .yt-chart span:nth-child(even) i { background: #3ddc97; }
+.yt-chart u { display: none; }
+.yt-spk { position: absolute; left: 10%; bottom: 0; width: 84px; height: 150px; }
+.yt-spk i { position: absolute; left: 26px; top: 0; width: 32px; height: 38px; border-radius: 50%; background: #05060a; }
+.yt-spk b { position: absolute; left: 0; right: 0; top: 42px; bottom: 0; border-radius: 30px 30px 0 0; background: #05060a; }
 .yt-ctl { position: absolute; left: 12px; right: 12px; bottom: 8px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
 .yt-play { width: 0; height: 0; border-left: 11px solid #fff; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
 .yt-prog { flex: 1; height: 3px; background: #ffffff55; } .yt-prog i { display: block; width: 63%; height: 100%; background: #f00; }
