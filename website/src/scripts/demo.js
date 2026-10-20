@@ -37,7 +37,7 @@ let L = null; // { cx, inX, outX, cells }
 function buildCells() {
   seed = 11;
   const W = hero.clientWidth, cx = W / 2, hr = hero.getBoundingClientRect(), pr = panel.getBoundingClientRect();
-  const pTop = pr.top - hr.top - 14, pBot = Math.max(pr.bottom - hr.top, 384 + 345) + 14;
+  const pTop = pr.top - hr.top - 14, pBot = Math.max(pr.bottom - hr.top, 404 + 345) + 14;
   const colsX = [cx - 300 - GAP - CW - 20 - CW, cx - 300 - GAP - CW, cx + 300 + GAP, cx + 300 + GAP + CW + 20];
   const cells = [], band = [];
   for (let r = 0; r < 9; r++) colsX.forEach((x, c) => {
