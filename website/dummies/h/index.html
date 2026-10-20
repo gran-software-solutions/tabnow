@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TabNow: every tab, one keystroke away</title>
+<meta name="description" content="TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.">
+<link rel="icon" href="icon-128.png">
+<style>
+/* Direction H: Swiss / International Typographic Style.
+   12-column grid, flush-left grotesque, white, black, one red (#e30613). No radius, no shadow, no icons. */
+:root {
+  --ink: #0b0b0b; --paper: #fff; --red: #e30613; --mute: #565656; --tint: #f2f2f2;
+  --pad: clamp(16px, 3.4vw, 52px); --gx: clamp(12px, 1.7vw, 24px);
+  --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 clamp(16px, 1.15vw, 18px)/1.5 var(--sans); overflow-x: hidden; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+.wrap { max-width: 1440px; margin: 0 auto; padding-inline: var(--pad); }
+.g { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gx); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+mark { background: none; color: var(--red); }
+kbd { font: 700 .82em/1 var(--sans); border: 1.5px solid var(--ink); padding: .22em .45em .2em; white-space: nowrap; }
+
+/* Header */
+.top { padding-block: clamp(16px, 2vw, 28px); }
+.top .g { align-items: center; }
+.brand { grid-column: 1 / 4; display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.02em; text-decoration: none; }
+.brand img { width: 28px; height: 28px; display: block; }
+.top nav { grid-column: 7 / 13; display: flex; justify-content: space-between; gap: 12px; }
+.top nav a { text-decoration: none; font-weight: 500; }
+.top nav a:hover { color: var(--red); }
+
+/* Hero */
+.hero { padding-top: clamp(32px, 6vw, 88px); }
+.fz { margin: 0; font-weight: 700; letter-spacing: -.055em; line-height: .88; min-height: max(112px, 12.5vw); overflow-wrap: anywhere; font-size: 12vw; }
+.fz small { display: block; }
+.cap { min-height: 1.5em; margin: clamp(10px, 1.4vw, 20px) 0 0; color: var(--mute); font-size: clamp(14px, 1.1vw, 17px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cap b { font-weight: 400; color: var(--ink); }
+.hero .g.lede { margin-top: clamp(40px, 7vw, 112px); row-gap: 28px; }
+.hero h1 { grid-column: 4 / 13; margin: 0; font-size: clamp(34px, 4.6vw, 72px); line-height: .98; letter-spacing: -.045em; font-weight: 700; }
+.hero .side { grid-column: 1 / 4; grid-row: 1; padding-top: .5em; color: var(--mute); font-size: clamp(14px, 1.05vw, 16px); }
+.hero .sub { grid-column: 4 / 9; margin: 0; font-size: clamp(18px, 1.7vw, 26px); line-height: 1.3; letter-spacing: -.01em; }
+.hero .cta { grid-column: 4 / 13; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; padding-bottom: clamp(24px, 4vw, 56px); }
+.btn { display: inline-block; background: var(--ink); color: var(--paper); font-weight: 700; padding: 1em 1.8em; text-decoration: none; border: 2px solid var(--ink); transition: background .15s, border-color .15s; white-space: nowrap; }
+.btn:hover { background: var(--red); border-color: var(--red); }
+.btn:active { transform: translateY(1px); }
+.lnk { font-weight: 700; text-decoration: none; border-bottom: 2px solid var(--ink); padding-bottom: 2px; transition: color .15s, border-color .15s; }
+.lnk:hover { color: var(--red); border-color: var(--red); }
+
+/* Sections */
+section { padding-top: clamp(80px, 13vw, 200px); }
+.num { grid-column: 1 / 4; margin: 0; font-size: clamp(72px, 12vw, 190px); font-weight: 700; letter-spacing: -.07em; line-height: .78; }
+h2 { grid-column: 4 / 13; margin: 0; font-size: clamp(34px, 5vw, 80px); line-height: .96; letter-spacing: -.045em; font-weight: 700; }
+.rest { grid-column: 4 / 13; }
+
+/* Demo */
+.ez { min-height: 0; margin-top: clamp(32px, 4vw, 56px); height: clamp(64px, 8vw, 120px); line-height: .95; padding-top: .06em; overflow: hidden; }
+.nowon { margin: 20px 0 12px; display: flex; flex-wrap: wrap; gap: 4px 20px; align-items: baseline; font-size: clamp(14px, 1.05vw, 16px); }
+.nowon span:first-child { color: var(--mute); }
+.nowon strong { font-weight: 700; }
+.nowon .win { margin-left: auto; color: var(--mute); }
+.demo { position: relative; border: 2px solid var(--ink); background: var(--paper); font-size: 15px; }
+.demo .q { position: relative; display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 2px solid var(--ink); }
+.demo input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--ink); font: 500 clamp(20px, 2.2vw, 30px)/1.2 var(--sans); letter-spacing: -.02em; padding: 0; border-radius: 0; }
+.demo input::placeholder { color: #767676; }
+.demo:focus-within { outline: 3px solid var(--red); outline-offset: 3px; }
+.chip { flex: none; background: var(--ink); color: var(--paper); font-weight: 700; padding: 3px 9px; font-size: 14px; }
+.chip:empty { display: none; }
+.n { flex: none; font-size: 13px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.menu { position: absolute; left: 12px; top: calc(100% + 2px); z-index: 5; min-width: min(300px, calc(100% - 24px)); background: var(--paper); border: 2px solid var(--ink); }
+.menu div { display: flex; gap: 14px; padding: 9px 12px; cursor: pointer; }
+.menu div.on { background: var(--ink); color: var(--paper); }
+.menu code { font: 700 14px var(--sans); min-width: 22px; }
+.menu span { margin-left: auto; color: var(--mute); }
+.menu div.on span { color: #ddd; }
+.demo ul { list-style: none; margin: 0; padding: 0; max-height: 330px; overflow-y: auto; overscroll-behavior: contain; position: relative; }
+.demo li { display: flex; align-items: center; gap: 14px; padding: 9px 20px 9px 16px; cursor: pointer; border-left: 4px solid transparent; }
+.demo li.on { background: var(--tint); border-left-color: var(--red); }
+.fav { flex: none; width: 22px; height: 22px; display: grid; place-items: center; background: var(--ink); color: var(--paper); font: 700 11px/1 var(--sans); position: relative; }
+.fav.away::after { content: ""; position: absolute; right: -5px; bottom: -4px; width: 11px; height: 9px; background: var(--paper); border: 2px solid var(--ink); border-top-width: 4px; }
+.txt { min-width: 0; flex: 1; }
+.t, .u { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t { font-weight: 500; }
+.u { font-size: 13px; color: var(--mute); }
+.u .host { color: var(--ink); }
+.demo mark { font-weight: 700; }
+.go { flex: none; visibility: hidden; font-weight: 700; }
+li.on .go { visibility: visible; }
+.empty { padding: 20px; color: var(--mute); cursor: default !important; }
+.sec { cursor: default !important; padding-top: 12px !important; padding-bottom: 4px !important; font-size: 12px; font-weight: 700; color: var(--mute); }
+.foot { display: flex; align-items: center; gap: 18px; padding: 10px 16px; border-top: 2px solid var(--ink); font-size: 13px; white-space: nowrap; overflow: hidden; }
+.foot .end { margin-left: auto; }
+.foot kbd { font-size: 11px; border-width: 1px; margin-right: 4px; }
+.status { min-height: 1.5em; margin: 12px 0 0; font-weight: 700; font-size: clamp(14px, 1.05vw, 16px); }
+.status.flash { animation: flash .9s ease-out; }
+@keyframes flash { from { color: var(--red); } to { color: var(--ink); } }
+.hint { margin: 6px 0 0; color: var(--mute); font-size: clamp(14px, 1.05vw, 16px); }
+
+/* Features: two columns, the second one dropped. */
+.feats { margin-top: clamp(48px, 7vw, 112px); row-gap: 0; }
+.feat { grid-column: span 4; margin-bottom: clamp(40px, 6vw, 96px); max-width: 30rem; }
+.feat:nth-child(odd) { grid-column: 4 / 8; }
+.feat:nth-child(even) { grid-column: 9 / 13; margin-top: clamp(40px, 6vw, 96px); margin-bottom: 0; }
+.feat:nth-child(even):last-child { margin-bottom: clamp(40px, 6vw, 96px); }
+.feat h3 { margin: 0 0 .5em; font-size: clamp(24px, 2.6vw, 40px); line-height: 1; letter-spacing: -.04em; font-weight: 700; }
+.feat p { margin: 0; color: var(--mute); }
+.feat p b { color: var(--ink); font-weight: 700; }
+
+/* Keys */
+.keys { margin-top: clamp(48px, 7vw, 112px); }
+.kg { grid-column: 4 / 13; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 7fr); column-gap: var(--gx); margin-bottom: clamp(32px, 5vw, 72px); }
+.kg h3 { margin: 0; font-size: clamp(20px, 1.8vw, 28px); letter-spacing: -.03em; line-height: 1.1; }
+.kg dl { margin: 0; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 5fr); gap: 14px var(--gx); align-items: baseline; }
+.kg dt { font-weight: 700; font-size: clamp(20px, 2.3vw, 36px); letter-spacing: -.045em; line-height: 1.05; }
+.kg dt i { font-style: normal; font-weight: 400; color: var(--mute); font-size: .5em; letter-spacing: 0; padding: 0 .3em; }
+.kg dd { margin: 0; color: var(--mute); }
+.kg dd code { font: 700 1em var(--sans); color: var(--ink); }
+
+/* Privacy */
+.big { grid-column: 1 / 13; margin: clamp(32px, 4vw, 56px) 0 0; font-size: clamp(48px, 10.6vw, 170px); line-height: .86; letter-spacing: -.06em; font-weight: 700; overflow-wrap: anywhere; }
+.perm { margin-top: clamp(48px, 7vw, 112px); row-gap: clamp(24px, 3vw, 40px); }
+.perm .pl { grid-column: 4 / 13; margin: 0; max-width: 40rem; font-size: clamp(18px, 1.7vw, 26px); line-height: 1.3; letter-spacing: -.01em; }
+.pg { grid-column: 4 / 13; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 7fr); column-gap: var(--gx); }
+.pg h3 { margin: 0; font-size: clamp(20px, 1.8vw, 28px); letter-spacing: -.03em; line-height: 1.1; }
+.pg dl { margin: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 5fr); gap: 12px var(--gx); }
+.pg dt { font-weight: 700; }
+.pg dd { margin: 0; color: var(--mute); }
+
+/* Install */
+.steps { margin-top: clamp(48px, 7vw, 112px); list-style: none; padding: 0; margin-bottom: 0; row-gap: 32px; }
+.steps li { grid-column: span 3; }
+.steps li:nth-child(1) { grid-column: 4 / 7; }
+.steps li:nth-child(2) { grid-column: 7 / 10; margin-top: clamp(24px, 4vw, 64px); }
+.steps li:nth-child(3) { grid-column: 10 / 13; margin-top: clamp(48px, 8vw, 128px); }
+.steps li:nth-child(4) { grid-column: 7 / 13; margin-top: clamp(24px, 4vw, 64px); }
+.steps b { display: block; font-size: clamp(56px, 7vw, 110px); line-height: .8; letter-spacing: -.07em; margin-bottom: .22em; }
+.steps p { margin: 0; max-width: 20rem; }
+.steps code { font: 700 1em var(--sans); }
+.inst { grid-column: 4 / 13; margin-top: clamp(48px, 7vw, 96px); display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; }
+.inst p { margin: 0; color: var(--mute); max-width: 30rem; }
+
+/* Footer */
+footer { padding-top: clamp(96px, 14vw, 220px); padding-bottom: clamp(24px, 3vw, 40px); }
+.fw { margin: 0; font-size: 19.5vw; font-weight: 700; letter-spacing: -.075em; line-height: .78; margin-left: -.04em; }
+.fl { margin-top: clamp(32px, 5vw, 72px); row-gap: 16px; align-items: baseline; }
+.fl ul { grid-column: 1 / 7; list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 28px; font-weight: 700; }
+.fl a { text-decoration: none; }
+.fl ul a:hover, .fl .by a:hover { color: var(--red); }
+.fl .by { grid-column: 7 / 13; margin: 0; color: var(--mute); }
+.fl .by a { color: var(--ink); font-weight: 700; }
+
+@media (max-width: 860px) {
+  .top nav { grid-column: 5 / 13; }
+  .top nav a:not(.keep) { display: none; }
+  .top nav { justify-content: flex-end; }
+  .brand { grid-column: 1 / 5; }
+  .hero .side, .hero h1, .hero .sub, .hero .cta, .num, h2, .rest, .kg, .perm .pl, .pg, .inst, .feat:nth-child(n), .steps li:nth-child(n), .fl ul, .fl .by { grid-column: 1 / -1; }
+  .hero .side { grid-row: auto; padding: 0; }
+  .num { margin-bottom: 16px; }
+  .feat:nth-child(n) { margin-top: 0; margin-bottom: 40px; }
+  .steps li:nth-child(n) { margin-top: 0; }
+  .kg, .pg { grid-template-columns: 1fr; row-gap: 14px; }
+  .kg dl { grid-template-columns: 1fr; gap: 2px; }
+  .kg dd { margin-bottom: 14px; }
+  .pg dl { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+  .foot .opt { display: none; }
+  .cap { white-space: normal; margin-top: 12px; }
+  .fz { min-height: 124px; line-height: .9; }
+  .hero .g.lede { margin-top: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="top wrap">
+  <div class="g">
+    <a class="brand" href="#top"><img src="icon-128.png" alt="" width="28" height="28">TabNow</a>
+    <nav aria-label="Primary">
+      <a href="#demo">Demo</a>
+      <a href="#keys">Keys</a>
+      <a href="#privacy">Privacy</a>
+      <a class="keep" href="#install">Install</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<div class="hero wrap">
+  <p class="fz" id="hero-fz" aria-hidden="true"></p>
+  <p class="cap" id="hero-cap" aria-hidden="true"></p>
+  <div class="g lede">
+    <p class="side">Matched letters are red. Type in the demo and this line follows.</p>
+    <h1>Every tab, one keystroke away.</h1>
+    <p class="sub">TabNow is a fuzzy finder for your open tabs. Press <kbd class="mod">Ctrl+E</kbd>, type a few letters, hit Enter.</p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/gran-software-solutions/tabnow">Install</a>
+      <a class="lnk" href="#demo">Try the demo</a>
+    </div>
+  </div>
+</div>
+
+<section id="demo" class="wrap" aria-labelledby="demo-h">
+  <div class="g">
+    <p class="num" aria-hidden="true">01</p>
+    <h2 id="demo-h">Type. The tab finds you.</h2>
+  </div>
+  <div class="g">
+    <div class="rest">
+      <p class="fz ez" id="demo-fz" aria-hidden="true"></p>
+      <div class="nowon" aria-live="polite"><span>Current tab</span><strong id="cur-title"></strong><span id="cur-addr"></span><span class="win" id="cur-win"></span></div>
+      <div class="demo" id="panel">
+        <div class="q">
+          <span class="chip" id="chip"></span>
+          <input id="qi" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="list" aria-label="Search tabs" placeholder="Search tabs">
+          <span class="n" id="count"></span>
+          <div class="menu" id="menu" role="listbox" aria-label="Scopes" hidden></div>
+        </div>
+        <ul id="list" role="listbox" aria-label="Results"></ul>
+        <div class="foot">
+          <span><kbd>&uarr;</kbd><kbd>&darr;</kbd>navigate</span>
+          <span><kbd>&crarr;</kbd>open</span>
+          <span class="opt"><kbd class="mod">Ctrl</kbd><kbd>&#9003;</kbd>close tab</span>
+          <span class="opt"><kbd>/</kbd>scopes</span>
+          <span class="end"><kbd>esc</kbd>dismiss</span>
+        </div>
+      </div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <p class="hint">Try <b>gh pr</b>, <b>fig</b> or <b>/b</b>. <kbd class="mod">Ctrl+E</kbd> focuses the field from anywhere on this page.</p>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="wrap" aria-labelledby="feat-h">
+  <div class="g">
+    <p class="num" aria-hidden="true">02</p>
+    <h2 id="feat-h">Six things it does.</h2>
+  </div>
+  <div class="g feats">
+    <article class="feat"><h3>Find any tab in a keystroke.</h3><p><kbd class="mod">Ctrl+E</kbd>, a few letters, Enter. The previous tab is preselected, so Ctrl+E Enter flips back.</p></article>
+    <article class="feat"><h3>Fast and fuzzy.</h3><p><b>gh pr</b> finds the GitHub pull request. Words must all match. Domain ranks above title, title above the rest of the URL.</p></article>
+    <article class="feat"><h3>Keyboard only.</h3><p>Every action has a key. The mouse works too: hover selects, click switches.</p></article>
+    <article class="feat"><h3>Private by design.</h3><p>Zero network requests. Nothing to sign up for. About 600 lines of plain JavaScript, open source.</p></article>
+    <article class="feat"><h3>Every window.</h3><p>Tabs from all windows, most recently used first. Bookmarks and history too, when you turn them on.</p></article>
+    <article class="feat"><h3>Fits your browser.</h3><p>Light and dark. A glass panel with opacity, blur and size you set.</p></article>
+  </div>
+</section>
+
+<section id="keys" class="wrap" aria-labelledby="keys-h">
+  <div class="g">
+    <p class="num" aria-hidden="true">03</p>
+    <h2 id="keys-h">Keys.</h2>
+  </div>
+  <div class="g keys">
+    <div class="kg"><h3>Open</h3><dl>
+      <dt><span class="mod">Ctrl</span>+E</dt><dd>Open TabNow on the current page.</dd>
+      <dt>Alt+Z</dt><dd>Jump to the previous tab. No panel.</dd>
+    </dl></div>
+    <div class="kg"><h3>Move</h3><dl>
+      <dt>&uarr; &darr;<i>or</i>Ctrl+J / K</dt><dd>Move the selection. It wraps at both ends.</dd>
+      <dt>Enter</dt><dd>Switch to the selected tab, in any window.</dd>
+    </dl></div>
+    <div class="kg"><h3>Act</h3><dl>
+      <dt><span class="mod">Ctrl</span>+&#9003;</dt><dd>Close the selected tab and stay in the list.</dd>
+      <dt>/</dt><dd>Scopes: <code>/t</code> tabs, <code>/b</code> bookmarks, <code>/h</code> history.</dd>
+      <dt>Ctrl+U</dt><dd>Clear the search.</dd>
+      <dt>Alt+T</dt><dd>Switch light and dark.</dd>
+      <dt>Esc</dt><dd>Dismiss.</dd>
+    </dl></div>
+  </div>
+</section>
+
+<section id="privacy" class="wrap" aria-labelledby="priv-h">
+  <div class="g">
+    <p class="num" aria-hidden="true">04</p>
+    <h2 id="priv-h">Privacy</h2>
+    <p class="big">No network requests. Ever.</p>
+  </div>
+  <div class="g perm">
+    <p class="pl">No account, no analytics. Your tabs never leave the browser. These are the permissions it asks for, in plain words.</p>
+    <div class="pg"><h3>Always</h3><dl>
+      <dt>tabs</dt><dd>Read titles and addresses of open tabs, so you can search them.</dd>
+      <dt>activeTab</dt><dd>Show the panel on the page you are on.</dd>
+      <dt>scripting</dt><dd>Put that panel onto the page.</dd>
+      <dt>favicon</dt><dd>Show each site's icon, read from the browser.</dd>
+      <dt>storage</dt><dd>Remember your options.</dd>
+    </dl></div>
+    <div class="pg"><h3>Only if you ask</h3><dl>
+      <dt>bookmarks</dt><dd>When you turn on <code>/b</code>. The browser asks first.</dd>
+      <dt>history</dt><dd>When you turn on <code>/h</code>. The browser asks first.</dd>
+    </dl></div>
+  </div>
+</section>
+
+<section id="install" class="wrap" aria-labelledby="inst-h">
+  <div class="g">
+    <p class="num" aria-hidden="true">05</p>
+    <h2 id="inst-h">Install in four steps.</h2>
+  </div>
+  <ol class="g steps">
+    <li><b aria-hidden="true">1</b><p>Clone the repo.</p></li>
+    <li><b aria-hidden="true">2</b><p>Open <code>chrome://extensions</code> and turn on Developer mode.</p></li>
+    <li><b aria-hidden="true">3</b><p>Click Load unpacked and pick the <code>extension/</code> folder.</p></li>
+    <li><b aria-hidden="true">4</b><p>Press <kbd class="mod">Ctrl+E</kbd> on any page.</p></li>
+  </ol>
+  <div class="g">
+    <div class="inst">
+      <a class="btn" href="https://github.com/gran-software-solutions/tabnow">Install</a>
+      <p>Web Store coming soon. Needs Chrome 121+ or Edge, Brave, Opera, Vivaldi, Arc.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="wrap">
+  <p class="fw" aria-hidden="true">TabNow</p>
+  <div class="g fl">
+    <ul>
+      <li><a href="https://github.com/gran-software-solutions/tabnow">GitHub</a></li>
+      <li><a href="#">LinkedIn</a></li>
+      <li><a href="#">X</a></li>
+      <li><a href="#">Reddit</a></li>
+    </ul>
+    <p class="by">Made by <a href="https://www.gransoftware.de">GRAN Software Solutions</a>. MIT license.</p>
+  </div>
+</footer>
+
+<script>
+// ---- fuzzy.js, ported (match / search / parseScope) ----
+function match(q, text) {
+  const t = text.toLowerCase(), at = t.indexOf(q);
+  if (at >= 0) {
+    const start = at === 0 || /\W/.test(t[at - 1]);
+    return { score: 100 + q.length * 10 + (start ? 40 : 0) - at * 0.1, hits: [...Array(q.length)].map((_, k) => at + k) };
+  }
+  let score = 0, last = -2, k = 0; const hits = [];
+  for (let j = 0; j < t.length && k < q.length; j++) {
+    if (t[j] !== q[k]) continue;
+    score += j === last + 1 ? 5 : (j === 0 || /\W/.test(t[j - 1]) ? 3 : 1);
+    hits.push(j); last = j; k++;
+  }
+  return k === q.length && hits[k - 1] - hits[0] < q.length * 3 ? { score, hits } : null;
+}
+function search(items, q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return items.map(tab => ({ tab, th: [], uh: [] }));
+  const out = [];
+  for (const tab of items) {
+    let score = 0; const th = [], uh = [];
+    for (const w of words) {
+      const d = match(w, tab.disp.split("/")[0]), a = match(w, tab.title), b = match(w, tab.disp);
+      const best = Math.max((d?.score ?? -1) * 1.5, (a?.score ?? -1) * 1.2, b?.score ?? -1);
+      if (best < 0) { score = -1; break; }
+      score += best;
+      if (d && best === d.score * 1.5) uh.push(...d.hits);
+      else if (a && best === a.score * 1.2) th.push(...a.hits);
+      else uh.push(...b.hits);
+    }
+    if (score >= 0) out.push({ tab, score, th, uh });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+function hl(text, hits, from = 0) {
+  const set = new Set(hits), frag = document.createDocumentFragment();
+  let buf = "", on = false;
+  const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
+  [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
+  flush(); return frag;
+}
+const SCOPES = [
+  { code: "t", kind: "tab", name: "Tabs", note: "open tabs" },
+  { code: "b", kind: "bookmark", name: "Bookmarks", note: "opt-in" },
+  { code: "h", kind: "history", name: "History", note: "last 90 days, opt-in" }
+];
+function parseScope(v) {
+  const m = /^\/([a-z]) /i.exec(v), hit = m && SCOPES.find(s => s.code === m[1].toLowerCase());
+  if (hit) return { kind: hit.kind, rest: v.slice(3) };
+  const f = /^\/([a-z]*)$/i.exec(v)?.[1].toLowerCase();
+  return f === undefined ? {} : { menu: SCOPES.filter(s => s.code.startsWith(f) || s.kind.startsWith(f)) };
+}
+
+// ---- demo data (MRU order: first = current tab; win = which window) ----
+const T = (id, letter, win, title, disp) => ({ id, letter, win, title, disp, kind: "tab" });
+let tabs = [
+  T(1, "D", 1, "Q4 roadmap draft - Google Docs", "docs.google.com/document/d/1xQ9f/edit"),
+  T(2, "G", 1, "Add fuzzy ranking for domains by mira · Pull Request #482 · acme/web", "github.com/acme/web/pull/482"),
+  T(3, "L", 1, "ENG-2210 Checkout flow timeouts - Linear", "linear.app/acme/issue/ENG-2210"),
+  T(4, "F", 2, "Onboarding v3 - Figma", "figma.com/design/k3Xp9/Onboarding-v3"),
+  T(5, "M", 1, "Inbox (3) - dusan@acme.com - Gmail", "mail.google.com/mail/u/0/#inbox"),
+  T(6, "S", 2, "How to debounce in React hooks - Stack Overflow", "stackoverflow.com/questions/54666/debounce"),
+  T(7, "M", 1, "Array.prototype.flatMap() - JavaScript | MDN", "developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap"),
+  T(8, "Y", 2, "Lo-fi beats to refactor to - YouTube", "youtube.com/watch?v=jfKfPfyJRdk"),
+  T(9, "N", 1, "Meeting notes, 14.10. - Notion", "notion.so/acme/Meeting-notes-8f2c"),
+  T(10, "J", 1, "PLAT-931 Rotate API keys - Jira", "acme.atlassian.net/browse/PLAT-931"),
+  T(11, "A", 2, "EC2 Management Console", "eu-central-1.console.aws.amazon.com/ec2/home"),
+  T(12, "3", 1, "Acme - Dashboard", "localhost:3000/dashboard"),
+  T(13, "R", 1, "r/programming: Why your tests are slow", "reddit.com/r/programming/comments/1abx9k"),
+  T(14, "X", 1, "Home / X", "x.com/home"),
+  T(15, "in", 1, "Feed | LinkedIn", "linkedin.com/feed")
+];
+const B = (letter, title, disp, kind) => ({ id: disp, letter, win: 0, title, disp, kind });
+const bookmarks = [
+  B("T", "Tailwind CSS Documentation", "tailwindcss.com/docs", "bookmark"),
+  B("E", "Excalidraw - Collaborative whiteboard", "excalidraw.com", "bookmark"),
+  B("P", "PostgreSQL 16 Documentation", "postgresql.org/docs/16/index.html", "bookmark"),
+  B("C", "Can I use... Support tables for HTML5, CSS3", "caniuse.com", "bookmark")
+];
+const history = [
+  B("C", "Manifest V3 overview - Chrome for Developers", "developer.chrome.com/docs/extensions/develop/migrate", "history"),
+  B("n", "zod - npm", "npmjs.com/package/zod", "history"),
+  B("W", "Approximate string matching - Wikipedia", "en.wikipedia.org/wiki/Approximate_string_matching", "history"),
+  B("G", "Flights to Lisbon - Google Flights", "google.com/travel/flights", "history"),
+  B("V", "Vite | Next Generation Frontend Tooling", "vitejs.dev/guide", "history")
+];
+
+// ---- UI ----
+const $ = id => document.getElementById(id);
+const input = $("qi"), list = $("list"), menuEl = $("menu"), chip = $("chip");
+const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+document.querySelectorAll(".mod").forEach(k => { if (mac) k.textContent = k.textContent.replace("Ctrl", "Cmd"); });
+
+let scope = null, sel = 1, menuSel = 0, rows = [], curWin = 1, statusT;
+
+function say(msg) {
+  const el = $("status"); el.textContent = msg; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+}
+function fav(t, away) {
+  const f = document.createElement("span"); f.className = "fav" + (away ? " away" : ""); f.textContent = t.letter; return f;
+}
+function renderCurrent() {
+  const cur = tabs[0];
+  $("cur-title").textContent = cur.title.split(" - ")[0];
+  $("cur-addr").textContent = cur.disp.length > 44 ? cur.disp.slice(0, 43) + "..." : cur.disp;
+  $("cur-win").textContent = "Window " + curWin;
+}
+
+// Hero type: host + "/.../" + last segment of the selected result, matched letters red.
+const IDLE = { s: "github.com/…/pull", hits: [0, 3, 13, 14, 15, 16], cap: "Add fuzzy ranking for domains by mira · Pull Request #482", capHits: [] };
+function compact(r) {
+  const d = r.tab.disp, host = d.split("/")[0], cut = d.search(/[?#]/), clean = cut < 0 ? d : d.slice(0, cut);
+  const segs = clean.slice(host.length).split("/").filter(Boolean);
+  if (segs.length < 2) return { s: clean, hits: r.uh.filter(i => i < clean.length) };
+  const ls = clean.lastIndexOf("/") + 1, last = clean.slice(ls), pre = host + "/…/";
+  const hits = [];
+  for (const i of r.uh) { if (i < host.length) hits.push(i); else if (i >= ls && i < ls + last.length) hits.push(pre.length + i - ls); }
+  return { s: pre + last, hits };
+}
+function fit(el, len, mx) {
+  const W = el.clientWidth, cap = mx || Math.min(innerWidth * .2, 300);
+  el.style.fontSize = Math.max(Math.min(W / (len * .5), cap), innerWidth < 600 ? 62 : 40) + "px";
+}
+function setHero(c) {
+  const fz = $("hero-fz"), cap = $("hero-cap");
+  fz.replaceChildren(hl(c.s, c.hits)); fit(fz, c.s.length);
+  const ez = $("demo-fz"); ez.replaceChildren(hl(c.s, c.hits)); fit(ez, c.s.length, innerWidth < 600 ? 40 : 100);
+  cap.replaceChildren(hl(c.cap, c.capHits));
+}
+function updateHero() {
+  const q = input.value.trim();
+  if (!q && !scope) return setHero(IDLE);
+  const r = rows[sel];
+  if (!r) return setHero({ s: "no match", hits: [], cap: "Nothing matches “" + q + "”", capHits: [] });
+  const c = compact(r);
+  setHero({ s: c.s, hits: c.hits, cap: r.tab.title, capHits: r.th });
+}
+
+function currentItems() { return (scope || "tab") === "tab" ? tabs : scope === "bookmark" ? bookmarks : history; }
+function render() {
+  const v = input.value, p = scope ? {} : parseScope(v), open = !!p.menu;
+  menuEl.hidden = !open;
+  chip.textContent = scope ? SCOPES.find(s => s.kind === scope).name : "";
+  input.placeholder = scope ? "Search " + SCOPES.find(s => s.kind === scope).name.toLowerCase() : "Search tabs";
+  if (open) {
+    menuSel = Math.min(menuSel, Math.max(p.menu.length - 1, 0));
+    menuEl.replaceChildren(...p.menu.map((s, i) => {
+      const d = document.createElement("div"); d.role = "option"; d.className = i === menuSel ? "on" : "";
+      const c = document.createElement("code"); c.textContent = "/" + s.code;
+      const n = document.createElement("strong"); n.textContent = s.name;
+      const x = document.createElement("span"); x.textContent = s.note;
+      d.append(c, n, x);
+      d.addEventListener("mousedown", e => { e.preventDefault(); pickScope(s); });
+      return d;
+    }));
+  }
+  rows = search(currentItems(), open ? "" : v);
+  if (scope && scope !== "tab") rows = rows.slice(0, 8);
+  sel = Math.min(sel, Math.max(rows.length - 1, 0));
+  list.replaceChildren();
+  if (!rows.length) {
+    const li = document.createElement("li"); li.className = "empty"; li.textContent = "No match for “" + v + "”";
+    list.append(li);
+  }
+  rows.forEach((r, i) => {
+    const t = r.tab, li = document.createElement("li"); li.role = "option"; li.id = "r" + i;
+    if (i === sel) li.className = "on";
+    const away = t.kind === "tab" && t.win !== curWin;
+    const txt = document.createElement("div"); txt.className = "txt";
+    const title = document.createElement("div"); title.className = "t"; title.append(hl(t.title, r.th));
+    const u = document.createElement("div"); u.className = "u";
+    const host = t.disp.split("/")[0], path = t.disp.slice(host.length);
+    const h = document.createElement("span"); h.className = "host"; h.append(hl(host, r.uh));
+    const pa = document.createElement("span"); pa.append(hl(path, r.uh, host.length));
+    u.append(h, pa); txt.append(title, u);
+    const go = document.createElement("span"); go.className = "go"; go.textContent = "↵";
+    li.append(fav(t, away), txt, go);
+    if (away) li.title = "In another window";
+    li.addEventListener("mouseenter", () => setSel(i));
+    li.addEventListener("click", () => act(i));
+    list.append(li);
+  });
+  $("count").textContent = rows.length + (rows.length === 1 ? " result" : " results");
+  if (rows.length) input.setAttribute("aria-activedescendant", "r" + sel); else input.removeAttribute("aria-activedescendant");
+  updateHero();
+}
+function setSel(i) {
+  if (i === sel) return;
+  list.children[sel]?.classList.remove("on"); sel = i; list.children[sel]?.classList.add("on");
+  input.setAttribute("aria-activedescendant", "r" + sel);
+  updateHero();
+}
+// Scroll only inside the list, and only while the field has focus.
+function keepInView() {
+  const li = list.children[sel]; if (!li || document.activeElement !== input) return;
+  if (li.offsetTop < list.scrollTop) list.scrollTop = li.offsetTop;
+  else if (li.offsetTop + li.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = li.offsetTop + li.offsetHeight - list.clientHeight;
+}
+function move(d) { if (!rows.length) return; setSel((sel + d + rows.length) % rows.length); keepInView(); }
+function pickScope(s) { scope = s.kind; input.value = ""; sel = 0; menuSel = 0; render(); input.focus({ preventScroll: true }); }
+function clearAll() { scope = null; input.value = ""; sel = tabs.length > 1 ? 1 : 0; menuSel = 0; render(); list.scrollTop = 0; }
+const short = (t, n) => t.title.split(/ [-|·] /)[0].slice(0, n);
+function act(i) {
+  const r = rows[i]; if (!r) return;
+  const t = r.tab;
+  if (t.kind === "tab") {
+    tabs = [t, ...tabs.filter(x => x !== t)]; curWin = t.win;
+    say("Switched to " + short(t, 48) + (t.win === 1 ? "." : " (window 2)."));
+  } else say((t.kind === "bookmark" ? "Opened bookmark: " : "Opened from history: ") + short(t, 40) + ".");
+  renderCurrent(); clearAll(); input.focus({ preventScroll: true });
+}
+function removeSel() {
+  const r = rows[sel]; if (!r || r.tab.kind !== "tab") return;
+  if (tabs.length < 2) { say("That is the last tab. Keep it."); return; }
+  tabs = tabs.filter(x => x !== r.tab);
+  say("Closed " + short(r.tab, 40) + ".");
+  renderCurrent(); render(); keepInView();
+}
+
+input.addEventListener("input", () => {
+  if (!scope) { const p = parseScope(input.value); if (p.kind) { scope = p.kind; input.value = p.rest; } }
+  sel = 0; menuSel = 0; render(); list.scrollTop = 0;
+});
+input.addEventListener("keydown", e => {
+  const k = e.key, ctrl = e.ctrlKey || e.metaKey, menu = !menuEl.hidden;
+  const down = k === "ArrowDown" || (ctrl && k.toLowerCase() === "j"), up = k === "ArrowUp" || (ctrl && k.toLowerCase() === "k");
+  if (down || up) {
+    e.preventDefault();
+    if (menu) { const n = menuEl.children.length; if (n) { menuSel = (menuSel + (down ? 1 : -1) + n) % n; render(); } }
+    else move(down ? 1 : -1);
+  } else if (k === "Enter" || (k === "Tab" && menu)) {
+    e.preventDefault();
+    if (menu) { const s = parseScope(input.value).menu[menuSel]; if (s) pickScope(s); } else act(sel);
+  } else if (ctrl && k === "Backspace") { e.preventDefault(); removeSel(); }
+  else if (ctrl && k.toLowerCase() === "u") { e.preventDefault(); clearAll(); }
+  else if (k === "Escape") { e.preventDefault(); if (input.value || scope) clearAll(); else input.blur(); }
+  else if (k === "Backspace" && !input.value && scope) { e.preventDefault(); scope = null; sel = 0; render(); }
+});
+input.addEventListener("focus", keepInView);
+// Ctrl+E / Cmd+E anywhere on the page focuses the demo (key press only, never on load).
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "e") {
+    e.preventDefault();
+    const y = $("panel").getBoundingClientRect().top + scrollY - Math.max(24, (innerHeight - $("panel").offsetHeight) / 2);
+    scrollTo({ top: y, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    input.focus({ preventScroll: true }); input.select();
+  }
+});
+addEventListener("resize", updateHero);
+renderCurrent(); clearAll();
+</script>
+</body>
+</html>

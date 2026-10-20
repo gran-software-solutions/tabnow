@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TabNow - every tab, one keystroke away</title>
+<meta name="description" content="TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="icon-128.png">
+<style>
+/* Direction G. Graphite, one accent (#1f5fd6). Radii: 16 surfaces, 8 controls, 6 keycaps (same as the extension). */
+:root {
+  --bg: #0d0f12; --s1: #13161b; --s2: #191d23; --line: rgb(255 255 255 / .07); --line2: rgb(255 255 255 / .13);
+  --fg: #e9ebef; --mut: #a3aab6; --fai: #7c8494; --acc: #1f5fd6; --hit: #9cbcff;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --ease: cubic-bezier(.32, .72, 0, 1); --wrap: 1180px;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; font: 16px/1.6 var(--sans); color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, p { margin: 0; }
+:focus-visible { outline: 2px solid var(--hit); outline-offset: 3px; border-radius: 6px; }
+.wrap { width: min(var(--wrap), 100% - 48px); margin-inline: auto; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- keycaps ---------- */
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; font: 500 11.5px/1 var(--sans); color: var(--fg); border-radius: 6px;
+  background: rgb(255 255 255 / .06); box-shadow: inset 0 1px 0 rgb(255 255 255 / .09), inset 0 -1px 0 rgb(0 0 0 / .35), 0 0 0 1px var(--line2); }
+.keys { display: inline-flex; gap: 4px; align-items: center; vertical-align: middle; }
+.keys.lg kbd { min-width: 32px; height: 32px; padding: 0 10px; font-size: 13.5px; border-radius: 8px; }
+
+/* ---------- nav ---------- */
+.nav { display: flex; align-items: center; height: 64px; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; }
+.brand img { width: 26px; height: 26px; border-radius: 6px; display: block; }
+.nav ul { display: flex; gap: 4px; list-style: none; margin: 0 0 0 12px; padding: 0; }
+.nav ul a { display: block; padding: 6px 12px; border-radius: 8px; font-size: 14px; color: var(--mut); transition: color .25s var(--ease), background .25s var(--ease); }
+.nav ul a:hover { color: var(--fg); background: rgb(255 255 255 / .05); }
+.nav .gh { margin-left: auto; }
+
+/* ---------- buttons ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 8px; font: 500 15px/1 var(--sans); white-space: nowrap; cursor: pointer; border: 0;
+  transition: transform .3s var(--ease), background .25s var(--ease), box-shadow .3s var(--ease); }
+.btn:active { transform: translateY(1px) scale(.985); }
+.btn.pri { background: var(--acc); color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), 0 0 0 1px rgb(10 40 110 / .6), 0 10px 24px -10px rgb(31 95 214 / .7); }
+.btn.pri:hover { background: #2a6be0; box-shadow: inset 0 1px 0 rgb(255 255 255 / .28), 0 0 0 1px rgb(10 40 110 / .6), 0 14px 30px -10px rgb(31 95 214 / .85); }
+.btn.sec { color: var(--fg); background: transparent; box-shadow: inset 0 0 0 1px var(--line2); }
+.btn.sec:hover { background: rgb(255 255 255 / .05); }
+.btn.sm { height: 34px; padding: 0 14px; font-size: 14px; }
+.btn .arr { transition: transform .35s var(--ease); }
+.btn:hover .arr { transform: translateX(3px); }
+
+/* ---------- hero ---------- */
+.hero { padding-top: 40px; }
+h1 { font-size: clamp(36px, 8.6vw, 68px); line-height: 1.02; font-weight: 600; letter-spacing: -.04em; max-width: 14em; text-wrap: balance; }
+.sub { margin-top: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
+.sub p { font-size: 18px; line-height: 1.5; color: var(--mut); max-width: 36em; }
+.sub .cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.sub p kbd, .lead kbd { margin: 0 1px; }
+
+/* the stage: a browser window with the real panel on top */
+.stage { position: relative; margin-top: 40px; border-radius: 16px; overflow: hidden; background: var(--s1); isolation: isolate;
+  box-shadow: 0 0 0 1px var(--line2), inset 0 1px 0 rgb(255 255 255 / .06), 0 50px 100px -30px rgb(0 0 0 / .8), 0 30px 60px -40px rgb(10 30 80 / .5); }
+.chrome { display: flex; align-items: flex-end; gap: 2px; height: 40px; padding: 8px 14px 0; background: #0a0b0e; overflow: hidden; }
+.dots { display: flex; gap: 7px; align-self: center; margin-right: 14px; padding-bottom: 8px; }
+.dots i { width: 11px; height: 11px; border-radius: 50%; background: rgb(255 255 255 / .12); }
+.tb2 { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; min-width: 0; flex: 0 1 190px; border-radius: 8px 8px 0 0; font-size: 12px; color: var(--fai); white-space: nowrap; transition: background .3s var(--ease), color .3s var(--ease); }
+.tb2 span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.tb2.on { background: var(--s2); color: var(--fg); }
+.bar { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; background: var(--s2); box-shadow: 0 1px 0 var(--line); }
+.bar .nv { display: flex; gap: 6px; color: var(--fai); font-size: 14px; }
+.addr { flex: 1; max-width: 640px; margin-inline: auto; height: 28px; padding: 0 14px; display: flex; align-items: center; border-radius: 8px; background: rgb(255 255 255 / .05); font-size: 12.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pgwrap { position: relative; height: 560px; background: #1a1e25; overflow: hidden; }
+.pg { padding: 0 44px 30px; animation: pgin .5s var(--ease); }
+.pg .band { display: flex; align-items: center; gap: 14px; height: 84px; margin: 0 -44px 34px; padding: 0 44px; background: color-mix(in srgb, var(--tc) 46%, #1a1e25); }
+.pg .band .fav { width: 28px; height: 28px; } .pg .band .fav b { width: 28px; height: 28px; font-size: 14px; border-radius: 7px; }
+.pg .host { font-size: 13px; color: rgb(255 255 255 / .7); }
+.pg h2 { font-size: 30px; line-height: 1.15; letter-spacing: -.025em; font-weight: 600; max-width: 22em; color: #dfe2e8; }
+.pg .lines { display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px; margin-top: 30px; }
+.pg .lines div { display: grid; gap: 12px; align-content: start; }
+.pg .lines i { display: block; height: 10px; border-radius: 5px; background: rgb(255 255 255 / .07); }
+.pg .lines i.t { height: 16px; width: 40%; background: rgb(255 255 255 / .12); margin-top: 10px; }
+.pg .block { height: 120px; border-radius: 8px; background: rgb(255 255 255 / .05); }
+.pg .accent { height: 3px; width: 56px; border-radius: 2px; margin-bottom: 22px; }
+@keyframes pgin { from { opacity: .35; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ---------- the panel: mirrors extension/search.css (dark theme) ---------- */
+.ov { --fg: #eceef2; --muted: #a0a7b4; --faint: #6d7585; --line: #2c313b; --hit: #9cbcff; --alpha: .86; --blurpx: 24px;
+  --solid: #1b1f27; --glass: rgb(22 25 31 / var(--alpha)); --hair: rgb(255 255 255 / .08); --rb: var(--solid); color-scheme: dark;
+  --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1.5' y='1.5' width='21' height='21' rx='3' fill='none' stroke='%239cbcff' stroke-width='3'/%3E%3Crect x='1.5' y='1.5' width='21' height='6' fill='%239cbcff'/%3E%3C/svg%3E");
+  height: 100%; display: flex; flex-direction: column; background: var(--glass); border-radius: 16px; overflow: hidden; color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: normal;
+  backdrop-filter: blur(var(--blurpx)) saturate(1.25); -webkit-backdrop-filter: blur(var(--blurpx)) saturate(1.25); box-shadow: inset 0 0 0 1px var(--hair); }
+.ov.light { --fg: #14171d; --muted: #5f6672; --faint: #9ba1ac; --line: #e4e7ec; --hit: #1f5fd6; --solid: #fff; --glass: rgb(255 255 255 / var(--alpha)); --hair: rgb(15 20 30 / .07); color-scheme: light;
+  --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1.5' y='1.5' width='21' height='21' rx='3' fill='none' stroke='%231f5fd6' stroke-width='3'/%3E%3Crect x='1.5' y='1.5' width='21' height='6' fill='%231f5fd6'/%3E%3C/svg%3E"); }
+.ov input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; padding: 0; }
+.ov input::placeholder { color: var(--faint); opacity: 1; }
+.ov ul { list-style: none; margin: 0; padding: 6px; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / .14) transparent; position: relative; }
+.ov li { cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; --rb: var(--solid); }
+.ov li.on { background: color-mix(in srgb, var(--hit) 12%, transparent); --rb: color-mix(in srgb, var(--hit) 12%, var(--solid)); }
+.ov li.on .t { color: var(--hit); }
+.go { flex: none; visibility: hidden; color: var(--hit); }
+li.on .go { visibility: visible; }
+.ov mark { background: color-mix(in srgb, var(--hit) 28%, transparent); color: var(--fg); font-weight: 600; border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.ov li.on mark { background: color-mix(in srgb, var(--hit) 38%, transparent); }
+.trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.empty { padding: 18px; color: var(--muted); cursor: default !important; }
+.q { position: relative; display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--hair); font-size: 20px; font-weight: 300; cursor: text; }
+.n { flex: none; font-size: 12px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+.q > svg { flex: none; color: var(--muted); }
+.fav { flex: none; position: relative; width: 16px; height: 16px; }
+.fav b { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; font: 700 9.5px/1 var(--sans); color: #fff; text-transform: none; }
+.fav.away::after { content: ""; position: absolute; right: -6px; bottom: -5px; width: 13px; height: 11px; border-radius: 2.5px; background: var(--win) center / 100% 100% no-repeat var(--rb); box-shadow: 0 0 0 1.5px var(--rb); }
+.t { font-size: 14px; }
+.u { font-size: 12px; }
+.u .host { color: var(--fg); opacity: .78; }
+.u .path { color: var(--faint); }
+.txt { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.foot { display: flex; align-items: center; gap: 16px; padding: 9px 16px; border-top: 1px solid var(--hair); font-size: 11.5px; color: var(--muted); opacity: .9; white-space: nowrap; overflow: hidden; }
+.foot .k { display: inline-flex; align-items: center; gap: 4px; }
+.foot .k i { font-style: normal; margin-left: 2px; }
+.foot .end { margin-left: auto; }
+.ov kbd { min-width: 20px; height: 20px; padding: 0 6px; font: 500 11px/1 var(--sans); word-spacing: 2px; opacity: .75; background: color-mix(in srgb, var(--fg) 7%, transparent); box-shadow: none; }
+.chip { flex: none; display: none; align-items: center; height: 28px; padding: 0 10px; border-radius: 7px; font: 500 14px var(--sans); color: var(--hit); background: color-mix(in srgb, var(--hit) 14%, transparent); }
+.chip.show { display: inline-flex; }
+.menu { position: absolute; left: 44px; top: calc(100% + 4px); z-index: 2; min-width: 280px; padding: 5px; border-radius: 10px; background: var(--solid); box-shadow: 0 12px 40px rgb(0 0 0 / .35), inset 0 0 0 1px var(--hair); font-size: 13px; font-weight: 400; }
+.menu[hidden] { display: none; }
+.menu div { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 7px; cursor: pointer; }
+.menu div.on { background: color-mix(in srgb, var(--hit) 12%, transparent); }
+.menu code { font: 600 12px var(--mono); color: var(--hit); min-width: 22px; }
+.menu span { color: var(--muted); margin-left: auto; }
+.menu.in { position: static; min-width: 0; margin: 6px; box-shadow: none; background: none; padding: 0; }
+
+/* hero panel placement and states */
+.field { position: relative; flex: 1; min-width: 0; display: grid; }
+.field > * { grid-area: 1 / 1; }
+.ghost { visibility: hidden; white-space: pre; overflow: hidden; }
+.ghost::after { content: ""; display: none; width: 2px; height: 1.12em; margin-left: 1px; vertical-align: -.2em; background: var(--hit); visibility: visible; border-radius: 1px; animation: blink 1.1s steps(1) infinite; }
+.q.auto:not(:focus-within) .ghost::after { display: inline-block; }
+@keyframes blink { 50% { opacity: 0; } }
+.panel { position: absolute; top: 28px; left: 0; right: 0; margin-inline: auto; width: min(640px, 100% - 24px); height: 480px; border-radius: 16px; z-index: 1;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / .1), 0 40px 90px -20px rgb(0 0 0 / .75), 0 12px 32px -12px rgb(0 0 0 / .6);
+  transition: opacity .45s var(--ease), transform .55s var(--ease), box-shadow .3s var(--ease); }
+.panel:focus-within { box-shadow: 0 0 0 1px rgb(156 188 255 / .45), 0 40px 90px -20px rgb(0 0 0 / .75), 0 12px 32px -12px rgb(0 0 0 / .6); }
+.panel .ov { border-radius: 16px; }
+.stage[data-open="false"] .panel { opacity: 0; transform: translateY(10px) scale(.985); pointer-events: none; }
+.stagebody { position: relative; }
+.reopen { position: absolute; left: 50%; top: 50%; translate: -50% -50%; z-index: 1; display: none; align-items: center; gap: 10px; height: 40px; padding: 0 16px; border: 0; border-radius: 8px; color: var(--fg); cursor: pointer; font: 14px var(--sans);
+  background: rgb(20 23 28 / .82); backdrop-filter: blur(14px); box-shadow: 0 0 0 1px var(--line2), 0 16px 40px -12px rgb(0 0 0 / .7); }
+.stage[data-open="false"][data-idle="true"] .reopen { display: inline-flex; }
+.toast { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; z-index: 2; padding: 8px 14px; border-radius: 8px; font-size: 13px; color: var(--fg); white-space: nowrap; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis;
+  background: rgb(20 23 28 / .86); backdrop-filter: blur(14px); box-shadow: 0 0 0 1px var(--line2), 0 12px 30px -10px rgb(0 0 0 / .7); opacity: 0; transform: translateY(8px); transition: opacity .35s var(--ease), transform .4s var(--ease); pointer-events: none; }
+.toast.show { opacity: 1; transform: none; }
+.under { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; margin-top: 16px; font-size: 13.5px; color: var(--fai); }
+.under b { font-weight: 400; color: var(--mut); }
+
+/* ---------- sections ---------- */
+section { padding: 128px 0 0; }
+h2.big { font-size: clamp(30px, 5.4vw, 44px); line-height: 1.06; font-weight: 600; letter-spacing: -.035em; text-wrap: balance; max-width: 16em; }
+.lead { margin-top: 16px; font-size: 17px; color: var(--mut); max-width: 36em; line-height: 1.55; }
+
+/* features: asymmetric bento, five cells */
+.bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-top: 56px; }
+.cell { position: relative; display: flex; flex-direction: column; border-radius: 16px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgb(255 255 255 / .05); overflow: hidden; }
+.cell .copy { padding: 28px 28px 0; }
+.cell h3 { font-size: 18px; font-weight: 600; letter-spacing: -.015em; line-height: 1.3; }
+.cell p { margin-top: 8px; font-size: 15px; line-height: 1.55; color: var(--mut); max-width: 34em; }
+code.q2 { font: 500 .92em var(--mono); color: var(--fg); background: rgb(255 255 255 / .07); padding: 1px 6px; border-radius: 5px; }
+.cell .demo { margin-top: auto; padding: 28px; }
+.c7 { grid-column: span 7; } .c5 { grid-column: span 5; } .c12 { grid-column: span 12; }
+.cell.dots { background-image: radial-gradient(rgb(255 255 255 / .06) 1px, transparent 1px); background-size: 14px 14px; background-color: var(--s1); }
+.cell.tint { background: color-mix(in srgb, var(--acc) 9%, var(--s1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 32%, transparent), inset 0 1px 0 rgb(255 255 255 / .05); }
+.mini { height: auto; --alpha: 1; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--hair), 0 16px 36px -18px rgb(0 0 0 / .8); backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--solid); }
+.mini .q { padding: 12px 16px; font-size: 16px; }
+.mini .typed { white-space: pre; }
+.mini ul { flex: none; overflow: visible; padding: 5px; }
+.mini li { cursor: default; padding: 7px 10px; }
+.pair { display: flex; gap: 12px; flex-wrap: wrap; }
+.pair > * { flex: 1 1 220px; min-width: 0; }
+.flip { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 18px; font-size: 13px; color: var(--fai); }
+.tag { display: inline-block; margin-left: auto; padding: 1px 8px; border-radius: 5px; font-size: 11.5px; color: var(--mut); background: rgb(255 255 255 / .06); white-space: nowrap; }
+
+/* options cell: live sliders on a frosted mini panel */
+.tune { display: grid; grid-template-columns: minmax(0, 300px) 1fr; gap: 40px; padding: 28px; align-items: center; }
+.tune .copy { padding: 0; }
+.ctl { margin-top: 24px; display: grid; gap: 16px; }
+.ctl label { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 13.5px; color: var(--mut); }
+.ctl output { font-variant-numeric: tabular-nums; color: var(--fg); }
+.ctl input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--acc); margin: 0; }
+.seg { display: inline-flex; padding: 3px; border-radius: 8px; background: rgb(255 255 255 / .06); box-shadow: inset 0 0 0 1px var(--line); width: max-content; }
+.seg button { height: 28px; padding: 0 14px; border: 0; border-radius: 6px; background: none; color: var(--mut); font: 500 13px var(--sans); cursor: pointer; transition: background .25s var(--ease), color .25s var(--ease); }
+.seg button[aria-pressed=true] { background: rgb(255 255 255 / .12); color: var(--fg); }
+.backdrop { position: relative; border-radius: 12px; overflow: hidden; height: 250px; background: #e6e9ef; color: #1c2230; padding: 22px 26px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .08); }
+.backdrop h4 { margin: 0; font-size: 34px; letter-spacing: -.03em; line-height: 1.05; }
+.backdrop p { color: #3b4458; font-size: 14px; max-width: 30em; margin-top: 10px; }
+.backdrop .bar2 { display: flex; gap: 8px; margin-top: 16px; }
+.backdrop .bar2 i { height: 26px; width: 84px; border-radius: 6px; background: #1f5fd6; } .backdrop .bar2 i + i { background: #c8cfdb; width: 60px; }
+.backdrop .mini { position: absolute; left: 50%; top: 62px; width: min(360px, 100% - 32px); translate: -50% 0; --blurpx: 24px; --alpha: .86; backdrop-filter: blur(var(--blurpx)) saturate(1.25); -webkit-backdrop-filter: blur(var(--blurpx)) saturate(1.25); background: var(--glass); box-shadow: 0 0 0 1px var(--hair), 0 24px 50px -16px rgb(10 20 40 / .5); }
+
+/* keyboard */
+.kgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 56px 48px; margin-top: 56px; }
+.kgrid h3 { font-size: 14px; font-weight: 600; color: var(--fai); letter-spacing: .01em; margin-bottom: 20px; }
+.kgrid dl { margin: 0; display: grid; gap: 22px; }
+.kgrid dt { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.kgrid dt .or { font-size: 12.5px; color: var(--fai); }
+.kgrid dd { margin: 8px 0 0; font-size: 15px; color: var(--mut); line-height: 1.5; }
+.note { margin-top: 48px; font-size: 14px; color: var(--fai); }
+
+/* privacy: manifest */
+.manifest { margin-top: 48px; max-width: 800px; border-radius: 16px; background: #0a0c0f; box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgb(255 255 255 / .05); font: 13.5px/1.9 var(--mono); padding: 24px 28px; color: var(--mut); overflow-x: auto; }
+.manifest .h { color: var(--fai); }
+.manifest .gap { height: 14px; }
+.manifest .r { display: grid; grid-template-columns: 110px 1fr; gap: 0 24px; padding-left: 20px; white-space: nowrap; }
+.manifest .r b { font-weight: 500; color: var(--hit); }
+.facts { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 14px; color: var(--mut); }
+
+/* install */
+.inst { display: grid; grid-template-columns: 5fr 7fr; gap: 64px; align-items: start; }
+.inst > * { min-width: 0; }
+.inst .cta { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; }
+.inst .cta span { font-size: 14px; color: var(--fai); }
+.term { border-radius: 16px; background: #0a0c0f; box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgb(255 255 255 / .05); overflow: hidden; }
+.term .top { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 10px 18px; font-size: 12.5px; color: var(--fai); box-shadow: 0 1px 0 var(--line); }
+.term pre { margin: 0; padding: 16px 18px; font: 13.5px/1.6 var(--mono); color: var(--fg); overflow-x: auto; }
+.term pre i { font-style: normal; color: var(--fai); }
+.steps { list-style: none; margin: 28px 0 0; padding: 0; counter-reset: s; display: grid; gap: 18px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 12px; font-size: 15px; color: var(--mut); line-height: 1.5; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 24px; height: 24px; margin-top: 0; border-radius: 6px; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line2); }
+.steps b { color: var(--fg); font-weight: 500; }
+.steps code { font: .92em var(--mono); color: var(--fg); }
+
+footer { margin-top: 144px; padding: 40px 0 48px; box-shadow: 0 -1px 0 var(--line); }
+.foot2 { display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: center; justify-content: space-between; font-size: 14px; color: var(--fai); }
+.foot2 nav { display: flex; gap: 22px; flex-wrap: wrap; }
+.foot2 nav a { color: var(--mut); transition: color .2s; } .foot2 nav a:hover, .foot2 .by a:hover { color: var(--fg); }
+.foot2 .by a { color: var(--mut); text-decoration: underline; text-decoration-color: var(--line2); text-underline-offset: 3px; }
+
+/* reveal on scroll */
+.js .rv { opacity: 0; transform: translateY(14px); transition: opacity .8s var(--ease), transform .9s var(--ease); }
+.js .rv.in { opacity: 1; transform: none; }
+
+@media (max-width: 960px) {
+  .nav ul { display: none; }
+  .bento > * { grid-column: 1 / -1; }
+  .tune { grid-template-columns: 1fr; gap: 28px; }
+  .kgrid { grid-template-columns: 1fr 1fr; }
+  .inst { grid-template-columns: 1fr; gap: 40px; }
+}
+@media (max-width: 640px) {
+  .wrap { width: calc(100% - 32px); }
+  section { padding-top: 88px; }
+  .hero { padding-top: 24px; }
+  .sub p { font-size: 17px; }
+  .sub .cta { width: 100%; } .sub .cta .btn { flex: 1; }
+  .stage { margin-top: 28px; border-radius: 14px; }
+  .dots { display: none; }
+  .tb2 { flex: 0 1 130px; } .tb2.on { order: -1; }
+  .bar .nv { display: none; }
+  .pgwrap { height: 498px; }
+  .pg { padding: 0 18px 22px; } .pg .band { height: 60px; margin: 0 -18px 24px; padding: 0 18px; } .pg h2 { font-size: 22px; } .pg .lines { grid-template-columns: 1fr; }
+  .panel { top: 14px; height: 440px; }
+  .q { padding: 14px 16px; font-size: 18px; }
+  .foot .opt { display: none; }
+  .cell .copy, .cell .demo { padding-inline: 20px; } .cell .demo { padding-block: 20px 20px; } .tune { padding: 20px; }
+  .backdrop { height: 330px; padding: 18px; } .backdrop h4 { font-size: 26px; } .backdrop .mini { top: 108px; }
+  .kgrid { grid-template-columns: 1fr; gap: 40px; margin-top: 40px; }
+  .manifest { padding: 18px; font-size: 12.5px; } .manifest .r { grid-template-columns: 84px 1fr; gap: 0 12px; }
+  .manifest .r span { white-space: normal; }
+  .manifest .r { white-space: normal; }
+  footer { margin-top: 96px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+  .js .rv { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+<header class="wrap nav">
+  <a class="brand" href="#top" aria-label="TabNow home"><img src="icon-128.png" alt="" width="26" height="26">TabNow</a>
+  <ul>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#keys">Keys</a></li>
+    <li><a href="#privacy">Privacy</a></li>
+    <li><a href="#install">Install</a></li>
+  </ul>
+  <a class="btn sec sm gh" href="https://github.com/gran-software-solutions/tabnow">GitHub</a>
+</header>
+
+<main id="top">
+<div class="wrap hero">
+  <h1>Every tab, one keystroke away.</h1>
+  <div class="sub">
+    <p>A fuzzy finder for your open tabs. Press <span class="keys"><kbd class="mod">Ctrl</kbd><kbd>E</kbd></span>, type a few letters, hit <kbd>Enter</kbd>.</p>
+    <div class="cta">
+      <a class="btn pri" href="https://github.com/gran-software-solutions/tabnow">Install from GitHub <span class="arr" aria-hidden="true">&rarr;</span></a>
+      <a class="btn sec" href="#features">See how it works</a>
+    </div>
+  </div>
+
+  <div class="stage" id="stage" data-open="true" data-idle="false">
+    <div class="chrome" id="chrome" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span id="strip" style="display:contents"></span></div>
+    <div class="bar" aria-hidden="true"><span class="nv"><span>&larr;</span><span>&rarr;</span></span><div class="addr" id="addr"></div></div>
+    <div class="pgwrap">
+      <div class="pg" id="pg" aria-hidden="true"></div>
+    </div>
+    <div class="panel" id="panelBox">
+      <div class="ov" id="ov" role="dialog" aria-label="TabNow live demo">
+        <label class="q" id="qrow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <span id="chip" class="chip"></span>
+          <span class="field"><span class="ghost" id="ghost" aria-hidden="true"></span><input id="qi" autocomplete="off" autocapitalize="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="list" aria-label="Search tabs" placeholder="Search tabs, or type / for more"></span>
+          <span class="n" id="count" aria-live="polite"></span>
+          <div class="menu" id="menu" role="listbox" hidden></div>
+        </label>
+        <ul id="list" role="listbox" aria-label="Tabs"></ul>
+        <div class="foot">
+          <span class="k"><kbd>&uarr; &darr;</kbd><kbd>ctrl j k</kbd><i>navigate</i></span>
+          <span class="k"><kbd>&crarr;</kbd><i>open</i></span>
+          <span class="k opt"><kbd>/</kbd><i>scopes</i></span>
+          <span class="k opt"><kbd class="mod">ctrl</kbd><kbd>&#9003;</kbd><i>close tab</i></span>
+          <span class="k end"><kbd>esc</kbd><i>dismiss</i></span>
+        </div>
+      </div>
+    </div>
+    <button class="reopen" id="reopen" type="button">Open TabNow <span class="keys"><kbd class="mod">Ctrl</kbd><kbd>E</kbd></span></button>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <div class="under"><span><b>Live.</b> Type, use the arrow keys, or press <kbd class="mod">Ctrl</kbd> <kbd>E</kbd> from anywhere on this page.</span><span>Chrome 121+, Edge, Brave, Opera, Vivaldi, Arc. MIT licensed.</span></div>
+</div>
+
+<section id="features" class="wrap">
+  <h2 class="big rv">Small, fast, out of the way.</h2>
+  <div class="bento">
+    <article class="cell c7 rv">
+      <div class="copy">
+        <h3>Fuzzy, domain first</h3>
+        <p><code class="q2">gh pr</code> finds the GitHub pull request. Words can come in any order. Domain ranks above title, title above the rest of the URL, and matched letters are highlighted.</p>
+      </div>
+      <div class="demo">
+        <div class="ov mini">
+          <div class="q"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="typed">gh pr</span><span style="flex:1"></span><span class="n" data-count></span></div>
+          <ul data-snip="gh pr" data-from="tabs"></ul>
+        </div>
+      </div>
+    </article>
+    <article class="cell c5 dots rv">
+      <div class="copy">
+        <h3>Flip back with two keys</h3>
+        <p>The previous tab is already selected. <span class="keys"><kbd class="mod">Ctrl</kbd><kbd>E</kbd></span> then <kbd>Enter</kbd> takes you back. <span class="keys"><kbd>Alt</kbd><kbd>Z</kbd></span> does it without opening anything.</p>
+      </div>
+      <div class="demo">
+        <div class="ov mini">
+          <div class="q"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="typed" style="color:var(--faint)">Search tabs, or type / for more</span></div>
+          <ul data-snip="" data-from="tabs" data-ids="1,2,3" data-sel="1"></ul>
+        </div>
+      </div>
+    </article>
+    <article class="cell c5 rv">
+      <div class="copy">
+        <h3>Every window</h3>
+        <p>All open tabs in all windows, most recently used first. A tab in another window gets a small window badge, and Enter focuses that window.</p>
+      </div>
+      <div class="demo">
+        <div class="ov mini">
+          <ul data-snip="" data-from="tabs" data-ids="4,6,3" data-sel="0" data-win="1"></ul>
+        </div>
+      </div>
+    </article>
+    <article class="cell c7 tint rv">
+      <div class="copy">
+        <h3>Tabs, bookmarks, history</h3>
+        <p>Type <code class="q2">/</code> to pick a scope. Bookmarks and history (last 90 days) stay off until you turn them on in the options, and the browser asks first.</p>
+      </div>
+      <div class="demo">
+        <div class="pair">
+          <div class="ov mini">
+            <div class="q"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="typed">/</span></div>
+            <div class="menu in" style="padding:5px;margin:0">
+              <div class="on"><code>/t</code><strong style="font-weight:500">Tabs</strong><span>open tabs</span></div>
+              <div><code>/b</code><strong style="font-weight:500">Bookmarks</strong><span>opt-in</span></div>
+              <div><code>/h</code><strong style="font-weight:500">History</strong><span>90 days</span></div>
+            </div>
+          </div>
+          <div class="ov mini">
+            <div class="q"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="chip show" style="height:24px;font-size:13px">Bookmarks</span><span class="typed">pg doc</span></div>
+            <ul data-snip="pg doc" data-from="bookmarks"></ul>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="cell c12 rv">
+      <div class="tune">
+        <div class="copy">
+          <h3>Fits your browser</h3>
+          <p>Light and dark. Set how clear the glass is, how much of the page shows through, how big the panel is, and rebind every key.</p>
+          <div class="ctl">
+            <div class="seg" role="group" aria-label="Theme"><button type="button" aria-pressed="true" data-theme="dark">Dark</button><button type="button" aria-pressed="false" data-theme="light">Light</button></div>
+            <label for="op"><span>Opacity</span><output id="opv">86 %</output><input id="op" type="range" min="60" max="100" value="86"></label>
+            <label for="bl"><span>Blur</span><output id="blv">24 px</output><input id="bl" type="range" min="0" max="40" value="24"></label>
+          </div>
+        </div>
+        <div class="backdrop" aria-hidden="true">
+          <h4>Q4 roadmap draft</h4>
+          <p>Checkout timeouts, API key rotation and the onboarding rewrite are the three items that decide the quarter.</p>
+          <div class="bar2"><i></i><i></i></div>
+          <div class="ov mini" id="tuned">
+            <div class="q"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="typed">ro</span></div>
+            <ul data-snip="ro" data-from="tabs" data-ids="1,3"></ul>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section id="keys" class="wrap">
+  <h2 class="big rv">Nine keys, and you know it all.</h2>
+  <div class="kgrid rv">
+    <div>
+      <h3>Open</h3>
+      <dl>
+        <div><dt><span class="keys"><kbd class="mod">Ctrl</kbd><kbd>E</kbd></span></dt><dd>Open TabNow on the current page. Press it again to close.</dd></div>
+        <div><dt><span class="keys"><kbd>Alt</kbd><kbd>Z</kbd></span></dt><dd>Jump to the previous tab. No panel, press again to flip back.</dd></div>
+        <div><dt><span class="keys"><kbd>Alt</kbd><kbd>T</kbd></span></dt><dd>Switch between light and dark.</dd></div>
+      </dl>
+    </div>
+    <div>
+      <h3>Move</h3>
+      <dl>
+        <div><dt><span class="keys"><kbd>&uarr;</kbd><kbd>&darr;</kbd></span><span class="or">or</span><span class="keys"><kbd class="mod">Ctrl</kbd><kbd>J</kbd><kbd>K</kbd></span></dt><dd>Move through the results. The list wraps at both ends.</dd></div>
+        <div><dt><kbd>Enter</kbd></dt><dd>Switch to the selected tab, in any window.</dd></div>
+        <div><dt><kbd>Esc</kbd></dt><dd>Dismiss. Clicking the dimmed page does the same.</dd></div>
+      </dl>
+    </div>
+    <div>
+      <h3>Search</h3>
+      <dl>
+        <div><dt><kbd>/</kbd></dt><dd>Pick a scope: <code class="q2">/t</code> tabs, <code class="q2">/b</code> bookmarks, <code class="q2">/h</code> history.</dd></div>
+        <div><dt><span class="keys"><kbd class="mod">Ctrl</kbd><kbd>&#9003;</kbd></span></dt><dd>Close the selected tab and stay in the list.</dd></div>
+        <div><dt><span class="keys"><kbd class="mod">Ctrl</kbd><kbd>U</kbd></span></dt><dd>Clear the query. Press again to clear the scope.</dd></div>
+      </dl>
+    </div>
+  </div>
+  <p class="note">On macOS, Ctrl becomes Cmd for the open key and for closing a tab.</p>
+</section>
+
+<section id="privacy" class="wrap">
+  <h2 class="big rv">No network requests. Ever.</h2>
+  <p class="lead rv">No account, no analytics. Your tabs are searched inside the browser and never leave it.</p>
+  <div class="manifest rv" role="figure" aria-label="Permissions TabNow asks for, in plain words">
+    <div class="h">permissions</div>
+    <div class="r"><b>tabs</b><span>List your open tabs so they can be searched.</span></div>
+    <div class="r"><b>activeTab</b><span>Show the panel on the page you are on.</span></div>
+    <div class="r"><b>scripting</b><span>Draw that panel.</span></div>
+    <div class="r"><b>favicon</b><span>Show each site's icon.</span></div>
+    <div class="r"><b>storage</b><span>Remember your settings.</span></div>
+    <div class="gap"></div>
+    <div class="h">optional, off until you turn them on</div>
+    <div class="r"><b>history</b><span>Search the last 90 days.</span></div>
+    <div class="r"><b>bookmarks</b><span>Search your bookmarks.</span></div>
+  </div>
+  <div class="facts rv"><span>Plain JS, no dependencies</span><span>About 600 lines</span><span>Open source, MIT</span></div>
+</section>
+
+<section id="install" class="wrap">
+  <div class="inst">
+    <div class="rv">
+      <h2 class="big">Running in a minute.</h2>
+      <p class="lead">Not in the Web Store yet. TabNow needs Chrome 121+ or a Chromium browser of that version.</p>
+      <div class="cta">
+        <a class="btn pri" href="https://github.com/gran-software-solutions/tabnow">Install from GitHub <span class="arr" aria-hidden="true">&rarr;</span></a>
+        <span>Web Store coming soon</span>
+      </div>
+    </div>
+    <div class="rv">
+      <div class="term">
+        <div class="top"><span>Terminal</span><button class="btn sec sm" id="copy" type="button">Copy</button></div>
+<pre id="cmd">git clone https://github.com/gran-software-solutions/tabnow</pre>
+      </div>
+      <ol class="steps">
+        <li><span><b>Clone the repo.</b> One command, above.</span></li>
+        <li><span><b>Turn on Developer mode</b> at <code>chrome://extensions</code>. Brave and Edge use <code>brave://</code> and <code>edge://</code>.</span></li>
+        <li><span><b>Click Load unpacked</b> and pick the <code>extension/</code> folder.</span></li>
+        <li><span><b>Press <span class="keys"><kbd class="mod">Ctrl</kbd><kbd>E</kbd></span></b> on any page. Change the shortcut at <code>chrome://extensions/shortcuts</code>.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot2">
+    <div class="brand" style="color:var(--fg)"><img src="icon-128.png" alt="" width="22" height="22">TabNow</div>
+    <nav aria-label="Links">
+      <a href="https://github.com/gran-software-solutions/tabnow">GitHub</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">X</a>
+      <a href="#">Reddit</a>
+    </nav>
+    <div class="by">MIT licensed. Made by <a href="https://www.gransoftware.de">GRAN Software Solutions</a></div>
+  </div>
+</footer>
+
+<script>
+document.documentElement.classList.add("js");
+// ---- fuzzy.js, ported verbatim (match / search) ----
+function match(q, text) {
+  const t = text.toLowerCase(), at = t.indexOf(q);
+  if (at >= 0) {
+    const start = at === 0 || /\W/.test(t[at - 1]);
+    return { score: 100 + q.length * 10 + (start ? 40 : 0) - at * 0.1, hits: [...Array(q.length)].map((_, k) => at + k) };
+  }
+  let score = 0, last = -2, k = 0; const hits = [];
+  for (let j = 0; j < t.length && k < q.length; j++) {
+    if (t[j] !== q[k]) continue;
+    score += j === last + 1 ? 5 : (j === 0 || /\W/.test(t[j - 1]) ? 3 : 1);
+    hits.push(j); last = j; k++;
+  }
+  return k === q.length && hits[k - 1] - hits[0] < q.length * 3 ? { score, hits } : null;
+}
+function search(items, q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return items.map(tab => ({ tab, th: [], uh: [] }));
+  const out = [];
+  for (const tab of items) {
+    let score = 0; const th = [], uh = [];
+    for (const w of words) {
+      const d = match(w, tab.disp.split("/")[0]), a = match(w, tab.title), b = match(w, tab.disp);
+      const best = Math.max((d?.score ?? -1) * 1.5, (a?.score ?? -1) * 1.2, b?.score ?? -1);
+      if (best < 0) { score = -1; break; }
+      score += best;
+      if (d && best === d.score * 1.5) uh.push(...d.hits);
+      else if (a && best === a.score * 1.2) th.push(...a.hits);
+      else uh.push(...b.hits);
+    }
+    if (score >= 0) out.push({ tab, score, th, uh });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+function hl(text, hits, from = 0) {
+  const set = new Set(hits), frag = document.createDocumentFragment();
+  let buf = "", on = false;
+  const flush = () => { if (!buf) return; frag.append(on ? Object.assign(document.createElement("mark"), { textContent: buf }) : buf); buf = ""; };
+  [...text].forEach((ch, i) => { const h = set.has(i + from); if (h !== on) { flush(); on = h; } buf += ch; });
+  flush(); return frag;
+}
+const SCOPES = [
+  { code: "t", kind: "tab", name: "Tabs", note: "open tabs" },
+  { code: "b", kind: "bookmark", name: "Bookmarks", note: "opt-in" },
+  { code: "h", kind: "history", name: "History", note: "last 90 days" }
+];
+function parseScope(v) {
+  const m = /^\/([a-z]) /i.exec(v), hit = m && SCOPES.find(s => s.code === m[1].toLowerCase());
+  if (hit) return { kind: hit.kind, rest: v.slice(3) };
+  const f = /^\/([a-z]*)$/i.exec(v)?.[1].toLowerCase();
+  return f === undefined ? {} : { menu: SCOPES.filter(s => s.code.startsWith(f) || s.kind.startsWith(f)) };
+}
+
+// ---- demo data (MRU order: first = current tab; win = window) ----
+const T = (id, letter, color, win, title, disp) => ({ id, letter, color, win, title, disp, kind: "tab" });
+let tabs = [
+  T(1, "D", "#1a73e8", 1, "Q4 roadmap draft - Google Docs", "docs.google.com/document/d/1xQ9f/edit"),
+  T(2, "G", "#3b4252", 1, "Add fuzzy ranking for domains by mira - Pull Request #482 - acme/web", "github.com/acme/web/pull/482"),
+  T(3, "L", "#5e6ad2", 1, "ENG-2210 Checkout flow timeouts - Linear", "linear.app/acme/issue/ENG-2210"),
+  T(4, "F", "#a259ff", 2, "Onboarding v3 - Figma", "figma.com/design/k3Xp9/Onboarding-v3"),
+  T(5, "M", "#d93025", 1, "Inbox (3) - dusan@acme.com - Gmail", "mail.google.com/mail/u/0/#inbox"),
+  T(6, "S", "#f48024", 2, "How to debounce in React hooks - Stack Overflow", "stackoverflow.com/questions/54666/debounce"),
+  T(7, "M", "#4a4f57", 1, "Array.prototype.flatMap() - JavaScript | MDN", "developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap"),
+  T(8, "Y", "#e00000", 2, "Lo-fi beats to refactor to - YouTube", "youtube.com/watch?v=jfKfPfyJRdk"),
+  T(9, "N", "#4a4f57", 1, "Meeting notes, 14.10. - Notion", "notion.so/acme/Meeting-notes-8f2c"),
+  T(10, "J", "#0052cc", 1, "PLAT-931 Rotate API keys - Jira", "acme.atlassian.net/browse/PLAT-931"),
+  T(11, "A", "#e07b00", 2, "EC2 Management Console", "eu-central-1.console.aws.amazon.com/ec2/home"),
+  T(12, "3", "#2e7d32", 1, "Acme - Dashboard", "localhost:3000/dashboard"),
+  T(13, "R", "#ff4500", 1, "r/programming: Why your tests are slow", "reddit.com/r/programming/comments/1abx9k"),
+  T(14, "X", "#4a4f57", 1, "Home / X", "x.com/home"),
+  T(15, "in", "#0a66c2", 1, "Feed | LinkedIn", "linkedin.com/feed"),
+  T(16, "G", "#3b4252", 1, "Fix flaky checkout tests - Pull Request #479 - acme/api", "github.com/acme/api/pull/479"),
+  T(17, "G", "#3b4252", 2, "Bump zod from 3.22 to 3.23 - Pull Request #471 - acme/web", "github.com/acme/web/pull/471"),
+  T(18, "G", "#3b4252", 1, "Pull requests - acme/web", "github.com/acme/web/pulls")
+];
+const ALL = tabs.slice(), ORDER = tabs.map(t => t.id);
+const B = (letter, color, title, disp, kind) => ({ id: disp, letter, color, win: 0, title, disp, kind });
+const bookmarks = [
+  B("T", "#0ea5a5", "Tailwind CSS Documentation", "tailwindcss.com/docs", "bookmark"),
+  B("E", "#6965db", "Excalidraw - Collaborative whiteboard", "excalidraw.com", "bookmark"),
+  B("P", "#336791", "PostgreSQL 16 Documentation", "postgresql.org/docs/16/index.html", "bookmark"),
+  B("C", "#4a6cf7", "Can I use... Support tables for HTML5, CSS3", "caniuse.com", "bookmark")
+];
+const history = [
+  B("C", "#1a73e8", "Manifest V3 overview - Chrome for Developers", "developer.chrome.com/docs/extensions/develop/migrate", "history"),
+  B("n", "#cb3837", "zod - npm", "npmjs.com/package/zod", "history"),
+  B("W", "#555555", "Approximate string matching - Wikipedia", "en.wikipedia.org/wiki/Approximate_string_matching", "history"),
+  B("G", "#4285f4", "Flights to Lisbon - Google Flights", "google.com/travel/flights", "history"),
+  B("V", "#41b883", "Vite | Next Generation Frontend Tooling", "vitejs.dev/guide", "history")
+];
+
+// ---- shared row renderer (hero panel and feature snippets) ----
+function fav(t, away) {
+  const f = document.createElement("span"); f.className = "fav" + (away ? " away" : "");
+  const b = document.createElement("b"); b.textContent = t.letter; b.style.background = t.color; f.append(b); return f;
+}
+function rowEl(r, on, away, i) {
+  const t = r.tab, li = document.createElement("li"); li.setAttribute("role", "option");
+  if (i !== undefined) li.id = "r" + i;
+  if (on) li.className = "on";
+  const txt = document.createElement("div"); txt.className = "txt";
+  const title = document.createElement("div"); title.className = "t trunc"; title.append(hl(t.title, r.th));
+  const u = document.createElement("div"); u.className = "u trunc";
+  const host = t.disp.split("/")[0], path = t.disp.slice(host.length);
+  const h = document.createElement("span"); h.className = "host"; h.append(hl(host, r.uh));
+  const pa = document.createElement("span"); pa.className = "path"; pa.append(hl(path, r.uh, host.length));
+  u.append(h, pa); txt.append(title, u);
+  const go = document.createElement("span"); go.className = "go"; go.textContent = "↵";
+  li.append(fav(t, away), txt, go);
+  if (away) li.title = "In another window";
+  return li;
+}
+
+// ---- static snippets in the feature cells ----
+document.querySelectorAll("[data-snip]").forEach(ul => {
+  const src = ul.dataset.from === "bookmarks" ? bookmarks : ALL;
+  const ids = ul.dataset.ids ? ul.dataset.ids.split(",").map(Number) : null;
+  const items = ids ? ids.map(id => ALL.find(t => t.id === id)) : src;
+  let rows = search(items, ul.dataset.snip).slice(0, 3);
+  if (ul.dataset.ids) rows = ids.map(id => rows.find(r => r.tab.id === id)).filter(Boolean);
+  const cur = ul.dataset.win ? +ul.dataset.win : 1, sel = +(ul.dataset.sel || 0);
+  rows.forEach((r, i) => {
+    const away = r.tab.kind === "tab" && r.tab.win !== cur;
+    const li = rowEl(r, i === sel, away); ul.append(li);
+    if (away && ul.dataset.win && i === 0) { const s = document.createElement("span"); s.className = "tag"; s.textContent = "In another window"; li.append(s); li.querySelector(".go").remove(); }
+  });
+  const c = ul.parentElement.querySelector("[data-count]");
+  if (c) { const all = search(src, ul.dataset.snip).length; c.textContent = all + (all === 1 ? " result" : " results"); }
+});
+
+// ---- hero demo ----
+const $ = id => document.getElementById(id);
+const input = $("qi"), list = $("list"), menuEl = $("menu"), chip = $("chip"), stage = $("stage"), qrow = $("qrow"), ghost = $("ghost");
+const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+if (mac) document.querySelectorAll("kbd.mod").forEach(k => { k.textContent = k.textContent.replace(/ctrl/i, m => m === "ctrl" ? "cmd" : "Cmd"); });
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let scope = null, sel = 1, menuSel = 0, rows = [], curWin = 1, toastT, reopenT, userClosed = false;
+
+function toast(msg) {
+  const el = $("toast"); el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2400);
+}
+function renderPage() {
+  const cur = tabs[0], pg = $("pg"), strip = $("strip"); strip.replaceChildren();
+  const inWin = ORDER.map(id => ALL.find(t => t.id === id)).filter(t => tabs.includes(t) && t.win === curWin);
+  const shown = inWin.slice(0, 7); if (!shown.includes(cur)) shown[6] = cur;
+  for (const t of shown) {
+    const d = document.createElement("div"); d.className = "tb2" + (t === cur ? " on" : "");
+    const s = document.createElement("span"); s.textContent = t.title; d.append(fav(t), s); strip.append(d);
+  }
+  $("addr").textContent = "https://" + cur.disp;
+  const host = cur.disp.split("/")[0];
+  pg.replaceChildren();
+  pg.style.animation = "none"; void pg.offsetWidth; pg.style.animation = "";
+  const band = document.createElement("div"); band.className = "band"; band.style.setProperty("--tc", cur.color); band.append(fav(cur));
+  const hs = document.createElement("span"); hs.className = "host"; hs.textContent = host; band.append(hs);
+  const acc = document.createElement("div"); acc.className = "accent"; acc.style.background = cur.color;
+  const h2 = document.createElement("h2"); h2.textContent = cur.title.split(/ - | \| /)[0];
+  const lines = document.createElement("div"); lines.className = "lines";
+  lines.innerHTML = '<div><i style="width:96%"></i><i style="width:88%"></i><i style="width:92%"></i><i style="width:64%"></i><i class="t"></i><i style="width:90%"></i><i style="width:82%"></i><i style="width:70%"></i></div><div><span class="block"></span><i style="width:78%"></i><i style="width:58%"></i></div>';
+  pg.append(band, acc, h2, lines);
+}
+function currentItems() { return scope === "bookmark" ? bookmarks : scope === "history" ? history : tabs; }
+function sync() { ghost.textContent = input.value; }
+function render() {
+  const v = input.value, p = scope ? {} : parseScope(v), open = !!p.menu;
+  sync();
+  menuEl.hidden = !open;
+  chip.classList.toggle("show", !!scope);
+  const sc = scope && SCOPES.find(s => s.kind === scope);
+  chip.textContent = sc ? sc.name : "";
+  input.placeholder = sc ? "Search " + sc.name.toLowerCase() : "Search tabs, or type / for more";
+  if (open) {
+    menuSel = Math.min(menuSel, Math.max(p.menu.length - 1, 0));
+    menuEl.replaceChildren(...p.menu.map((s, i) => {
+      const d = document.createElement("div"); d.setAttribute("role", "option"); d.className = i === menuSel ? "on" : "";
+      const c = document.createElement("code"); c.textContent = "/" + s.code;
+      const n = document.createElement("strong"); n.textContent = s.name; n.style.fontWeight = 500;
+      const x = document.createElement("span"); x.textContent = s.note;
+      d.append(c, n, x);
+      d.addEventListener("mousedown", e => { e.preventDefault(); pickScope(s); });
+      return d;
+    }));
+  }
+  rows = search(currentItems(), open ? "" : v);
+  if (scope && scope !== "tab") rows = rows.slice(0, 8);
+  sel = Math.min(sel, Math.max(rows.length - 1, 0));
+  list.replaceChildren();
+  if (!rows.length) {
+    const li = document.createElement("li"); li.className = "empty"; li.textContent = "No tabs match"; list.append(li);
+  }
+  rows.forEach((r, i) => {
+    const li = rowEl(r, i === sel, r.tab.kind === "tab" && r.tab.win !== curWin, i);
+    li.addEventListener("mouseenter", () => setSel(i));
+    li.addEventListener("click", () => act(i));
+    list.append(li);
+  });
+  const w = open || !v.trim() ? ["tab", "tabs"] : ["result", "results"];
+  $("count").textContent = rows.length + " " + (rows.length === 1 ? w[0] : w[1]);
+  if (rows.length) input.setAttribute("aria-activedescendant", "r" + sel); else input.removeAttribute("aria-activedescendant");
+  list.scrollTop = 0; keepVisible();
+}
+// Scroll only inside the list, never the page.
+function keepVisible() {
+  const el = list.children[sel]; if (!el || !el.id) return;
+  const top = el.offsetTop - 6, bot = el.offsetTop + el.offsetHeight + 6;
+  if (top < list.scrollTop) list.scrollTop = top;
+  else if (bot > list.scrollTop + list.clientHeight) list.scrollTop = bot - list.clientHeight;
+}
+function setSel(i) {
+  if (i === sel) return;
+  list.children[sel]?.classList.remove("on"); sel = i; list.children[sel]?.classList.add("on");
+  input.setAttribute("aria-activedescendant", "r" + sel);
+}
+function move(d) { if (!rows.length) return; setSel((sel + d + rows.length) % rows.length); keepVisible(); }
+function pickScope(s) { scope = s.kind === "tab" ? null : s.kind; input.value = ""; sel = 0; menuSel = 0; render(); input.focus({ preventScroll: true }); }
+function clearAll() { scope = null; input.value = ""; sel = tabs.length > 1 ? 1 : 0; menuSel = 0; render(); }
+function setOpen(open, idle) { stage.dataset.open = open; stage.dataset.idle = !!(idle && !open); }
+function short(t) { return t.title.split(/ - | \| /)[0].slice(0, 48); }
+function act(i) {
+  const r = rows[i]; if (!r) return;
+  const t = r.tab, hadFocus = document.activeElement === input;
+  if (t.kind === "tab") {
+    tabs = [t, ...tabs.filter(x => x !== t)]; curWin = t.win;
+    toast("Switched to " + short(t) + (t.win === 1 ? "" : " (window 2)"));
+  } else toast((t.kind === "bookmark" ? "Opened bookmark: " : "Opened from history: ") + short(t));
+  renderPage(); input.blur();
+  setOpen(false, false); userClosed = false;
+  clearTimeout(reopenT);
+  reopenT = setTimeout(() => { clearAll(); setOpen(true); if (hadFocus && !autoRun) input.focus({ preventScroll: true }); }, REDUCED ? 600 : 1500);
+}
+function removeSel() {
+  const r = rows[sel]; if (!r || r.tab.kind !== "tab") return;
+  if (tabs.length < 2) { toast("That is the last tab, keep it."); return; }
+  const t = r.tab; tabs = tabs.filter(x => x !== t);
+  toast("Closed " + short(t)); renderPage(); render();
+}
+function openPanel(focus) {
+  clearTimeout(reopenT); userClosed = false;
+  if (stage.dataset.open === "false") clearAll();
+  setOpen(true);
+  if (focus) { input.focus({ preventScroll: true }); input.select(); }
+}
+
+input.addEventListener("input", () => {
+  if (!scope) { const p = parseScope(input.value); if (p.kind && p.kind !== "tab") { scope = p.kind; input.value = p.rest; } else if (p.kind === "tab") input.value = p.rest; }
+  sel = 0; menuSel = 0; render();
+});
+input.addEventListener("keydown", e => {
+  const k = e.key, ctrl = e.ctrlKey || e.metaKey, menu = !menuEl.hidden;
+  const down = k === "ArrowDown" || (ctrl && k.toLowerCase() === "j"), up = k === "ArrowUp" || (ctrl && k.toLowerCase() === "k");
+  if (down || up) {
+    e.preventDefault();
+    if (menu) { const n = menuEl.children.length; menuSel = (menuSel + (down ? 1 : -1) + n) % n; render(); }
+    else move(down ? 1 : -1);
+  } else if (k === "Enter" || (k === "Tab" && menu)) {
+    e.preventDefault();
+    if (menu) { const s = parseScope(input.value).menu[menuSel]; if (s) pickScope(s); } else act(sel);
+  } else if (ctrl && k === "Backspace") { e.preventDefault(); removeSel(); }
+  else if (ctrl && k.toLowerCase() === "u") { e.preventDefault(); if (input.value) { input.value = ""; sel = 0; render(); } else if (scope) { scope = null; render(); } }
+  else if (k === "Escape") {
+    e.preventDefault();
+    if (input.value || scope) clearAll();
+    else { input.blur(); userClosed = true; setOpen(false, true); }
+  } else if (k === "Backspace" && !input.value && scope) { e.preventDefault(); scope = null; sel = 0; render(); }
+});
+qrow.addEventListener("click", () => input.focus({ preventScroll: true }));
+$("reopen").addEventListener("click", () => openPanel(true));
+// Ctrl+E / Cmd+E anywhere on the page focuses the demo.
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "e") {
+    e.preventDefault(); stopAuto();
+    const r = stage.getBoundingClientRect();
+    if (r.bottom < 120 || r.top > innerHeight - 120) window.scrollTo({ top: scrollY + r.top - 72, behavior: REDUCED ? "auto" : "smooth" });
+    openPanel(true);
+  }
+});
+
+// ---- slow auto-typing loop: stops the moment the visitor types or clicks ----
+let autoRun = true, inView = false;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function stopAuto() {
+  if (!autoRun) return; autoRun = false; qrow.classList.remove("auto");
+  clearTimeout(reopenT);
+  if (stage.dataset.open === "false") { clearAll(); setOpen(true); }
+}
+async function autoLoop() {
+  const qs = ["gh pr", "lin eng", "docs road"];
+  let n = 0;
+  qrow.classList.add("auto");
+  await sleep(1400);
+  while (autoRun) {
+    while (autoRun && !inView) await sleep(300);
+    if (!autoRun) return;
+    const q = qs[n++ % qs.length];
+    for (const ch of q) {
+      if (!autoRun) return;
+      input.value += ch; sel = 0; render();
+      await sleep(150 + Math.random() * 90);
+    }
+    await sleep(1500);
+    if (!autoRun) return;
+    qrow.classList.remove("auto");
+    act(0);
+    await sleep(3600);
+    if (!autoRun) return;
+    qrow.classList.add("auto");
+    await sleep(900);
+  }
+}
+new IntersectionObserver(es => { inView = es[0].isIntersecting; }, { threshold: .4 }).observe(stage);
+["keydown", "pointerdown"].forEach(ev => stage.addEventListener(ev, stopAuto, true));
+input.addEventListener("keydown", stopAuto, true);
+input.addEventListener("focus", stopAuto);
+document.addEventListener("keydown", e => { if (!["Shift", "Control", "Alt", "Meta", "Tab"].includes(e.key) && document.activeElement === input) stopAuto(); }, true);
+
+renderPage(); clearAll();
+if (REDUCED) { autoRun = false; input.value = "gh pr"; sel = 0; render(); }
+else autoLoop();
+
+// ---- options cell: sliders drive the frosted mini panel ----
+const tuned = $("tuned");
+$("op").addEventListener("input", e => { tuned.style.setProperty("--alpha", e.target.value / 100); $("opv").textContent = e.target.value + " %"; });
+$("bl").addEventListener("input", e => { tuned.style.setProperty("--blurpx", e.target.value + "px"); $("blv").textContent = e.target.value + " px"; });
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  tuned.classList.toggle("light", b.dataset.theme === "light");
+  document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+
+// ---- copy ----
+$("copy").addEventListener("click", async e => {
+  try { await navigator.clipboard.writeText($("cmd").textContent); e.target.textContent = "Copied"; }
+  catch (x) { e.target.textContent = "Press Ctrl+C"; }
+  setTimeout(() => { e.target.textContent = "Copy"; }, 1800);
+});
+
+// ---- reveal ----
+const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } }), { threshold: .08, rootMargin: "0px 0px -6% 0px" });
+document.querySelectorAll(".rv").forEach(el => io.observe(el));
+</script>
+</body>
+</html>
