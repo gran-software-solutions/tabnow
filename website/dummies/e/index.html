@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TabNow: every tab, one keystroke away</title>
+<meta name="description" content="TabNow is a fuzzy finder for your open tabs. Press Ctrl+E, type a few letters, hit Enter. No network requests. Open source.">
+<link rel="icon" href="icon-128.png">
+<style>
+:root{--bg:#fff;--fg:#000;--dim:#4a4a4a;--acc:#ff5a1f;--on:#000;--line:#000}
+html[data-theme=dark]{--bg:#000;--fg:#f2f2f2;--dim:#b0b0b0;--line:#f2f2f2}
+*{box-sizing:border-box;border-radius:0;box-shadow:none}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--fg);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
+a:hover{background:var(--acc);color:var(--on)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.skip{position:absolute;left:-999px}.skip:focus{left:8px;top:8px;background:var(--acc);color:var(--on);padding:6px;z-index:9}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.box{border:3px solid var(--line)}
+header.top{border-bottom:3px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none}
+.brand img{width:28px;height:28px;border:3px solid var(--line);image-rendering:auto}
+nav a{margin-right:14px;font-size:14px}
+button{font:inherit;color:inherit;background:var(--bg);border:3px solid var(--line);padding:4px 10px;cursor:pointer}
+button:hover{background:var(--acc);color:var(--on)}
+.btn{display:inline-block;font-weight:700;border:3px solid var(--line);background:var(--acc);color:var(--on);padding:10px 18px;text-decoration:none;box-shadow:5px 5px 0 var(--line)}
+.btn:hover{background:var(--fg);color:var(--bg)}
+.btn.alt{background:var(--bg);color:var(--fg)}
+.btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--line)}
+section{padding:48px 0;border-bottom:3px solid var(--line)}
+.label{display:inline-block;background:var(--fg);color:var(--bg);padding:2px 10px;font-weight:700;letter-spacing:.05em;margin:0 0 22px;font-size:15px}
+h1{font-size:clamp(34px,7.2vw,76px);line-height:1.02;margin:0 0 18px;letter-spacing:-.03em;text-transform:uppercase}
+h1 span{background:var(--acc);color:var(--on);padding:0 .12em}
+h2{font-size:clamp(22px,3.4vw,34px);margin:0 0 20px;text-transform:uppercase;letter-spacing:-.01em}
+.rule{color:var(--dim);overflow:hidden;white-space:nowrap;margin:0 0 18px;user-select:none}
+.lede{font-size:18px;max-width:62ch;margin:0 0 24px}
+.cta{display:flex;gap:18px;flex-wrap:wrap;margin:26px 0}
+kbd{font:inherit;font-weight:700;border:2px solid var(--line);padding:0 6px;background:var(--bg)}
+.hero{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:start}
+.help{padding:16px;margin:0;white-space:pre-wrap;font-size:14px;background:var(--bg)}
+.help b{background:var(--acc);color:var(--on);padding:0 3px}
+.help i{font-style:normal;color:var(--dim)}
+/* demo */
+.tui{border:3px solid var(--line);box-shadow:8px 8px 0 var(--line);background:var(--bg)}
+.tabbar{display:flex;border-bottom:3px solid var(--line);overflow:hidden;font-size:13px}
+.tabbar span{padding:4px 10px;border-right:3px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34%;flex:0 1 auto}
+.tabbar span.cur{background:var(--acc);color:var(--on);font-weight:700}
+.curline{padding:6px 12px;border-bottom:3px solid var(--line);font-size:14px}
+.curline b{background:var(--fg);color:var(--bg);padding:0 6px}
+.prompt{position:relative;display:flex;align-items:center;gap:0;padding:10px 12px;border-bottom:3px solid var(--line);font-size:18px;cursor:text;min-height:52px;flex-wrap:wrap}
+.prompt:focus-within{outline:3px solid var(--acc);outline-offset:-6px}
+.prompt .gt{color:var(--fg);font-weight:700;margin-right:1ch}
+.chip{background:var(--fg);color:var(--bg);padding:0 6px;margin-right:1ch;font-size:14px}
+.typed{white-space:pre-wrap;word-break:break-all}
+.cur{display:inline-block;width:1ch;height:1.2em;background:var(--acc);vertical-align:text-bottom;animation:blink 1.1s steps(1) infinite}
+.prompt:not(:focus-within) .cur{background:none;border:2px solid var(--fg);animation:none}
+@keyframes blink{50%{opacity:0}}
+.prompt input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:text;font-size:16px}
+.list{margin:0;padding:0;list-style:none;height:372px;overflow-y:auto;overflow-x:hidden}
+.list li{display:flex;gap:1ch;padding:5px 12px;cursor:pointer;border-bottom:1px dashed var(--dim)}
+.list li .m{flex:0 0 1ch;font-weight:700}
+.list li .tx{flex:1;min-width:0}
+.list li .t{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list li .u{display:block;font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list li .w{flex:0 0 auto;font-size:13px;align-self:center;border:2px solid var(--line);padding:0 4px}
+.list li[aria-selected=true]{background:var(--fg);color:var(--bg)}
+.list li[aria-selected=true] .u{color:var(--bg);opacity:.8}
+.list li[aria-selected=true] .w{border-color:var(--bg)}
+mark{background:var(--acc);color:var(--on);font-weight:700;padding:0}
+.empty{padding:20px 12px;color:var(--dim)}
+.status{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:6px 12px;border-top:3px solid var(--line);background:var(--fg);color:var(--bg);font-size:14px}
+.status #toast{background:var(--acc);color:var(--on);padding:0 6px;font-weight:700}
+.keys{padding:8px 12px;border-top:3px solid var(--line);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px}
+.hint{margin:14px 0 0;font-size:14px;color:var(--dim)}
+/* grids */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:3px solid var(--line);border-left:3px solid var(--line)}
+.cell{border-right:3px solid var(--line);border-bottom:3px solid var(--line);padding:18px}
+.cell h3{margin:0 0 8px;font-size:17px}
+.cell h3 span{background:var(--acc);color:var(--on);padding:0 6px;margin-right:6px}
+.cell p{margin:0}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;border:3px solid var(--line)}
+th,td{border:3px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+th{background:var(--fg);color:var(--bg)}
+td.k{white-space:nowrap}
+.perm{font-weight:700;white-space:nowrap}
+.perm b{background:var(--acc);color:var(--on)}
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:18px}
+.steps li{border:3px solid var(--line);padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:6px 16px}
+.steps li::before{counter-increment:s;content:"0" counter(s);background:var(--acc);color:var(--on);font-weight:700;padding:0 8px;height:fit-content}
+.steps code,.code{display:block;background:var(--fg);color:var(--bg);padding:6px 10px;margin-top:6px;white-space:pre-wrap;word-break:break-all}
+footer{padding:36px 0 60px}
+footer ul{list-style:none;padding:0;margin:0 0 18px;display:flex;gap:10px 22px;flex-wrap:wrap}
+.note{border:3px dashed var(--line);padding:10px 14px;margin-top:22px}
+@media (max-width:900px){.hero{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){body{font-size:15px}.grid{grid-template-columns:1fr}.wrap{padding:0 14px}section{padding:34px 0}.tui{box-shadow:5px 5px 0 var(--line)}.list{height:320px}.tabbar span{max-width:50%}.tabbar span:nth-child(n+3){display:none}}
+@media (prefers-reduced-motion:reduce){.cur{animation:none}html{scroll-behavior:auto}.btn:active{transform:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#demo">Skip to demo</a>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#top"><img src="icon-128.png" alt="">TABNOW<span style="font-weight:400">/0.1.0</span></a>
+  <nav aria-label="Sections"><a href="#demo">demo</a><a href="#features">features</a><a href="#keys">keys</a><a href="#privacy">privacy</a><a href="#install">install</a></nav>
+  <button id="theme" type="button" aria-pressed="false">[ dark: off ]</button>
+</div></header>
+
+<main id="top">
+<section><div class="wrap">
+  <div class="label">[00] TABNOW</div>
+  <div class="hero">
+    <div>
+      <h1>Every tab,<br>one <span>keystroke</span> away.</h1>
+      <p class="lede">TabNow is a fuzzy finder for your open tabs. Press <kbd>Ctrl+E</kbd>, type a few letters, hit <kbd>Enter</kbd>. You are on the tab. Built for 30 to 200 open tabs.</p>
+      <div class="cta">
+        <a class="btn" href="https://github.com/gran-software-solutions/tabnow">$ git clone tabnow</a>
+        <a class="btn alt" href="#demo">$ try the demo</a>
+      </div>
+      <p style="color:var(--dim);margin:0">Chrome 121+, Edge, Brave, Opera, Vivaldi, Arc. MIT. Web Store: coming soon.</p>
+    </div>
+    <pre class="help box" aria-label="Command line cheat sheet">$ tabnow --help
+
+<b>USAGE</b>
+  <b>ctrl+e</b>      open the finder  <i>(cmd+e on mac)</i>
+  <b>alt+z</b>       previous tab, no UI
+  <b>/t /b /h</b>    tabs, bookmarks, history
+
+<b>FLAGS</b>
+  --windows=all   <i>every window</i>
+  --sort=mru      <i>last used first</i>
+  --network=none  <i>always</i>
+  --deps=0        <i>~600 lines of JS</i></pre>
+  </div>
+</div></section>
+
+<section id="demo"><div class="wrap">
+  <div class="label">[01] LIVE DEMO</div>
+  <h2>Type. It filters. Enter.</h2>
+  <p class="rule" aria-hidden="true">----------------------------------------------------------------------------------------------------------------</p>
+  <div class="tui" role="application" aria-label="TabNow demo">
+    <div class="tabbar" id="bar" aria-hidden="true"></div>
+    <div class="curline">current tab: <b id="cur"></b></div>
+    <div class="prompt" id="prompt">
+      <span class="gt" aria-hidden="true">&gt;</span><span id="chip" class="chip" hidden></span><span class="typed" id="typed" aria-hidden="true"></span><span class="cur" aria-hidden="true"></span>
+      <input id="q" type="text" role="combobox" aria-expanded="true" aria-controls="list" aria-activedescendant="" aria-label="Search tabs" autocomplete="off" autocapitalize="off" spellcheck="false" value="gh pr">
+    </div>
+    <ul class="list" id="list" role="listbox" aria-label="Results"></ul>
+    <div class="status"><span id="count"></span><span id="toast" role="status" aria-live="polite"></span><span id="scopeLabel"></span></div>
+    <div class="keys" aria-hidden="true"><span>[↑↓] nav</span><span>[enter] open</span><span>[ctrl+⌫] close</span><span>[/] scope</span><span>[esc] clear</span></div>
+  </div>
+  <p class="hint">Click the box or press <kbd>Ctrl+E</kbd> / <kbd>Cmd+E</kbd> anywhere on this page. Try <code>gh pr</code>, <code>fig</code>, <code>/b </code> or <code>/h </code>. Tabs marked [w2] live in another window. Fake data, nothing is stored.</p>
+</div></section>
+
+<section id="features"><div class="wrap">
+  <div class="label">[02] FEATURES</div>
+  <h2>Six things it does.</h2>
+  <div class="grid">
+    <div class="cell"><h3><span>1</span>Find any tab</h3><p><kbd>Ctrl+E</kbd>, a few letters, <kbd>Enter</kbd>. Most recent first, previous tab preselected, so <kbd>Ctrl+E</kbd> <kbd>Enter</kbd> flips back.</p></div>
+    <div class="cell"><h3><span>2</span>Fast, fuzzy</h3><p>"gh pr" finds the GitHub pull request. Every word must match. Domain beats title, title beats the rest of the URL.</p></div>
+    <div class="cell"><h3><span>3</span>Keyboard first</h3><p>Arrows or <kbd>Ctrl+J</kbd>/<kbd>K</kbd> to move, <kbd>Ctrl+Backspace</kbd> to close a tab. The mouse works too.</p></div>
+    <div class="cell"><h3><span>4</span>Private</h3><p>Zero network requests. No account, no analytics. Plain JS, no dependencies, open source.</p></div>
+    <div class="cell"><h3><span>5</span>All windows</h3><p>Tabs from other windows carry a badge. Add bookmarks and history (90 days) with <kbd>/b</kbd> and <kbd>/h</kbd>. Both are opt-in.</p></div>
+    <div class="cell"><h3><span>6</span>Fits your browser</h3><p>Light and dark with <kbd>Alt+T</kbd>. Set opacity (60 to 100 %), blur (0 to 40 px) and size (70 to 150 %) on the options page.</p></div>
+  </div>
+</div></section>
+
+<section id="keys"><div class="wrap">
+  <div class="label">[03] KEYS</div>
+  <h2>$ man tabnow</h2>
+  <div class="tablewrap"><table>
+    <caption style="text-align:left;padding:0 0 8px;color:var(--dim)">Keyboard shortcuts</caption>
+    <thead><tr><th scope="col">key</th><th scope="col">does</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>Open or close the finder (<kbd>Cmd</kbd>+<kbd>E</kbd> on macOS)</td></tr>
+      <tr><td class="k"><kbd>Alt</kbd>+<kbd>Z</kbd></td><td>Jump to the previous tab. Nothing opens.</td></tr>
+      <tr><td class="k"><kbd>↑</kbd> <kbd>↓</kbd> / <kbd>Ctrl</kbd>+<kbd>J</kbd> <kbd>K</kbd></td><td>Move selection. Wraps at both ends.</td></tr>
+      <tr><td class="k"><kbd>Enter</kbd></td><td>Switch to the tab. Focuses its window if needed.</td></tr>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>Backspace</kbd></td><td>Close the selected tab, stay in the list</td></tr>
+      <tr><td class="k"><kbd>/</kbd></td><td>Scope menu: <code>/t</code> tabs, <code>/b</code> bookmarks, <code>/h</code> history</td></tr>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>U</kbd></td><td>Clear query. Again to clear scope.</td></tr>
+      <tr><td class="k"><kbd>Alt</kbd>+<kbd>T</kbd></td><td>Light or dark</td></tr>
+      <tr><td class="k"><kbd>Esc</kbd></td><td>Dismiss</td></tr>
+    </tbody></table></div>
+</div></section>
+
+<section id="privacy"><div class="wrap">
+  <div class="label">[04] PRIVACY</div>
+  <h2>No network requests. Ever.</h2>
+  <p class="lede">What TabNow may touch, as <code>ls -l</code>. Nothing here talks to a server.</p>
+  <div class="tablewrap"><table>
+    <caption style="text-align:left;padding:0 0 8px;color:var(--dim)">$ ls -l ./permissions</caption>
+    <thead><tr><th scope="col">mode</th><th scope="col">name</th><th scope="col">why</th></tr></thead>
+    <tbody>
+      <tr><td class="perm">-r--------</td><td>tabs</td><td>Read titles and URLs to list and switch tabs</td></tr>
+      <tr><td class="perm">-r--------</td><td>activeTab</td><td>Show the panel on the page you are on</td></tr>
+      <tr><td class="perm">-r--------</td><td>scripting</td><td>Draw the overlay in the page</td></tr>
+      <tr><td class="perm">-r--------</td><td>favicon</td><td>Read icons from the browser cache, not the web</td></tr>
+      <tr><td class="perm">-rw-------</td><td>storage</td><td>Save your options, synced by your browser</td></tr>
+      <tr><td class="perm"><b>-r-- opt-in</b></td><td>bookmarks</td><td>Only if you turn on <code>/b</code>. The browser asks first.</td></tr>
+      <tr><td class="perm"><b>-r-- opt-in</b></td><td>history</td><td>Only if you turn on <code>/h</code>. Last 90 days.</td></tr>
+      <tr><td class="perm">----------</td><td>network</td><td>Never. No accounts, no analytics, no telemetry.</td></tr>
+    </tbody></table></div>
+  <p class="hint">Plain JS, ~600 lines, no dependencies. <a href="https://github.com/gran-software-solutions/tabnow">Read the source.</a></p>
+</div></section>
+
+<section id="install"><div class="wrap">
+  <div class="label">[05] INSTALL</div>
+  <h2>Four steps. No store yet.</h2>
+  <ol class="steps">
+    <li><div><strong>Clone the repo.</strong><span class="code">$ git clone https://github.com/gran-software-solutions/tabnow</span></div></li>
+    <li><div><strong>Open the extensions page and turn on Developer mode.</strong><span class="code">chrome://extensions</span></div></li>
+    <li><div><strong>Click Load unpacked and pick the <code>extension/</code> folder.</strong></div></li>
+    <li><div><strong>Press <kbd>Ctrl+E</kbd> on any page.</strong> Check shortcuts at <code>chrome://extensions/shortcuts</code> if it does not open.</div></li>
+  </ol>
+  <p class="note">[!] Chrome Web Store: coming soon. <code>brave://</code> and <code>edge://</code> work the same.</p>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <p class="rule" aria-hidden="true">================================================================================================================</p>
+  <ul>
+    <li><a href="https://github.com/gran-software-solutions/tabnow">GitHub</a></li>
+    <li><a href="#">LinkedIn</a></li>
+    <li><a href="#">X</a></li>
+    <li><a href="#">Reddit</a></li>
+  </ul>
+  <p>Made by <a href="https://www.gransoftware.de">GRAN Software Solutions</a>. MIT License. TabNow 0.1.0.</p>
+</div></footer>
+
+<script>
+const TABS=[
+ {id:1,title:"Fix tab ordering by MRU by dana-k · Pull Request #482 · gran/tabnow",disp:"github.com/gran/tabnow/pull/482",w:1},
+ {id:2,title:"GitHub - gran-software-solutions/tabnow",disp:"github.com/gran-software-solutions/tabnow",w:1},
+ {id:3,title:"Inbox (12) - dusan@gransoftware.de - Gmail",disp:"mail.google.com/mail/u/0/#inbox",w:1},
+ {id:4,title:"GRAN-141 Landing page prototype · Linear",disp:"linear.app/gran/issue/GRAN-141",w:2},
+ {id:5,title:"Landing v3 – Figma",disp:"figma.com/design/k3Jd9/landing-v3",w:1},
+ {id:6,title:"Q4 roadmap - Google Docs",disp:"docs.google.com/document/d/1xQ/edit",w:2},
+ {id:7,title:"javascript - Why does Array.sort mutate? - Stack Overflow",disp:"stackoverflow.com/questions/9776",w:1},
+ {id:8,title:"Array.prototype.toSorted() - JavaScript | MDN",disp:"developer.mozilla.org/en-US/docs/Web/JavaScript",w:1},
+ {id:9,title:"Rust in 100 Seconds - YouTube",disp:"youtube.com/watch?v=5C_HPTJg5ek",w:1},
+ {id:10,title:"Meeting notes / Sprint 42 | Notion",disp:"notion.so/gran/Sprint-42-7ac1",w:1},
+ {id:11,title:"[CORE-318] Session timeout bug - Jira",disp:"gran.atlassian.net/browse/CORE-318",w:2},
+ {id:12,title:"EC2 Management Console",disp:"console.aws.amazon.com/ec2/home",w:1},
+ {id:13,title:"TabNow dev server",disp:"localhost:3000/",w:1},
+ {id:14,title:"r/chrome_extensions - best tab switcher?",disp:"reddit.com/r/chrome_extensions/comments/1a",w:1},
+ {id:15,title:"Home / X",disp:"x.com/home",w:1}];
+const BOOKS=[
+ {title:"Chrome extension docs: manifest v3",disp:"developer.chrome.com/docs/extensions"},
+ {title:"fzf: a command-line fuzzy finder",disp:"github.com/junegunn/fzf"},
+ {title:"Lobsters",disp:"lobste.rs"},{title:"Tailwind CSS cheat sheet",disp:"nerdcheatsheet.com/tailwind"},
+ {title:"Postgres docs: indexes",disp:"postgresql.org/docs/current/indexes.html"}];
+const HIST=[
+ {title:"npm: fuse.js",disp:"npmjs.com/package/fuse.js"},
+ {title:"How to use git rebase - Atlassian",disp:"atlassian.com/git/tutorials/rewriting-history/git-rebase"},
+ {title:"Hetzner Cloud Console",disp:"console.hetzner.cloud/projects"},
+ {title:"Wikipedia: Levenshtein distance",disp:"en.wikipedia.org/wiki/Levenshtein_distance"},
+ {title:"caniuse: CSS :has()",disp:"caniuse.com/css-has"},
+ {title:"Typing speed test",disp:"monkeytype.com"}];
+// ported from extension/fuzzy.js
+function match(q,text){const t=text.toLowerCase(),at=t.indexOf(q);
+ if(at>=0){const s=at===0||/\W/.test(t[at-1]);return{score:100+q.length*10+(s?40:0)-at*.1,hits:[...Array(q.length)].map((_,k)=>at+k)}}
+ let score=0,last=-2,k=0;const hits=[];
+ for(let j=0;j<t.length&&k<q.length;j++){if(t[j]!==q[k])continue;score+=j===last+1?5:(j===0||/\W/.test(t[j-1])?3:1);hits.push(j);last=j;k++}
+ return k===q.length&&hits[k-1]-hits[0]<q.length*3?{score,hits}:null}
+function search(items,q){const words=q.toLowerCase().split(/\s+/).filter(Boolean);
+ if(!words.length)return items.map(tab=>({tab,th:[],uh:[]}));
+ const out=[];for(const tab of items){let score=0;const th=[],uh=[];
+  for(const w of words){const d=match(w,tab.disp.split("/")[0]),a=match(w,tab.title),b=match(w,tab.disp);
+   const best=Math.max((d?.score??-1)*1.5,(a?.score??-1)*1.2,b?.score??-1);
+   if(best<0){score=-1;break}score+=best;
+   if(d&&best===d.score*1.5)uh.push(...d.hits);else if(a&&best===a.score*1.2)th.push(...a.hits);else uh.push(...b.hits)}
+  if(score>=0)out.push({tab,score,th,uh})}
+ return out.sort((x,y)=>y.score-x.score)}
+const SCOPES=[{code:"t",kind:"tab",name:"Tabs"},{code:"b",kind:"bookmark",name:"Bookmarks"},{code:"h",kind:"history",name:"History (90 days)"}];
+function parseScope(v){const m=/^\/([a-z]) /i.exec(v),hit=m&&SCOPES.find(s=>s.code===m[1].toLowerCase());
+ if(hit)return{kind:hit.kind,rest:v.slice(3)};
+ const f=/^\/([a-z]*)$/i.exec(v)?.[1].toLowerCase();
+ return f===undefined?{}:{menu:SCOPES.filter(s=>s.code.startsWith(f)||s.kind.startsWith(f))}}
+function hl(text,hits){const set=new Set(hits),frag=document.createDocumentFragment();let buf="",on=false;
+ const flush=()=>{if(!buf)return;if(on){const m=document.createElement("mark");m.textContent=buf;frag.append(m)}else frag.append(buf);buf=""};
+ [...text].forEach((ch,i)=>{const h=set.has(i);if(h!==on){flush();on=h}buf+=ch});flush();return frag}
+
+const $=id=>document.getElementById(id);
+const q=$("q"),list=$("list");
+let tabs=TABS.slice(),curId=13,sel=0,rows=[],toastT;
+$("typed").textContent=q.value;
+
+function toast(msg){const t=$("toast");t.textContent=msg;clearTimeout(toastT);toastT=setTimeout(()=>t.textContent="",2600)}
+function drawBar(){const bar=$("bar");bar.textContent="";
+ tabs.filter(t=>t.w===1).slice(0,6).forEach(t=>{const s=document.createElement("span");s.textContent=t.title;if(t.id===curId)s.className="cur";bar.append(s)});
+ const c=tabs.find(t=>t.id===curId);$("cur").textContent=c?c.title:"(none)"}
+function render(){
+ const v=q.value,sc=parseScope(v);
+ $("typed").textContent=sc.kind?sc.rest:v;
+ const chip=$("chip");chip.hidden=!sc.kind;chip.textContent=sc.kind?"/"+SCOPES.find(s=>s.kind===sc.kind).code:"";
+ list.textContent="";rows=[];
+ let total,mode="tab";
+ if(sc.menu){
+  total=sc.menu.length;
+  sc.menu.forEach(s=>rows.push({menu:s}));
+ }else{
+  mode=sc.kind||"tab";
+  const src=mode==="tab"?tabs:mode==="bookmark"?BOOKS:HIST;total=src.length;
+  const items=src.map(x=>({...x}));
+  rows=search(items,sc.kind?sc.rest:v);
+ }
+ if(sel>=rows.length)sel=Math.max(0,rows.length-1);
+ rows.forEach((r,i)=>{
+  const li=document.createElement("li");li.id="r"+i;li.setAttribute("role","option");li.setAttribute("aria-selected",i===sel);
+  const m=document.createElement("span");m.className="m";m.textContent=i===sel?">":" ";
+  const tx=document.createElement("span");tx.className="tx";
+  const a=document.createElement("span"),b=document.createElement("span");a.className="t";b.className="u";
+  if(r.menu){a.textContent="/"+r.menu.code+"  "+r.menu.name;b.textContent=r.menu.code==="t"?"open tabs, all windows":"opt-in on the options page"}
+  else{a.append(hl(r.tab.title,r.th));b.append(hl(r.tab.disp,r.uh));}
+  tx.append(a,b);li.append(m,tx);
+  if(r.tab&&r.tab.w===2){const w=document.createElement("span");w.className="w";w.textContent="[w2]";w.title="In another window";li.append(w)}
+  li.onmousemove=()=>{if(sel!==i)setSel(i,false)};
+  li.onclick=()=>{sel=i;act()};
+  list.append(li)});
+ if(!rows.length){const e=document.createElement("li");e.className="empty";e.textContent="no matches";e.style.cursor="default";list.append(e)}
+ q.setAttribute("aria-activedescendant",rows.length?"r"+sel:"");
+ $("count").textContent=rows.length+"/"+total;
+ $("scopeLabel").textContent="scope: "+(sc.menu?"menu":mode+"s");
+ const s=list.children[sel];if(s&&rows.length&&document.activeElement===q)s.scrollIntoView({block:"nearest"})}
+function setSel(i,scroll=true){const n=list.children;if(n[sel]){n[sel].setAttribute("aria-selected","false");n[sel].firstChild.textContent=" "}
+ sel=i;if(n[sel]){n[sel].setAttribute("aria-selected","true");n[sel].firstChild.textContent=">";q.setAttribute("aria-activedescendant","r"+sel);if(scroll)n[sel].scrollIntoView({block:"nearest"})}}
+function move(d){if(!rows.length)return;setSel((sel+d+rows.length)%rows.length)}
+function act(){const r=rows[sel];if(!r)return;
+ if(r.menu){q.value="/"+r.menu.code+" ";sel=0;render();q.focus();return}
+ const t=r.tab;
+ if(t.id){tabs=[t0(t.id),...tabs.filter(x=>x.id!==t.id)];curId=t.id;q.value="";sel=1;drawBar();render();
+  toast(t.w===2?"focus window 2 -> "+t.title.slice(0,28):"switched -> "+t.title.slice(0,28))}
+ else toast("(demo) would open "+t.disp.slice(0,34))}
+function t0(id){return tabs.find(x=>x.id===id)}
+function closeSel(){const r=rows[sel];if(!r||!r.tab||!r.tab.id)return toast("only tabs can be closed");
+ const id=r.tab.id;tabs=tabs.filter(x=>x.id!==id);if(id===curId)curId=tabs[0]?.id;drawBar();render();toast("closed: "+r.tab.title.slice(0,30))}
+q.addEventListener("input",()=>{sel=0;render()});
+q.addEventListener("keydown",e=>{
+ const c=e.ctrlKey||e.metaKey,k=e.key;
+ if(k==="ArrowDown"||(c&&k.toLowerCase()==="j")){e.preventDefault();move(1)}
+ else if(k==="ArrowUp"||(c&&k.toLowerCase()==="k")){e.preventDefault();move(-1)}
+ else if(k==="Enter"||(k==="Tab"&&rows[sel]?.menu)){e.preventDefault();act()}
+ else if(c&&k==="Backspace"){e.preventDefault();closeSel()}
+ else if(k==="Backspace"&&/^\/[a-z] $/i.test(q.value)){e.preventDefault();q.value="";sel=0;render()}
+ else if(c&&k.toLowerCase()==="u"){e.preventDefault();const sc=parseScope(q.value);q.value=sc.kind&&sc.rest?q.value.slice(0,3):"";sel=0;render()}
+ else if(k==="Escape"){e.preventDefault();q.value="";sel=0;render();toast("cleared")}});
+document.addEventListener("keydown",e=>{
+ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="e"){e.preventDefault();$("demo").scrollIntoView({block:"center"});q.focus();q.select()}});
+$("prompt").addEventListener("click",()=>q.focus());
+// theme
+const th=$("theme");
+function theme(d){document.documentElement.dataset.theme=d?"dark":"";th.setAttribute("aria-pressed",d);th.textContent="[ dark: "+(d?"on":"off")+" ]"}
+th.onclick=()=>theme(document.documentElement.dataset.theme!=="dark");
+drawBar();render();
+</script>
+</body>
+</html>
