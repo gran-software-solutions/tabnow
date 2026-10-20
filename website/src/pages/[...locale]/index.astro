@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Hero from '../../components/Hero.astro';
+import Playground from '../../components/Playground.astro';
 import Moments from '../../components/Moments.astro';
 import Keys from '../../components/Keys.astro';
 import Privacy from '../../components/Privacy.astro';
@@ -30,6 +31,7 @@ const jsonLd = {
 
 <Base title={t('meta.homeTitle')} description={t('meta.homeDescription')} path="/" jsonLd={jsonLd} home>
   <Hero />
+  <Playground />
   <Moments />
   <Privacy />
   <Keys />

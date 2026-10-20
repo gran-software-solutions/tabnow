@@ -149,5 +149,30 @@
   },
   "llms": {
     "tagline": "A fuzzy finder for your open tabs."
+  },
+  "playground": {
+    "titleA": "Try it",
+    "titleB": "here.",
+    "line": "Press Alt+E inside the window.",
+    "lineMac": "Press Cmd+E inside the window.",
+    "hint": "Click the window, then press Alt+E",
+    "hintMac": "Click the window, then press Cmd+E",
+    "button": "Open TabNow",
+    "keyAlt": "Alt",
+    "keyMac": "Cmd",
+    "label": "A browser window with 43 open tabs in two windows. Press Alt+E to open TabNow.",
+    "labelMac": "A browser window with 43 open tabs in two windows. Press Cmd+E to open TabNow.",
+    "windowName": "Window {n}",
+    "windowSwitch": "Switch to window {n}",
+    "newTab": "New tab",
+    "closeTab": "Close tab",
+    "back": "Back",
+    "forward": "Forward",
+    "reload": "Reload",
+    "bookmark": "Bookmark this tab",
+    "extension": "TabNow",
+    "allBookmarks": "All bookmarks",
+    "panel": "TabNow search panel",
+    "address": "Address bar"
   }
 }
