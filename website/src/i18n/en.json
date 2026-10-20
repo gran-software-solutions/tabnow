@@ -118,17 +118,15 @@
   },
   "installSection": {
     "label": "Install",
-    "titleA": "Four steps,",
-    "titleB": "one minute.",
+    "titleA": "Three steps,",
+    "titleB": "half a minute.",
     "lead": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc.",
     "leadSoon": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc. Not in the Web Store yet.",
     "steps": [
-      "Clone the repository from GitHub.",
-      "Open <code>chrome://extensions</code>.",
-      "Turn on Developer mode.",
-      "Choose Load unpacked and pick the <code>extension/</code> folder."
-    ],
-    "github": "Get it on GitHub"
+      "Open TabNow in the Chrome Web Store.",
+      "Click <strong>Add to Chrome</strong>.",
+      "Press <code>Ctrl+E</code> on any page. Change the key at <code>chrome://extensions/shortcuts</code>."
+    ]
   },
   "footer": {
     "made": "Made by",

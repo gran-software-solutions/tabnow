@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_name__",
+  "short_name": "__MSG_shortName__",
   "description": "__MSG_description__",
   "version": "0.1.0",
   "minimum_chrome_version": "121",
@@ -10,7 +11,7 @@
   "options_ui": { "page": "options.html" },
   "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "action": {
-    "default_title": "__MSG_name__",
+    "default_title": "__MSG_shortName__",
     "default_icon": { "16": "icons/icon-16.png", "20": "icons/icon-20.png", "24": "icons/icon-24.png", "32": "icons/icon-32.png" }
   },
   "commands": {

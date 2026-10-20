@@ -1,5 +1,6 @@
 {
-  "name": { "message": "TabNow" },
+  "name": { "message": "TabNow: Fuzzy Tab Search" },
+  "shortName": { "message": "TabNow" },
   "description": { "message": "Fast fuzzy search across all your open tabs." },
   "placeholder": { "message": "Search tabs, or type / for more" },
   "scopeTab": { "message": "Tabs" },

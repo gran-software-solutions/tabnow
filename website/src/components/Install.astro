@@ -1,6 +1,6 @@
 ---
 import { useT } from '../i18n/index.js';
-import { install, GITHUB_INSTALL_URL } from '../config.js';
+import { install } from '../config.js';
 import InstallButton from './InstallButton.astro';
 const { t, list } = useT(Astro.currentLocale);
 const { soon } = install();
@@ -16,7 +16,6 @@ const { soon } = install();
         {list('installSection.steps').map((step) => <li><span set:html={step} /></li>)}
       </ol>
       <InstallButton />
-      {!soon && <a class="btn ghost note-btn" href={GITHUB_INSTALL_URL} rel="noopener">{t('installSection.github')}</a>}
     </div>
   </div></div>
 </section>

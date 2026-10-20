@@ -7,10 +7,11 @@ export const IMPRINT_URL = 'https://gransoftware.de/impressum';
 // TODO: the production domain is not decided; tabnow.app is a placeholder. SITE_URL overrides it for a build.
 export const DOMAIN = 'tabnow.app';
 
-// The Chrome Web Store listing. null until it is live. While null, every Install button says
+// The Chrome Web Store listing (draft created 20.10.2026; the link works once Google approves it).
+// While null, every Install button says
 // "Coming soon to the Chrome Web Store" and opens the install steps on GitHub. Set the URL and
 // every Install button links to the store instead.
-export const webStoreUrl = null;
+export const webStoreUrl = 'https://chromewebstore.google.com/detail/tabnow-fuzzy-tab-search/mepimfhgphlbfopbenbiojhbgekineih';
 
 export const GITHUB_URL = 'https://github.com/gran-software-solutions/tabnow';
 // Where the install steps are while the store listing does not exist yet.
