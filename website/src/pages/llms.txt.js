@@ -1,5 +1,5 @@
 import { useT } from '../i18n/index.js';
-import { SUPPORT_EMAIL, GITHUB_URL, webStoreUrl } from '../config.js';
+import { SUPPORT_EMAIL, GITHUB_URL, webStoreUrl, EDGE_STORE_URL } from '../config.js';
 
 // llms.txt (llmstxt.org): the site in plain Markdown for AI assistants. Built from the same
 // English strings as the page, so it cannot say something the page does not.
@@ -28,6 +28,7 @@ export function GET({ site }) {
     '## Install',
     '',
     webStoreUrl ? `- Chrome Web Store: ${webStoreUrl}` : `- ${t('install.soon')}`,
+    `- Microsoft Edge Add-ons: ${EDGE_STORE_URL}`,
     ...list('installSection.steps').map((step, i) => `${i + 1}. ${plain(step)}`),
     '',
     '## Links',

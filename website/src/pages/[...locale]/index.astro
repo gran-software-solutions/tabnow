@@ -8,7 +8,7 @@ import Privacy from '../../components/Privacy.astro';
 import Install from '../../components/Install.astro';
 import { useT, localePath } from '../../i18n/index.js';
 import { localeStaticPaths } from '../../i18n/locales.js';
-import { webStoreUrl, GITHUB_URL, SUPPORT_EMAIL, COMPANY, COMPANY_URL } from '../../config.js';
+import { storeUrls, SUPPORT_EMAIL, COMPANY, COMPANY_URL } from '../../config.js';
 
 export const getStaticPaths = localeStaticPaths;
 
@@ -23,8 +23,9 @@ const jsonLd = {
   url: new URL(localePath(locale, '/'), Astro.site).href,
   license: 'https://opensource.org/licenses/MIT',
   isAccessibleForFree: true,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
-  downloadUrl: webStoreUrl ?? GITHUB_URL,
+  offers: storeUrls.map((url) => ({ '@type': 'Offer', price: '0', priceCurrency: 'EUR', url })),
+  downloadUrl: storeUrls,
+  installUrl: storeUrls,
   author: { '@type': 'Organization', name: COMPANY, url: COMPANY_URL, email: SUPPORT_EMAIL },
 };
 ---

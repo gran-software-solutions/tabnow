@@ -389,6 +389,11 @@ input[type=range] { width: 100%; margin: 0; accent-color: var(--fg); height: 20p
 .steps code { white-space: nowrap; }
 .steps li::before { content: counter(s); display: block; margin-bottom: 14px; font: italic 400 40px/1 "Instrument Serif", serif; color: var(--muted); }
 .closing .mac { margin-top: 52px; }
+.edge-alt { margin: 12px 0 0; font-size: 14px; }
+.edge-alt a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.edge-alt a:hover { color: var(--fg); }
+.go-btn .edge-alt { margin-top: 16px; font-size: 15px; }
+[data-edge] .edge-alt { display: none; }
 
 footer { border-top: 1px solid var(--line); padding: 36px 0 44px; color: var(--muted); font-size: 14px; }
 footer .wrap { display: flex; align-items: center; gap: 28px; }

@@ -2,7 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import { ANALYTICS, DOMAIN } from '../config.js';
+import { ANALYTICS, DOMAIN, EDGE_STORE_URL } from '../config.js';
 import { useT, localePath, DEFAULT_LOCALE } from '../i18n/index.js';
 
 const { title, description, path = '/', jsonLd = null, noindex = false, home = false } = Astro.props;
@@ -35,6 +35,9 @@ const canonical = abs(localePath(locale, path));
         var t = null; try { t = localStorage.getItem('tabnow-theme'); } catch (e) {}
         if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.dataset.theme = t;
+        // Edge: its Install buttons go to the Edge store (script at the end of body).
+        var b = navigator.userAgentData && navigator.userAgentData.brands;
+        if (b && b.length ? b.some(function (x) { return x.brand === 'Microsoft Edge'; }) : /\bEdg\//.test(navigator.userAgent)) document.documentElement.dataset.edge = '';
       })();
     </script>
     <meta property="og:type" content="website" />
@@ -70,5 +73,12 @@ const canonical = abs(localePath(locale, path));
       <slot />
     </main>
     <Footer />
+    {/* On Edge every Install button goes to the Edge store. Runs before first paint. */}
+    <script is:inline define:vars={{ edgeUrl: EDGE_STORE_URL }}>
+      if (document.documentElement.hasAttribute('data-edge')) document.querySelectorAll('[data-install]').forEach(function (a) {
+        a.href = edgeUrl; a.textContent = a.dataset.edgeLabel; a.rel = 'noopener';
+        a.removeAttribute('data-soon'); a.removeAttribute('title'); a.dataset.umamiEvent = 'install-click-edge';
+      });
+    </script>
   </body>
 </html>

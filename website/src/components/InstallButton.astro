@@ -6,6 +6,7 @@ const { variant = 'primary', short = false } = Astro.props;
 const { href, soon } = install();
 ---
 
-<a class:list={['btn', variant === 'ghost' && 'ghost']} href={href} data-install data-umami-event="install-click" data-soon={soon ? '' : undefined} title={soon && short ? t('install.soon') : undefined} rel={soon ? undefined : 'noopener'}>
+{/* data-edge-label: on Edge, Base.astro points this button at the Edge store with that label. */}
+<a class:list={['btn', variant === 'ghost' && 'ghost']} href={href} data-install data-edge-label={t('install.edge')} data-umami-event="install-click" data-soon={soon ? '' : undefined} title={soon && short ? t('install.soon') : undefined} rel={soon ? undefined : 'noopener'}>
   {soon ? t(short ? 'install.soonShort' : 'install.soon') : t('install.button')}
 </a>

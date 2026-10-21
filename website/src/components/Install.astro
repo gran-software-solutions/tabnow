@@ -2,6 +2,7 @@
 import { useT } from '../i18n/index.js';
 import { install } from '../config.js';
 import InstallButton from './InstallButton.astro';
+import EdgeLink from './EdgeLink.astro';
 const { t, list } = useT(Astro.currentLocale);
 const { soon } = install();
 ---
@@ -9,7 +10,7 @@ const { soon } = install();
 <section class="moment closing" id="install">
   <div class="wrap">
     <h2 data-reveal>{t('installSection.titleA')} <em>{t('installSection.titleB')}</em></h2>
-    <div class="go-btn" data-reveal><InstallButton /></div>
+    <div class="go-btn" data-reveal><InstallButton /><EdgeLink /></div>
     <ol class="steps" data-reveal>
       {list('installSection.steps').map((step) => <li><span set:html={step} /></li>)}
     </ol>

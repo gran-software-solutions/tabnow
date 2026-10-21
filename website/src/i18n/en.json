@@ -26,7 +26,10 @@
   "install": {
     "button": "Add to Chrome",
     "soon": "Coming soon to the Chrome Web Store",
-    "soonShort": "Coming soon"
+    "soonShort": "Coming soon",
+    "edge": "Add to Edge",
+    "edgeNow": "Available now for Microsoft Edge",
+    "edgeAlso": "Also for Microsoft Edge"
   },
   "key": {
     "ctrl": "Ctrl",
@@ -125,7 +128,7 @@
     "titleA": "Get",
     "titleB": "TabNow.",
     "lead": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc.",
-    "leadSoon": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc. Not in the Web Store yet, coming soon.",
+    "leadSoon": "Works in Chrome 121+, Edge, Brave, Opera, Vivaldi and Arc. In the Microsoft Edge Add-ons store now, the Chrome Web Store is coming soon.",
     "steps": [
       "Open TabNow in the Chrome Web Store.",
       "Click <strong>Add to Chrome</strong>.",

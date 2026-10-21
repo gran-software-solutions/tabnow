@@ -1,0 +1,9 @@
+---
+import { EDGE_STORE_URL, install } from '../config.js';
+import { useT } from '../i18n/index.js';
+const { t } = useT(Astro.currentLocale);
+const { soon } = install();
+---
+
+{/* The small Edge link for visitors not on Edge. Hidden on Edge, where the main button goes there. */}
+<p class="edge-alt"><a href={EDGE_STORE_URL} rel="noopener" data-umami-event="install-click-edge">{soon ? t('install.edgeNow') : t('install.edgeAlso')}</a></p>

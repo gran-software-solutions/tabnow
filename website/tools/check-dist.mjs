@@ -8,7 +8,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
 // Hosts a link may point to. TabNow is not a shop: no payment hosts.
 const ALLOWED_HOSTS = new Set([
-  'chromewebstore.google.com', 'github.com', 'www.gransoftware.de', 'gransoftware.de',
+  'chromewebstore.google.com', 'microsoftedge.microsoft.com', 'github.com', 'www.gransoftware.de', 'gransoftware.de',
   'opensource.org',
 ]);
 const strict = process.env.STRICT === '1';

@@ -1,6 +1,7 @@
 ---
 import { useT } from '../i18n/index.js';
 import InstallButton from './InstallButton.astro';
+import EdgeLink from './EdgeLink.astro';
 const { t } = useT(Astro.currentLocale);
 ---
 
@@ -20,6 +21,7 @@ const { t } = useT(Astro.currentLocale);
       <a class="btn ghost" href="#features">{t('hero.how')}</a>
       <span class="hint"><kbd data-mod data-mac={t('key.mod')}>{t('key.alt')}</kbd><kbd>E</kbd> {t('hero.try')}</span>
     </div>
+    <EdgeLink />
   </div>
   <div class="ov" id="panel" role="search" aria-label={t('demo.label')}>
     <div class="q">
