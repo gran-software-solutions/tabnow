@@ -117,6 +117,12 @@ the dashboard while it is pending means cancelling the review, which puts the it
 queue. So the links and the description line above are switched in the dashboard on approval day (step on
 GRAN-148), together with `storeLive` in `website/src/config.js`. The Edge listing uses these links from the start.
 
+## Microsoft Edge Add-ons
+
+Live since 21.10.2026: https://microsoftedge.microsoft.com/addons/detail/eicellnpfeaoedbigkbdghlgdnkcpkcp
+(version 0.1.1; product id and Partner Center notes in `extensions/PLAYBOOK.md`, section 4b).
+tabnow.app links it as `EDGE_STORE_URL` in `website/src/config.js`.
+
 ## Images (this folder)
 
 - `icon-128.png`: store icon, 128 x 128 (copy of `extension/icons/icon-128.png`).
