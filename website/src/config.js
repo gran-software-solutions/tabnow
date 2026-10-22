@@ -12,7 +12,7 @@ export const DOMAIN = 'tabnow.app';
 // storeLive is the single switch. While false, every Install button says "Coming soon to the Chrome
 // Web Store" (the header says "Coming soon") and opens the install section on GitHub. On approval
 // day set storeLive to true: every button, the install section, JSON-LD and llms.txt switch to the store.
-export const storeLive = false;
+export const storeLive = true;
 const STORE_URL = 'https://chromewebstore.google.com/detail/tabnow-fuzzy-tab-search/mepimfhgphlbfopbenbiojhbgekineih';
 export const webStoreUrl = storeLive ? STORE_URL : null;
 

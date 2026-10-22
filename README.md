@@ -16,7 +16,7 @@ Fuzzy search across every open tab in every window. Press `Alt+E` (`Cmd+E` on a 
 
 ## Install
 
-**Coming soon to the Chrome Web Store.** The listing is under review; this section gets the link once it is approved.
+Install TabNow from the [Chrome Web Store](https://chromewebstore.google.com/detail/tabnow-fuzzy-tab-search/mepimfhgphlbfopbenbiojhbgekineih) or from [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/eicellnpfeaoedbigkbdghlgdnkcpkcp).
 
 Works in Chrome 121+ and other Chromium browsers (Edge, Brave, Opera, Vivaldi, Arc). After installing, press `Alt+E` (`Cmd+E` on a Mac) on any page. To change the shortcut, open `chrome://extensions/shortcuts`.
 
